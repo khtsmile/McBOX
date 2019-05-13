@@ -1,0 +1,16 @@
+
+
+energy 1
+nugrid 8192
+
+% history total active
+pop 5000000 350 300
+
+tally 0
+
+%CMFD  <CMFD_lat>, <n_skip>, <n_acc>
+%pCMFD 333  1  1
+
+% Thermal Power in MWth 
+%power 25
+

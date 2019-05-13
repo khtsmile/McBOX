@@ -1,0 +1,6 @@
+#!/bin/bash
+
+#export OMP_NUM_THREADS=28
+mpirun -machinefile spacen0208 -np 7 -x OMP_NUM_THREADS=28  ./McBOX_new.out   > log.out
+#rm -f profile.0.*
+#mpirun  -np 1 -x OMP_NUM_THREADS=1  ./McBOX_new.out   #> log.out
