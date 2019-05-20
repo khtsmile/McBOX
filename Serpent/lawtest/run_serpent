@@ -1,5 +1,0 @@
-#!/bin/bash
-
-mpirun -machinefile spacen04 -np 1 sss2_129 lawtest -omp 20 > log1.out
-
-
