@@ -1,0 +1,200 @@
+
+  _                   .-=-.           .-=-.          .-==-.       
+ { }      __        .' O o '.       .' O o '.       /  -<' )--<   
+ { }    .' O'.     / o .-. O \     / o .-. O \     /  .---`       
+ { }   / .-. o\   /O  /   \  o\   /O  /   \  o\   /O /            
+  \ `-` /   \ O`-'o  /     \  O`-'o  /     \  O`-`o /             
+   `-.-`     '.____.'       `._____.'       `.____.'              
+
+Serpent 2 beta
+
+A Continuous-energy Monte Carlo Reactor Physics Burnup Calculation Code
+
+ - Version 2.1.29 (June 12, 2017) -- Contact: serpent@vtt.fi
+
+ - Reference: J. Leppanen, et al. "The Serpent Monte Carlo code: Status,
+              development and applications in 2013." Ann. Nucl. Energy,
+              82 (2015) 142-150.
+
+ - Compiled Feb 20 2018 17:24:27
+
+ - MPI Parallel calculation mode available
+
+ - OpenMP Parallel calculation mode available
+
+ - Geometry and mesh plotting available
+
+ - Default data path not set
+
+Begin calculation on Tue Apr  2 11:43:40 2019
+
+Reading input file "PWR_lattice"...
+
+Checking duplicate input definitions...
+OK.
+
+Creating geometry...
+OK.
+
+Counting geometry zones...
+
+The geometry consists of 3 levels:
+
+Level 0 size: max 3 zones
+Level 1 size: max 289 zones
+Level 2 size: max 4 zones
+
+Processing cells...
+OK.
+
+Linking materials to geometry...
+OK.
+
+Counting cells...
+OK.
+
+Processing data for group constant generation:
+
+ - 70 energy groups in micro-group structure
+ - 2 energy groups in macro-group structure
+ - B1 fundamental mode calculation is not run
+ - Group constants generated in 1 universes
+ - Discontinuity factors are not calculated
+ - Pin-power distributions are not calculated
+ - Albedos are not calculated
+ - Poison cross sections are not calculated
+
+Reading ACE directory files...
+OK.
+
+Reading neutron-induced fission yields...
+OK.
+
+Adding nuclides in material UO2...
+
+Nuclide  92235.00c -- uranium 235 (U-235)
+Nuclide  92238.00c -- uranium 238 (U-238)
+Nuclide   8016.00c -- oxygen 16 (O-16)
+
+Adding nuclides in material gap...
+
+Adding nuclides in material water...
+
+Nuclide   1001.00c -- hydrogen (H-1)
+
+Checking data and printing output...
+OK.
+
+
+***** Tue Apr  2 11:43:57 2019 (seed = 1554173020)
+Warning message from function ProcessNuclides:
+
+Minimum photon cross section energy 1.000000E+37 MeV is
+above the energy grid minimum 1.000000E-03 MeV.
+The energy grid minimum is set to 1.000000E+37 MeV.
+Possible changes in energy cutoff cards (warned if any).
+
+
+***** Tue Apr  2 11:43:57 2019 (seed = 1554173020)
+Warning message from function ProcessNuclides:
+
+Photon energy cutoff 1.000000E-03 MeV is changed to 1.000000E+37.
+
+
+Generating unionize energy grids...
+
+Adding points:
+
+  1001.00c -- Points added in neutron grid: 332
+  8016.00c -- Points added in neutron grid: 2729
+ 92235.00c -- Points added in neutron grid: 138689
+ 92238.00c -- Points added in neutron grid: 184954
+
+Generating unionized energy grid:
+
+ - Unionization performed without grid thinning
+   between 1.00E-11 and 20.0 MeV.
+
+ - Final neutron grid size: 326532 points.
+
+ - 16.69 Mb of memory allocated for grid data
+
+OK.
+
+Processing cross sections and ENDF reaction laws...
+
+Nuclide   1001.00c -- hydrogen (H-1)
+Nuclide   8016.00c -- oxygen 16 (O-16)
+Nuclide  92235.00c -- uranium 235 (U-235)
+Nuclide  92238.00c -- uranium 238 (U-238)
+
+SUMMARY -- 4 nuclides included in calculation:
+
+ - 4 transport nuclides
+ - Neutron energy cut-offs at 1.00E-11 and 20.0 MeV
+ - 115 transport reactions
+ - 28 special reactions
+ - 4 decay reactions
+ - 55.88 Mb of memory allocated for data
+
+Normalizing compositions and processing mixtures...
+OK.
+
+Allocating memory for macroscopic cross section data...
+OK.
+
+Allocating memory for particle structures...
+OK.
+
+Calculating maximum densities...
+OK.
+
+Performing density cut-off...
+OK.
+
+Sorting material-wise reaction lists:
+
+   0% complete
+  33% complete
+ 100% complete
+
+Calculating macroscopic cross sections:
+
+   0% complete
+ 100% complete
+
+Calculating DT neutron majorant cross section:
+
+   0% complete
+ 100% complete
+
+Clearing results and statistics...
+OK.
+
+Sampling initial source...
+OK.
+
+Inactive cycle   1 / 150: k-eff = 1.00000
+Inactive cycle   2 / 150: k-eff = 1.35057
+Inactive cycle   3 / 150: k-eff = 1.34865
+Inactive cycle   4 / 150: k-eff = 1.35514
+Inactive cycle   5 / 150: k-eff = 1.35911
+Inactive cycle   6 / 150: k-eff = 1.35317
+Inactive cycle   7 / 150: k-eff = 1.35551
+Inactive cycle   8 / 150: k-eff = 1.35029
+Inactive cycle   9 / 150: k-eff = 1.34928
+Inactive cycle  10 / 150: k-eff = 1.35404
+Inactive cycle  11 / 150: k-eff = 1.35161
+Inactive cycle  12 / 150: k-eff = 1.35766
+Inactive cycle  13 / 150: k-eff = 1.35159
+Inactive cycle  14 / 150: k-eff = 1.35181
+Inactive cycle  15 / 150: k-eff = 1.34983
+Inactive cycle  16 / 150: k-eff = 1.34657
+Inactive cycle  17 / 150: k-eff = 1.35035
+Inactive cycle  18 / 150: k-eff = 1.34892
+Inactive cycle  19 / 150: k-eff = 1.34992
+Inactive cycle  20 / 150: k-eff = 1.34387
+Inactive cycle  21 / 150: k-eff = 1.35462
+Inactive cycle  22 / 150: k-eff = 1.35798
+Inactive cycle  23 / 150: k-eff = 1.34643
+Inactive cycle  24 / 150: k-eff = 1.35106
