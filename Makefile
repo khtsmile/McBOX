@@ -8,7 +8,7 @@ COMPILERC   = icc
 #COMPILERF   = ifort 
 COMPILERF   = mpif90 
 FLAG  		= -openmp
-#BUG		= -check all -traceback
+BUG		= -check all -traceback
 
 
 CODE 		= McCrit_beta.out 

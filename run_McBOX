@@ -47,7 +47,7 @@ fi
 ########################################
 # run a simulation
 rm -f spacen0*
-export N_OMP=28
+export N_OMP=1
 for (( I=$N0; I<=$N1; I++ ))
 do
 	echo spacen0$I > spacen0$I

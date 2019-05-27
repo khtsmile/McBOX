@@ -1307,6 +1307,8 @@ type (AceFormat), pointer :: ac
 integer :: iMT, LOCA, nfis
 real(8), allocatable :: temp_XS(:,:)
 
+if ( JXS(21) == 0 ) return
+
 !Set pointer
 ac => ace(iso)
 
