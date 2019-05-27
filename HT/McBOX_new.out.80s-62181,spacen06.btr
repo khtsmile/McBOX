@@ -1,0 +1,6 @@
+
+McBOX_new.out:62181 terminated with signal 7 at PC=2b7dfc53ae38 SP=2b7e062e22c0.  Backtrace:
+/opt/intel/composer_xe_2013_sp1.3.174/compiler/lib/intel64/libiomp5.so(__kmp_acquire_queuing_lock+0x68)[0x2b7dfc53ae38]
+/opt/intel/composer_xe_2013_sp1.3.174/compiler/lib/intel64/libiomp5.so(__kmpc_critical+0x243)[0x2b7dfc526a93]
+./McBOX_new.out(simulation_mp_simulate_history_+0x1bfa)[0x45d0aa]
+/opt/intel/composer_xe_2013_sp1.3.174/compiler/lib/intel64/libiomp5.so(__kmp_invoke_microtask+0x93)[0x2b7dfc56aed3]

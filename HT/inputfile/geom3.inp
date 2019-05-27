@@ -1,0 +1,37 @@
+title InputTest 
+% no tab allowed YET...
+
+surf 2 sqcz 0.0 0.0 0.63
+
+surf 5 pz  1 
+surf 6 pz -1
+
+
+pin 1 2
+UO2_clad   0.54
+moderator
+
+pin 2 2 
+43_MOX_clad   0.54
+moderator
+
+pin 3 2 
+70_MOX_clad   0.54
+moderator
+
+pin 4 2 
+87_MOX_clad   0.54
+moderator
+
+
+
+cell 300  0  fill4    & -2  6  -5
+cell 301  0  outside  |  2 -6  5
+
+bc  2  2
+bc  5  2
+bc  6  2
+
+sgrid  -0.63 -0.63 -1 0.63 0.63 1
+
+% ====== end of geometry input ======

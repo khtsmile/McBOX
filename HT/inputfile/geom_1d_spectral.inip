@@ -1,0 +1,38 @@
+title Spectral_Analysis
+% no tab allowed YET...
+
+surf 1 px -0.5 
+surf 2 px  0.5
+
+surf 3 px -5
+surf 4 px  5
+
+surf 5 px -50 
+surf 6 px  50
+
+% pin geometry (-0.5 ~ 0.5) 
+cell 10  1 UO2  &  1 -2
+
+lat 110  1  0.0 0.0 0.0 10 1 1  1.0 1.0 1.0
+1 1 1 1 1 1 1 1 1 1
+
+% assembly geometry (-5 ~ 5)
+cell 20  2  fill110  &  3 -4
+
+lat 220 1 0.0 0.0 0.0 10 1 1  10.0 1.0 1.0
+2 2 2 2 2 2 2 2 2 2 
+
+% 1-D whole core ( -50 ~ 50 / CMFD grid of 220 )
+cell 30 0 fill220 &  5 -6 
+cell 40 0 outside | -5  6
+
+bc 5 2
+bc 6 2
+
+sgrid  -50 0 0 50 0 0 
+
+% echo "========================================" 
+% echo "     $i th BATCH RUN" 
+% echo "========================================" 
+
+% ====== end of geometry input ======
