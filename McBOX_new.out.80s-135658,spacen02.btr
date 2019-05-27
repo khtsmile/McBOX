@@ -1,6 +1,0 @@
-
-McBOX_new.out:135658 terminated with signal 7 at PC=41da13 SP=2b8bf7010fc0.  Backtrace:
-./McBOX_new.out(ace_xs_mp_getmacroxs_+0x193)[0x41da13]
-./McBOX_new.out(tracking_mp_transport_+0x6f4)[0x464a34]
-./McBOX_new.out(simulation_mp_simulate_history_+0x4f70)[0x46ab40]
-/opt/intel/composer_xe_2013_sp1.3.174/compiler/lib/intel64/libiomp5.so(__kmp_invoke_microtask+0x93)[0x2b8be48a4ed3]
