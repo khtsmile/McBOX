@@ -18,7 +18,6 @@ integer :: pt1, pt2
 integer :: anum, mnum
 integer :: ix, lmt 
 integer, parameter :: ace_read_handler = 20171116
-integer :: lib_type     ! type of library (1) continuous energy (4) S(a,b)
 
 integer :: min_egrid, max_egrid, num_egrid, loc1, loc2, loc3, max_len
  
@@ -225,27 +224,6 @@ end if
 
 end subroutine set_ace
 
-!! =============================================================================
-!! LibraryType
-!! 1 : continuous energy neutron
-!! 2 : discrete reaction neutron
-!! 3 : dosimetry
-!! 4 : thermal
-!! 5 : continuous energy photoatomic
-!! =============================================================================
-!subroutine LibraryType(name_of_lib,lib_type)
-!    character(len=*), intent(in):: name_of_lib  ! name of library
-!    integer:: lib_type  ! type of library
-!    integer:: length    ! length of character
-!
-!    length = len_trim(name_of_lib)
-!
-!    select case(name_of_lib(length-5:length-5))
-!    case('c'); lib_type = 1 ! continuous energy
-!    case('t'); lib_type = 4 ! thermal scattering; S(a,b)
-!    end select
-!
-!end subroutine
 
 
 !==============================================================================
@@ -1265,7 +1243,7 @@ allocate( ace(iso) % nyd( 1 : NXS(4) ) )
 do ii = 1, NXS(4)
   if( abs( ace(iso) % TY(ii) ) > 100 ) then  !> neutron yields Y(E) provieded as function of neutron energy
     !set pointer
-    print *, '   WARNING :: NYD block exists'
+    if ( icore == score ) print *, '   WARNING :: NYD block exists'
     
     ny => ace(iso) % nyd(ii)
 
@@ -1333,8 +1311,8 @@ real(8), allocatable :: temp_XS(:,:)
 ac => ace(iso)
 
 !Allocate arrays 
-if ( JXS(21) /= 0 ) then
 IE = XSS(JXS(21)); NE = XSS(JXS(21)+1);
+if ( NE > 1 ) then
     allocate( ac % sigf( 1 : NXS(3) ) )
     ac % sigf( : ) = 0 
     ac % sigf( IE : IE+NE-1 ) = XSS( JXS(21)+2 : JXS(21)+2+NE-1 )

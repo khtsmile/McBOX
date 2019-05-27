@@ -1,5 +1,5 @@
 module geometry
-	use constants, 			only: TINY_BIT
+	use constants, 			only: TINY_BIT, MAX_COORD
 	use surface_header 
 	use geometry_header
 	use particle_header
@@ -254,10 +254,10 @@ module geometry
 	! particle 'p' traveling in a certain direction. For a cell in a subuniverse
 	! that has a parent cell, also include the surfaces of the edge of the universe.
 	!===============================================================================
-	subroutine distance_to_boundary(p, dist, surface_crossed)!, lattice_translation, next_level)
+	subroutine distance_to_boundary(p, dist, surface_crossed)!, level)!, lattice_translation, next_level)
 		type(Particle), intent(inout) :: p
 		real(8),        intent(out)   :: dist
-		!integer,        intent(out)   :: level
+		!type(LocalCoord), intent(out) :: level(MAX_COORD) 
 		integer,        intent(out)   :: surface_crossed
 		!integer,        intent(out)   :: lattice_translation(3)
 		!integer,        intent(out)   :: next_level
@@ -272,18 +272,23 @@ module geometry
 		real(8) :: d_surf             ! distance to surface
 		real(8) :: xyz_cross(3)       ! coordinates at projected surface crossing
 		real(8) :: surf_uvw(3)        ! surface normal direction
-		!type(universe),   pointer :: univ
-		!type(Cell),       pointer :: c
-		!class(Lattice),   pointer :: lat
+
 		integer :: idx_surf
-		real(8) :: dist_min
+		integer :: i_xyz_out(3)
+		real(8) :: dist_temp
 		integer :: univ_idx
 
+		!do j = 1, MAX_COORD
+		!  call level(j) % reset()
+		!enddo
+		
 		! inialize distance to infinity (huge)
 		dist = INFINITY
 		d_lat = INFINITY
 		d_surf = INFINITY
-		dist_min = dist
+		dist_temp = INFINITY
+		i_xyz_out(:) = 0 
+		
 		!lattice_translation(:) = [0, 0, 0]
 
 		!next_level = 0
@@ -292,10 +297,7 @@ module geometry
 		!> surface 탐색 순서
 		! 1. universe 내부 cell boundary
 		! 2. 만약 위 거리가 toolong 보다 길면 -> 상위 universe 탐색 (lattice or universe)
-		
-		
 		p%coord(:)%dist = INFINITY			! reset level distance
-		!p%univ => universes(0)
 		univ_idx = 0 
 		j = 0 
 		LEVEL_LOOP: do 
@@ -303,7 +305,6 @@ module geometry
 
 			! get pointer to cell on this level
 			idx = p % coord(j) % cell
-			!c => cells(idx)
 			
 			! =======================================================================
 			! FIND MINIMUM DISTANCE TO SURFACE IN THIS CELL
@@ -311,17 +312,17 @@ module geometry
 			
 			! =======================================================================
 			! FIND MINIMUM DISTANCE TO LATTICE SURFACES		
-			!if ((p%coord(j) % dist > TOOLONG).and.(p % coord(j) % lattice /= NONE)) then
+			!if ((p%coord(j) % dist > TOOLONG).and.(p % coord(j) % lattice /= NONE)) then 
 			if (p % coord(j) % lattice /= NONE) then
-				!lat => lattices(p % coord(j) % lattice)
-				
-				
 				i_xyz(1) = p % coord(j) % lattice_x
 				i_xyz(2) = p % coord(j) % lattice_y
 				i_xyz(3) = p % coord(j) % lattice_z
 				
 				call lat_distance(lattices(p % coord(j) % lattice), surfaces, p % coord(j) % xyz, &
-									p % coord(j) % uvw, i_xyz, p % coord(j) % dist, idx_surf)
+									p % coord(j) % uvw, i_xyz, dist_temp, idx_surf)
+									
+				if (dist_temp < p % coord(j) % dist) p % coord(j) % dist = dist_temp
+				
 			endif 
 			
 			
@@ -339,19 +340,21 @@ module geometry
 				j_idx = j
 			endif 
 			
-			!if (cells(idx)%filltype == FILL_UNIVERSE) then 
-			!	!p%univ => universes(p%coord(j+1)%universe)
-			!	univ_idx = p%coord(j+1)%universe
-			!elseif (cells(idx)%filltype == FILL_LATTICE) then 
-			!	!p%univ => universes(lattices(p%coord(j+1)%lattice)%lat(p%coord(j+1)%lattice_x, p%coord(j+1)%lattice_y))
-			!	univ_idx = lattices(p%coord(j+1)%lattice)%lat(p%coord(j+1)%lattice_x, p%coord(j+1)%lattice_y)
-			!endif
 			if (j >= p%n_coord ) exit
 		enddo LEVEL_LOOP
 		
+		dist = p%coord(j_idx)%dist
 		
 		
-		dist = minval(p%coord(:)%dist)
+		!dist = p%coord(1)%dist; level(1) = p%coord(1)
+		!do i = 1, p%n_coord 
+		!	if (dist > p%coord(i)%dist) then 
+		!		dist = p%coord(i)%dist
+		!		level(1:i) =p%coord(1:i) 
+		!	enddo
+		!enddo
+		
+		!dist = minval(p%coord(:)%dist)
 		
 		
 	end subroutine

@@ -13,10 +13,8 @@ implicit none
     integer :: tally_switch !> o for off // 1 for on
     real(8) :: keff, k_col, k_tl
     real(8), allocatable:: kprt(:)
+    real(8) :: Nominal_Power
     
-    real(8):: cnt(500)
-    real(8):: derg
-        
     !==============================================================================
     integer ::    & 
     & ncore,      & !Total number of cores
@@ -25,13 +23,6 @@ implicit none
     & ierr,       & !Error
     & core        !Global communicator
 
-    !==============================================================================
-    ! real(8) :: macro_t,  macro_a, macro_f, macro_nuf
-    ! !$OMP THREADPRIVATE(macro_t)
-    ! !$OMP THREADPRIVATE(macro_a)
-    ! !$OMP THREADPRIVATE(macro_f)
-    ! !$OMP THREADPRIVATE(macro_nuf)
-    
     ! Error message
     character(len=80) :: err_msg !> error message when exception handler is called
 

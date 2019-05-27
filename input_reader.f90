@@ -5,7 +5,8 @@ module input_reader
     use variables
     use XS_header 
     use material_header
-    use tally,                only: TallyCoord, TallyFlux
+    use tally,                only: TallyCoord, TallyFlux, TallyPower
+    use CMFD,                 only: getXYZ, CMFD_lat, n_skip, n_acc, CMFD_type
     
     use ace_header
     use ace_module
@@ -68,9 +69,9 @@ module input_reader
                 
                 inquire(file=filename, exist=found)
                 if (found) then
-                  open(prt_keff, file=filename, status="old")!, action="write")
+                  if (icore == score) open(prt_keff, file=filename, status="old")
                 else
-                  open(prt_keff, file=filename, status="new")!, action="write")
+                  if (icore == score) open(prt_keff, file=filename, status="new")
                 end if
                 
             case ("surf")
@@ -116,8 +117,7 @@ module input_reader
                 if (allocated(cells)) isize = size(cells) 
                 isize = isize + univptr%ncell
                 allocate(cells_temp(isize))
-				!print *, 'asdfasdf', allocated(cells)
-                if (isize > 1 .and. allocated(cells)) cells_temp(1:isize-univptr%ncell) = cells(:) 
+                if (isize > 1) cells_temp(1:isize-univptr%ncell) = cells(:) 
                 if(allocated(cells)) deallocate(cells)
                 call move_alloc(cells_temp, cells)
                 
@@ -374,7 +374,8 @@ module input_reader
         !call check_input_result(universes,lattices, cells,surfaces)
                 
         !> READ DONE
-        print '(A25)', '    GEOM  READ COMPLETE...' 
+        close(rd_geom)
+        if(icore==score) print '(A25)', '    GEOM  READ COMPLETE...' 
         
     end subroutine
 
@@ -648,9 +649,10 @@ module input_reader
         !    print '(7F10.7)', XS_MG(i_mat)%sig_scat(1,:)
         !enddo 
         
-        
+        close(rd_xs)
+
         !> READ DONE
-        print '(A25)', '    XS    READ COMPLETE...' 
+        if(icore==score) print '(A25)', '    XS    READ COMPLETE...' 
     end subroutine    
     
     
@@ -664,7 +666,7 @@ module input_reader
         !Read ctrl.inp
         open(rd_ctrl, file="./inputfile/ctrl.inp",action="read", status="old")
     
-        ierr = 0;
+        ierr = 0; CMFD_lat = -1
         do while (ierr.eq.0)
             read (rd_ctrl, FMT='(A)', iostat=ierr) line 
             if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle  
@@ -689,16 +691,27 @@ module input_reader
             
             case ("tally") 
                 read(line(j+1:), *) tally_switch
+                if ( tally_switch > 0 .and. icore == score ) then
+                open(prt_spec,file="flux.out",action="write",status="replace")
+                open(prt_spec,file="power.out",action="write",status="replace")
+                end if
+
             case ("dbrc")
                 n_iso0K = 1
                 call READ_DBRC(trim(line(j+1:)))
-!            case ("otfdb")
-!                read(line(j+1:),*)
-                
+            case ("CMFD") 
+                read(line(j+1:), *) CMFD_lat, n_skip, n_acc
+                CMFD_type = 1
+            case ("pCMFD") 
+                read(line(j+1:), *) CMFD_lat, n_skip, n_acc
+                CMFD_type = 2 
+            case ("power") 
+                read(line(j+1:), *) Nominal_Power
             end select
         enddo
-        
-        print '(A25)', '    CTRL  READ COMPLETE...' 
+        close(rd_ctrl)
+
+        if ( icore == score ) print '(A25)', '    CTRL  READ COMPLETE...' 
         
     end subroutine
 
@@ -798,8 +811,8 @@ module input_reader
                 
             end select
         enddo
-        
-        print '(A27)', '    CE MAT READ COMPLETE...' 
+        close(rd_mat)
+        if ( icore == score ) print '(A27)', '    CE MAT READ COMPLETE...' 
         
     end subroutine
 
@@ -858,9 +871,9 @@ end subroutine READ_SAB_MAT
             call SET_DBRC
             call set_ace
 
+            print '(A29)', '    ACE Lib. READ COMPLETE...' 
         end if
                 
-        print '(A29)', '    ACE Lib. READ COMPLETE...' 
     
     end subroutine
 
@@ -939,8 +952,9 @@ end function
 
 
     
-    subroutine read_tally     
-        integer :: i, j, k, idx, n, level, i_univ, i_lat
+    subroutine read_tally
+        integer :: i, j, k, idx, n, level, i_univ, i_lat, i_pin, n_pin
+        integer :: a,b,c, i_xyz(3), i_save
         integer :: ierr
         character(100) :: line
         character(50)  :: option, temp, test
@@ -953,18 +967,26 @@ end function
         do while (ierr.eq.0)
             read (rd_tally, FMT='(A)', iostat=ierr) line 
             if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle  
-            !> option identifier 
-            j = 0
-            do while (j.le.len(line))
-                j = j+1 
-                if (line(j:j).eq.' ') exit
-                option = line(1:j)        
-            enddo 
+            !> option identifier             
+            j = index(adjustl(line),' ') -1 
+            option = line(1:j)
+            
+            if (trim(option) /= "tally") then 
+                print *, 'ERROR Tally Read :: tally.inp     ', option
+                stop
+            end if
+
+            line = adjustl(line(j+1:))
+            j = index(line,' ')-1
+            option = trim(line(1:j))
+
             select case (option)
-            case ("tally") 
+            case ("cell")
                 read(line(j+1:), *) n
                 allocate(TallyCoord(1:n))
                 allocate(TallyFlux(1:n))
+                allocate(TallyPower(1:n))
+                TallyCoord(:)%flag = 1
                 do i = 1, n
 10                    read (rd_tally, FMT='(A)', iostat=ierr) line 
                     if ((len_trim(line)==0).or.(scan(line,"%"))/=0) goto 10  
@@ -998,12 +1020,100 @@ end function
                     line = adjustl(line(4:)); read(line(1:),*) TallyCoord(i)%vol
                     TallyCoord(i)%n_coord = level
                 enddo 
-                TallyFlux(:) = 0
+                TallyFlux(:)  = 0
+                TallyPower(:) = 0 
 
+            case("pin") 
+                read(line(j+1:), *) n
+                allocate(TallyCoord(1:n)); TallyCoord(n)%n_coord = 0 
+                allocate(TallyFlux(1:n))
+                allocate(TallyPower(1:n))
+                TallyCoord(:)%flag = 0
+                i = 1; 
+                do while ( i <= n) 
+                11  read (rd_tally, FMT='(A)', iostat=ierr) line
+                    if ((len_trim(line)==0).or.(scan(line,"%"))/=0) goto 11
+
+                    level = 0; idx = index(line,'>')
+                    do while (idx /= 0)
+                        level = level + 1 
+                        !print *, 'level', level, line 
+                        j = index(line,' '); read(line(1:j),*) temp ; line = line(j:)                         
+                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_univ;  line = line(j:)
+                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_lat  ; line = line(j:)
+                        
+                        if (i_lat /= 0) i_lat = find_lat_idx(lattices, i_lat)
+                        line = adjustl(line);
+                        if (line(1:3) == 'all') then 
+                            a = lattices(i_lat)%n_xyz(1)
+                            b = lattices(i_lat)%n_xyz(2)
+                            c = lattices(i_lat)%n_xyz(3)
+                            n_pin = a*b*c
+                            i_save = i
+                            do i_pin = 1, n_pin
+                                i_xyz = getXYZ(i_pin, a,b,c)
+                                
+                                TallyCoord(i)%coord(1:level) = TallyCoord(i_save)%coord(1:level)
+                                
+                                TallyCoord(i)%coord(level)%lattice_x = i_xyz(1)
+                                TallyCoord(i)%coord(level)%lattice_y = i_xyz(2)
+                                TallyCoord(i)%coord(level)%lattice_z = i_xyz(3)
+                                
+                                if (i_lat == 0) then 
+                                    TallyCoord(i)%coord(level)%lattice = 0 
+                                else 
+                                    TallyCoord(i)%coord(level)%lattice  =  i_lat
+                                endif
+                                TallyCoord(i)%n_coord = level
+                                !> Reset the cell & univ designation (for pin only)
+                                TallyCoord(i)%coord(level)%cell = 0
+                                TallyCoord(i)%coord(level)%universe = 0 
+                                
+                                i = i + 1
+                                
+                            enddo 
+                            idx = 0 
+                        else
+                            line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_x; line = line(j:)
+                            line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_y; line = line(j:)
+                            line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_z; line = line(j:)
+                            
+                            TallyCoord(i)%coord(level)%cell     = find_cell_idx(cells, adjustl(temp))
+                            
+                            if (i_univ == 0) then 
+                                TallyCoord(i)%coord(level)%universe = 0 
+                            else 
+                                TallyCoord(i)%coord(level)%universe = find_univ_idx(universes, i_univ)
+                            endif
+                            
+                            if (i_lat == 0) then 
+                                TallyCoord(i)%coord(level)%lattice = 0 
+                            else 
+                                TallyCoord(i)%coord(level)%lattice  =  i_lat
+                            endif
+                            
+                            idx = index(line,'>')
+                            line = line(idx+1:); line = adjustl(line)
+                            
+                            if (idx == 0) then 
+                                i = i + 1
+                                TallyCoord(i)%n_coord = level
+                                !> Reset the cell designation (for pin only)
+                                TallyCoord(i)%coord(level)%cell = 0
+                            endif
+                        endif 
+                    enddo 
+                    !> pin volume is not needed (all same)
+                    TallyCoord(:)%vol = 1
+                enddo                     
+                TallyFlux(:)  = 0
+                TallyPower(:) = 0
+                
             end select
         enddo
         
-        print '(A25)', '    TALLY READ COMPLETE...' 
+        close(rd_tally)
+        if(icore==score) print '(A25)', '    TALLY READ COMPLETE...' 
         
     end subroutine
     subroutine check_input_result(universes,lattices, cells,surfaces)

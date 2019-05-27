@@ -235,7 +235,7 @@ module geometry_header
 			endif 
 		enddo 
 		
-	end function	
+	end function
 	
 	
 	function get_local_xyz(this, upper_xyz, i_xyz) result(local_xyz)
@@ -291,25 +291,63 @@ module geometry_header
 		type(lattice), intent(in) :: this
 		type(surface), intent(in) :: surflist(:)
 		integer, intent(in) :: i_xyz(3)
+		!integer, intent(inout) :: i_xyz_out(3)
 		real(8), intent(in) :: xyz(3), uvw(3)
 		real(8) :: xyz_(3)
-		real(8) :: d_surf, d_temp 
-		integer :: i,j, n, ix, iy, iz
+		real(8) :: d_surf, d_temp
+		integer :: i,j, ix, iy, iz, dxyz(3), nxyz(3)
 		integer :: idx_temp, idx_surf
 		
 		xyz_(:) = xyz(:)
 		
 		d_surf = INFINITY
-		do ix = 1, this%n_xyz(1)
-			do iy = 1, this%n_xyz(2)
-				do iz = 1, this%n_xyz(3)
+		
+		! ================== 수 정 사 항 ==================
+		! 1. 자기 (ix,iy,iz)에서 d_surf 찾기 
+		! if (d_surf < toolong) then 
+		! 	2. uvw 방향의 pin 탐색 
+		!	if (allocated(univ(j)%r)) then !> pin univ 
+		!		3.1 제일 바깥 cell에서만 찾기 
+		!	else 
+		!		3.2 밑에서 하는 대로 
+		!	endif 
+		! endif  
+		
+		ix = i_xyz(1); iy = i_xyz(2); iz = i_xyz(3); 
+		j = this%lat(ix,iy,iz)
+		do i = 1, universes(j)%ncell
+			associate(c => cells(universes(j)%cell(i)))
+				if(cell_contains_xyz(c, xyz)) then 
+					call cell_distance(c,xyz, uvw, surflist, d_temp, idx_temp)
+					if (d_surf > d_temp) then 
+						d_surf = d_temp
+						idx_surf = idx_temp
+					endif 
+				endif
+			end associate
+		enddo 
+		
+		if (d_surf < TOOLONG) return
+		
+		do i = 1, 3 
+			dxyz(i) = int(sign(1.0d0, uvw(i)))
+			if (dxyz(i) > 0) then 
+				nxyz(i) = this%n_xyz(i)
+			else 
+				nxyz(i) = 1
+			endif 
+		enddo 
+		
+		do iz = i_xyz(3), nxyz(3), dxyz(3)
+			do iy = i_xyz(2), nxyz(2), dxyz(2)
+				do ix = i_xyz(1), nxyz(1), dxyz(1)
 					xyz_(1) = xyz(1) + this%pitch(1)*(i_xyz(1)-ix)
 					xyz_(2) = xyz(2) + this%pitch(2)*(i_xyz(2)-iy)
 					xyz_(3) = xyz(3) + this%pitch(3)*(i_xyz(3)-iz)
-					
 					j = this%lat(ix,iy,iz)
-					do i = 1, universes(j)%ncell
-						associate(c => cells(universes(j)%cell(i)))
+					
+					if (allocated(universes(j)%r)) then 
+						associate(c => cells(universes(j)%cell(universes(j)%ncell)))
 							if(cell_contains_xyz(c, xyz_)) then 
 								call cell_distance(c,xyz_, uvw, surflist, d_temp, idx_temp)
 								if (d_surf > d_temp) then 
@@ -318,10 +356,49 @@ module geometry_header
 								endif 
 							endif
 						end associate
-					enddo 
+					else 
+						do i = 1, universes(j)%ncell
+							associate(c => cells(universes(j)%cell(i)))
+								if(cell_contains_xyz(c, xyz_)) then 
+									call cell_distance(c,xyz_, uvw, surflist, d_temp, idx_temp)
+									if (d_surf > d_temp) then 
+										d_surf = d_temp
+										idx_surf = idx_temp
+									endif 
+								endif
+							end associate
+						enddo 
+					endif
 				enddo 
 			enddo 
 		enddo 
+		
+		
+		
+		!do iz = 1, this%n_xyz(3)
+		!	do iy = 1, this%n_xyz(2)
+		!		do ix = 1, this%n_xyz(1)
+		!			xyz_(1) = xyz(1) + this%pitch(1)*(i_xyz(1)-ix)
+		!			xyz_(2) = xyz(2) + this%pitch(2)*(i_xyz(2)-iy)
+		!			xyz_(3) = xyz(3) + this%pitch(3)*(i_xyz(3)-iz)
+		!			
+		!			j = this%lat(ix,iy,iz)
+		!			do i = 1, universes(j)%ncell
+		!				associate(c => cells(universes(j)%cell(i)))
+		!					if(cell_contains_xyz(c, xyz_)) then 
+		!						call cell_distance(c,xyz_, uvw, surflist, d_temp, idx_temp)
+		!						if (d_surf > d_temp) then 
+		!							d_surf = d_temp
+		!							idx_surf = idx_temp
+		!							!i_xyz_out = (\ix, iy, iz\)
+		!							
+		!						endif 
+		!					endif
+		!				end associate
+		!			enddo 
+		!		enddo 
+		!	enddo 
+		!enddo 
 	end subroutine
 	
 	

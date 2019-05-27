@@ -14,19 +14,22 @@ contains
 function getMacroXS (mat, erg) result (macro_xs)
     type(Material_CE), intent(in) :: mat
     real(8), intent(in) :: erg
-    real(8) :: macro_xs(4)
+    real(8) :: macro_xs(5)
     
     integer :: i 
     integer :: i_iso, iso_, ierg_
     integer :: pt1, pt2, pt3, pt4
     real(8) :: ipfac
-    real(8) :: micro_t, micro_d, micro_f, micro_nuf, micro_a, micro_el
-    real(8) :: macro_t, macro_f, macro_nuf, macro_a
+    real(8) :: micro_t, micro_d, micro_f, micro_nuf, micro_a, micro_el, micro_xn
+    real(8) :: macro_t, macro_f, macro_nuf, macro_a, macro_qf
+    real(8) :: xn_xs(4)
     integer :: isab
     macro_t   = 0.0d0
     macro_a   = 0.0d0
     macro_f   = 0.0d0
     macro_nuf = 0.0d0
+    macro_qf  = 0.0d0
+    xn_xs(:)  = 0.0d0
 
     !print *, mat%mat_name, mat%n_iso
     do i_iso = 1, mat%n_iso     ! isotope number in the material
@@ -69,13 +72,29 @@ function getMacroXS (mat, erg) result (macro_xs)
         macro_a   = macro_a   + mat%numden(i_iso) * micro_a   * barn
         macro_f   = macro_f   + mat%numden(i_iso) * micro_f   * barn
         macro_nuf = macro_nuf + mat%numden(i_iso) * micro_nuf * barn
-        !macro_qf  = macro_qf  + mat%numden(i_iso)*micro_f(iso_)*ace(iso_)%qval
-                
+        macro_qf  = macro_qf  + mat%numden(i_iso) * micro_f   * barn * ace(iso_)%qval
+        
+        !> Macro_xs of Sig_abs is only used for CMFD, (n,xn) XS is subtracted. 
+        do i = 1, ace(iso_)%NXS(5) !> through the reaction types...
+            pt1 = abs(ace(iso_)%TY(i))
+            if (pt1 > 1 .and. pt1 < 5) then 
+                micro_xn   = ace(iso_)%sig_MT(i)%cx(ierg_) & 
+                            + ipfac*(ace(iso_)%sig_MT(i)%cx(ierg_+1) - ace(iso_)%sig_MT(i)%cx(ierg_))
+                xn_xs(pt1) = xn_xs(pt1) + mat%numden(i_iso) * micro_xn * barn
+            endif
+        enddo
+
     enddo 
+
+    do i = 2, 4 
+        macro_a = macro_a - (dble(i)-1.0d0)*xn_xs(i)
+    enddo     
+    
     macro_xs(1) = macro_t  
     macro_xs(2) = macro_a  
     macro_xs(3) = macro_f  
     macro_xs(4) = macro_nuf
+    macro_xs(5) = macro_qf
     
     
 end function

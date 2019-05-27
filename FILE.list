@@ -1,6 +1,6 @@
 
 FSRCS := \
-	    constants.f90\
+		constants.f90\
 		variables.f90\
 		exception.f90\
 		XS_header.f90\
@@ -13,6 +13,7 @@ FSRCS := \
 		randoms.f90\
 		bank_header.f90\
 		particle_header.f90\
+		CMFD.f90\
 		scattering_laws.f90\
 		ace_reactions.f90\
 		tally.f90\

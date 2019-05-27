@@ -1,76 +1,79 @@
 module constants
-	implicit none 
-	
-	!==============================================================================
-	!Constants for I/O unit
-	integer, parameter :: rd_geom    	 = 1, &  !I/O unit for reading problem
-						  rd_ctrl    	 = 2, & 	!I/O unit for reading control param.
-						  rd_xs			 = 3, &
-						  rd_tally       = 4, &
-						  rd_mat		 = 5, & 
-						  rd_inven		 = 7
-	integer, parameter :: wt_coord   	 = 10  !I/O unit for keff
-	
-	!integer, parameter :: rd_mg      	 = 3  !I/O unit for reading control param.
-	!integer, parameter :: rd_event   	 = 4  !I/O unit for event for tmc
-	!integer, parameter :: rd_burn    	 = 5  !I/O unit for burnup calculation
-	integer, parameter :: prt_keff   	 = 6  !I/O unit for keff
-	!integer, parameter :: prt_ntpy   	 = 7  !I/O unit for ntpy 
-	!integer, parameter :: prt_2Dflux 	 = 8  !I/O unit for flux
-	!integer, parameter :: prt_2Dpowr 	 = 9  !I/O unit for power
-	!integer, parameter :: prt_assflux 	 = 10 !I/O unit for flux
-	!integer, parameter :: prt_asspowr 	 = 11 !I/O unit for power
-	!integer, parameter :: prt_3Dflux 	 = 12 !I/O unit for flux
-	!integer, parameter :: prt_3Dpowr 	 = 13 !I/O unit for power
-	!integer, parameter :: prt_HB_2Dflux  = 14 !I/O unit for flux
-	!integer, parameter :: prt_HB_2Dpowr  = 15 !I/O unit for power
-	!integer, parameter :: prt_HB_assflux = 16 !I/O unit for flux
-	!integer, parameter :: prt_HB_asspowr = 17 !I/O unit for power
-	!integer, parameter :: prt_HB_3Dflux  = 18 !I/O unit for flux
-	!integer, parameter :: prt_HB_3Dpowr  = 19 !I/O unit for power
-	!integer, parameter :: monitor    	 = 20 !I/O unit for monitor to text
-	!integer, parameter :: debug1     	 = 21 !I/O unit for debugging
-	!integer, parameter :: debug2     	 = 22 !I/O unit for debugging
-	!integer, parameter :: prt_pwr    	 = 23 !I/O unit for transient Monte Carlo
-	!integer, parameter :: prt_pk     	 = 24 !I/O unit for transient Monte Carlo
-	!integer, parameter :: prt_pk2    	 = 25 !I/O unit for transient Monte Carlo
-	!integer, parameter :: prt_pk3    	 = 26 !I/O unit for transient Monte Carlo
-	!integer, parameter :: prt_pop    	 = 27 !I/O unit for transient Monte Carlo
-	!integer, parameter :: prt_tsize  	 = 28 !I/O unit for transient Monte Carlo
-	!integer, parameter :: prt_mg     	 = 29 !I/O unit for transient Monte Carlo
-	!integer, parameter :: prt_time   	 = 30 !I/O unit for time analysis
-	!integer, parameter :: prt_rSF    	 = 31 !I/O unit for convergence analysis
-	!integer, parameter :: prt_pCMFD  	 = 32 !I/O unit for keff from pCMFD calculation
-	!integer, parameter :: prt_ratio  	 = 33 !I/O unit for ratio estimator for keff
-	!integer, parameter :: prt_burn1  	 = 34 !I/O unit for burnup calculation
-	!integer, parameter :: prt_burn2  	 = 35 !I/O unit for burnup calculation
-	!integer, parameter :: prt_burn3  	 = 36 !I/O unit for burnup calculation
-	!integer, parameter :: prt_burn4  	 = 37 !I/O unit for burnup calculation
-	!integer, parameter :: prt_power  	 = 38 !I/O unit for fuel power distribution 
-	!integer, parameter :: prt_burnup 	 = 39 !I/O unit for burnup distribution
-	!integer, parameter :: prt_sca1   	 = 40 !I/O unit for fuel temperature distribution 
-	!integer, parameter :: prt_sca2   	 = 41 !I/O unit for bulk temperature
-	!integer, parameter :: prt_sca3   	 = 42 !I/O unit for bulk density
-	!integer, parameter :: prt_cbc    	 = 43 !I/O unit for critical boron concentration 
+    implicit none 
+    
+    !==============================================================================
+    !Constants for I/O unit
+    integer, parameter :: rd_geom         = 1, &  !I/O unit for reading problem
+                          rd_ctrl         = 2, &  !I/O unit for reading control param.
+                          rd_xs             = 3, &
+                          rd_tally       = 4, &
+                          rd_mat         = 5, & 
+                          rd_inven         = 7
+    integer, parameter :: wt_coord        = 8  !I/O unit for coordinate test 
+    integer, parameter :: prt_spec          = 9  !I/O unit for spectral analysis variable print 
+    
+    !integer, parameter :: rd_mg           = 3  !I/O unit for reading control param.
+    !integer, parameter :: rd_event        = 4  !I/O unit for event for tmc
+    !integer, parameter :: rd_burn         = 5  !I/O unit for burnup calculation
+    integer, parameter :: prt_keff        = 10  !I/O unit for keff
+    integer, parameter :: prt_ntpy        = 11  !I/O unit for ntpy 
+    integer, parameter :: prt_flux           = 12  !I/O unit for flux
+    integer, parameter :: prt_powr           = 13  !I/O unit for power
+    
+    
+    !integer, parameter :: prt_assflux      = 10 !I/O unit for flux
+    !integer, parameter :: prt_asspowr      = 11 !I/O unit for power
+    !integer, parameter :: prt_3Dflux      = 12 !I/O unit for flux
+    !integer, parameter :: prt_3Dpowr      = 13 !I/O unit for power
+    !integer, parameter :: prt_HB_2Dflux  = 14 !I/O unit for flux
+    !integer, parameter :: prt_HB_2Dpowr  = 15 !I/O unit for power
+    !integer, parameter :: prt_HB_assflux = 16 !I/O unit for flux
+    !integer, parameter :: prt_HB_asspowr = 17 !I/O unit for power
+    !integer, parameter :: prt_HB_3Dflux  = 18 !I/O unit for flux
+    !integer, parameter :: prt_HB_3Dpowr  = 19 !I/O unit for power
+    !integer, parameter :: monitor         = 20 !I/O unit for monitor to text
+    !integer, parameter :: debug1          = 21 !I/O unit for debugging
+    !integer, parameter :: debug2          = 22 !I/O unit for debugging
+    !integer, parameter :: prt_pwr         = 23 !I/O unit for transient Monte Carlo
+    !integer, parameter :: prt_pk          = 24 !I/O unit for transient Monte Carlo
+    !integer, parameter :: prt_pk2         = 25 !I/O unit for transient Monte Carlo
+    !integer, parameter :: prt_pk3         = 26 !I/O unit for transient Monte Carlo
+    !integer, parameter :: prt_pop         = 27 !I/O unit for transient Monte Carlo
+    !integer, parameter :: prt_tsize       = 28 !I/O unit for transient Monte Carlo
+    !integer, parameter :: prt_mg          = 29 !I/O unit for transient Monte Carlo
+    !integer, parameter :: prt_time        = 30 !I/O unit for time analysis
+    !integer, parameter :: prt_rSF         = 31 !I/O unit for convergence analysis
+    !integer, parameter :: prt_pCMFD       = 32 !I/O unit for keff from pCMFD calculation
+    !integer, parameter :: prt_ratio       = 33 !I/O unit for ratio estimator for keff
+    !integer, parameter :: prt_burn1       = 34 !I/O unit for burnup calculation
+    !integer, parameter :: prt_burn2       = 35 !I/O unit for burnup calculation
+    !integer, parameter :: prt_burn3       = 36 !I/O unit for burnup calculation
+    !integer, parameter :: prt_burn4       = 37 !I/O unit for burnup calculation
+    !integer, parameter :: prt_power       = 38 !I/O unit for fuel power distribution 
+    !integer, parameter :: prt_burnup      = 39 !I/O unit for burnup distribution
+    !integer, parameter :: prt_sca1        = 40 !I/O unit for fuel temperature distribution 
+    !integer, parameter :: prt_sca2        = 41 !I/O unit for bulk temperature
+    !integer, parameter :: prt_sca3        = 42 !I/O unit for bulk density
+    !integer, parameter :: prt_cbc         = 43 !I/O unit for critical boron concentration 
 
-	   
-	! universe types 
-	integer, parameter :: pure_univ = 0 , &
-						  Pin_univ	= 1
-	
-	! surface types 
-	integer ::  px   = 1, &
-				py   = 2, &
-				pz   = 3, &
-				sqcx = 4, &
-				sqcy = 5, &
-				sqcz = 6, &
-				cylx = 7, &
-				cyly = 8, &
-				cylz = 9, &
-				sph  = 10 
-	!==============================================================================
-	
+       
+    ! universe types 
+    integer, parameter :: pure_univ = 0 , &
+                          Pin_univ    = 1
+    
+    ! surface types 
+    integer ::  px   = 1, &
+                py   = 2, &
+                pz   = 3, &
+                sqcx = 4, &
+                sqcy = 5, &
+                sqcz = 6, &
+                cylx = 7, &
+                cyly = 8, &
+                cylz = 9, &
+                sph  = 10 
+    !==============================================================================
+    
   ! Maximum number of collisions/crossings
   integer, parameter :: MAX_EVENTS = 1000000
   integer, parameter :: MAX_SAMPLE = 100000
@@ -96,13 +99,13 @@ module constants
 
   
   real(8), parameter :: fes(33) = &  != Fission energy spectrum
-	& (/  0.0d0,       .162524d0,  .266043d0,  .358425d0,  .445672d0, &
-	&      .530293d0,  .613680d0,  .696783d0,  .780264d0,  .864702d0, &
-	&      .950540d0, 1.038286d0, 1.128326d0, 1.221111d0, 1.317206d0, &
-	&     1.417070d0, 1.521302d0, 1.630646d0, 1.745929d0, 1.868073d0, &
-	&     1.998282d0, 2.138046d0, 2.289259d0, 2.454356d0, 2.636707d0, &
-	&     2.840830d0, 3.073518d0, 3.344965d0, 3.672134d0, 4.086420d0, &
-	&     4.656234d0, 5.588725d0, 9.0d0  /)
+    & (/  0.0d0,       .162524d0,  .266043d0,  .358425d0,  .445672d0, &
+    &      .530293d0,  .613680d0,  .696783d0,  .780264d0,  .864702d0, &
+    &      .950540d0, 1.038286d0, 1.128326d0, 1.221111d0, 1.317206d0, &
+    &     1.417070d0, 1.521302d0, 1.630646d0, 1.745929d0, 1.868073d0, &
+    &     1.998282d0, 2.138046d0, 2.289259d0, 2.454356d0, 2.636707d0, &
+    &     2.840830d0, 3.073518d0, 3.344965d0, 3.672134d0, 4.086420d0, &
+    &     4.656234d0, 5.588725d0, 9.0d0  /)
 
   ! ============================================================================
   ! PHYSICAL CONSTANTS
@@ -121,7 +124,7 @@ module constants
        N_AVOGADRO       = 0.6022140857_8,    & ! Avogadro's number in 10^24/mol
        K_BOLTZMANN      = 8.6173303e-5_8,    & ! Boltzmann constant in eV/K
        INFINITY         = huge(0.0_8),       & ! positive infinity
-	   TOOLONG			= 1.0e10_8,			 & ! too long distance limit
+       TOOLONG            = 1.0e6_8,             & ! too long distance limit
        ZERO             = 0.0_8,             &
        HALF             = 0.5_8,             &
        ONE              = 1.0_8,             &
@@ -132,19 +135,12 @@ module constants
 
   ! ============================================================================
   ! GEOMETRY-RELATED CONSTANTS
-  real(8), parameter :: TINY_BIT = 1e-8_8
-  real(8), parameter :: wgt_min  = 0.25!1e-2_8
+  real(8), parameter :: TINY_BIT = 1e-9_8
+  real(8), parameter :: wgt_min  = 1e-2_8 !0.25!1e-2_8
   
   ! FLOATING POINT ARITHMETICS MARGIN 
-  integer, parameter :: EPSILON = 1.0e-10_8  
+  real(8), parameter :: EPSILON = 1.0e-10_8  
   
-  ! Logical operators for cell definitions
-  integer, parameter ::              &
-       OP_LEFT_PAREN   = huge(0),     & ! Left parentheses
-       OP_RIGHT_PAREN  = huge(0) - 1, & ! Right parentheses
-       OP_COMPLEMENT   = huge(0) - 2, & ! Complement operator (~)
-       OP_INTERSECTION = huge(0) - 3, & ! Intersection operator
-       OP_UNION        = huge(0) - 4    ! Union operator (^)
 
   ! Cell fill types
   integer, parameter ::  &
@@ -159,15 +155,6 @@ module constants
   integer, parameter ::  &
        LATTICE_RECT = 1, & ! Rectangular lattice
        LATTICE_HEX  = 2    ! Hexagonal lattice
-
-  ! Lattice boundary crossings
-  integer, parameter ::    &
-       LATTICE_LEFT   = 1, & ! Flag for crossing left (x) lattice boundary
-       LATTICE_RIGHT  = 2, & ! Flag for crossing right (x) lattice boundary
-       LATTICE_BACK   = 3, & ! Flag for crossing back (y) lattice boundary
-       LATTICE_FRONT  = 4, & ! Flag for crossing front (y) lattice boundary
-       LATTICE_BOTTOM = 5, & ! Flag for crossing bottom (z) lattice boundary
-       LATTICE_TOP    = 6    ! Flag for crossing top (z) lattice boundary
 
 
   ! Flag to say that the outside of a lattice is not defined
@@ -259,10 +246,6 @@ module constants
        MGXS_ISOTROPIC   = 1, & ! Isotropically Weighted Data
        MGXS_ANGLE       = 2    ! Data by Angular Bins
 
-  ! Flag to denote this was a macroscopic data object
-  real(8), parameter :: &
-       MACROSCOPIC_AWR = -TWO
-
   ! Fission neutron emission (nu) type
   integer, parameter ::   &
        NU_NONE       = 0, & ! No nu values (non-fissionable)
@@ -280,127 +263,7 @@ module constants
        ASCII  = 1, & ! ASCII cross section file
        BINARY = 2    ! Binary cross section file
 
-  ! Library types
-  integer, parameter :: &
-       LIBRARY_NEUTRON = 1, &
-       LIBRARY_THERMAL = 2, &
-       LIBRARY_PHOTON = 3, &
-       LIBRARY_MULTIGROUP = 4
 
-  ! Probability table parameters
-  integer, parameter :: &
-       URR_CUM_PROB = 1, &
-       URR_TOTAL    = 2, &
-       URR_ELASTIC  = 3, &
-       URR_FISSION  = 4, &
-       URR_N_GAMMA  = 5, &
-       URR_HEATING  = 6
-
-  ! Maximum number of partial fission reactions
-  integer, parameter :: PARTIAL_FISSION_MAX = 4
-
-  ! Temperature treatment method
-  integer, parameter :: &
-       TEMPERATURE_NEAREST = 1, &
-       TEMPERATURE_INTERPOLATION = 2
-
-  ! Resonance elastic scattering methods
-  integer, parameter :: &
-       RES_SCAT_ARES = 1, &
-       RES_SCAT_DBRC = 2, &
-       RES_SCAT_WCM = 3, &
-       RES_SCAT_CXS = 4
-
-  ! ============================================================================
-  ! TALLY-RELATED CONSTANTS
-
-  ! Tally result entries
-  integer, parameter :: &
-       RESULT_VALUE  = 1, &
-       RESULT_SUM    = 2, &
-       RESULT_SUM_SQ = 3
-
-  ! Tally type
-  integer, parameter :: &
-       TALLY_VOLUME          = 1, &
-       TALLY_MESH_SURFACE    = 2, &
-       TALLY_SURFACE         = 3
-
-  ! Tally estimator types
-  integer, parameter :: &
-       ESTIMATOR_ANALOG      = 1, &
-       ESTIMATOR_TRACKLENGTH = 2, &
-       ESTIMATOR_COLLISION   = 3
-
-  ! Event types for tallies
-  integer, parameter :: &
-       EVENT_SURFACE = -2, &
-       EVENT_LATTICE = -1, &
-       EVENT_SCATTER =  1, &
-       EVENT_ABSORB  =  2
-
-  ! Tally score type -- if you change these, make sure you also update the
-  ! _SCORES dictionary in openmc/capi/tally.py
-  integer, parameter :: N_SCORE_TYPES = 16
-  integer, parameter :: &
-       SCORE_FLUX               = -1,  & ! flux
-       SCORE_TOTAL              = -2,  & ! total reaction rate
-       SCORE_SCATTER            = -3,  & ! scattering rate
-       SCORE_NU_SCATTER         = -4,  & ! scattering production rate
-       SCORE_ABSORPTION         = -5,  & ! absorption rate
-       SCORE_FISSION            = -6,  & ! fission rate
-       SCORE_NU_FISSION         = -7,  & ! neutron production rate
-       SCORE_KAPPA_FISSION      = -8,  & ! fission energy production rate
-       SCORE_CURRENT            = -9,  & ! current
-       SCORE_EVENTS             = -10, & ! number of events
-       SCORE_DELAYED_NU_FISSION = -11, & ! delayed neutron production rate
-       SCORE_PROMPT_NU_FISSION  = -12, & ! prompt neutron production rate
-       SCORE_INVERSE_VELOCITY   = -13, & ! flux-weighted inverse velocity
-       SCORE_FISS_Q_PROMPT      = -14, & ! prompt fission Q-value
-       SCORE_FISS_Q_RECOV       = -15, & ! recoverable fission Q-value
-       SCORE_DECAY_RATE         = -16    ! delayed neutron precursor decay rate
-
-  ! Maximum scattering order supported
-  integer, parameter :: MAX_ANG_ORDER = 10
-
-  ! Tally map bin finding
-  integer, parameter :: NO_BIN_FOUND = -1
-
-
-  ! Tally surface current directions
-  integer, parameter :: &
-       OUT_LEFT   = 1,   &   ! x min
-       IN_LEFT    = 2,   &   ! x min
-       OUT_RIGHT  = 3,   &   ! x max
-       IN_RIGHT   = 4,   &   ! x max
-       OUT_BACK   = 5,   &   ! y min
-       IN_BACK    = 6,   &   ! y min
-       OUT_FRONT  = 7,   &   ! y max
-       IN_FRONT   = 8,   &   ! y max
-       OUT_BOTTOM = 9,   &   ! z min
-       IN_BOTTOM  = 10,  &   ! z min
-       OUT_TOP    = 11,  &   ! z max
-       IN_TOP     = 12       ! z max
-
-  ! Tally trigger types and threshold
-  integer, parameter :: &
-       VARIANCE           = 1, &
-       RELATIVE_ERROR     = 2, &
-       STANDARD_DEVIATION = 3
-
-  ! Global tally parameters
-  integer, parameter :: N_GLOBAL_TALLIES = 4
-  integer, parameter :: &
-       K_COLLISION   = 1, &
-       K_ABSORPTION  = 2, &
-       K_TRACKLENGTH = 3, &
-       LEAKAGE       = 4
-
-  ! Differential tally independent variables
-  integer, parameter :: &
-       DIFF_DENSITY = 1, &
-       DIFF_NUCLIDE_DENSITY = 2, &
-       DIFF_TEMPERATURE = 3
 
 
   ! ============================================================================
@@ -415,25 +278,7 @@ module constants
   integer, parameter :: ERROR_INT  = -huge(0)
   real(8), parameter :: ERROR_REAL = -huge(0.0_8) * 0.917826354_8
 
-  ! Running modes
-  integer, parameter ::        &
-       MODE_FIXEDSOURCE = 1, & ! Fixed source mode
-       MODE_EIGENVALUE  = 2, & ! K eigenvalue mode
-       MODE_PLOTTING    = 3, & ! Plotting mode
-       MODE_PARTICLE    = 4, & ! Particle restart mode
-       MODE_VOLUME      = 5    ! Volume calculation mode
 
-  !=============================================================================
-  ! CMFD CONSTANTS
-
-  ! for non-accelerated regions on coarse mesh overlay
-  integer, parameter :: CMFD_NOACCEL = 99999
-
-  ! constant to represent a zero flux "albedo"
-  real(8), parameter :: ZERO_FLUX = 999.0_8
-
-  ! constant for writing out no residual
-  real(8), parameter :: CMFD_NORES = 99999.0_8
 
   !=============================================================================
   ! DELAYED NEUTRON PRECURSOR CONSTANTS
@@ -444,7 +289,7 @@ module constants
   ! is read in, we want to have an upper bound on the size of the array we
   ! use to store the bins for delayed group tallies.
   integer, parameter :: MAX_DELAYED_GROUPS = 8
-	
+    
 
 
 end module constants

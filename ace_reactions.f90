@@ -1,7 +1,7 @@
 module ace_reactions
 use omp_lib
 use constants,         only : PI, wgt_min, barn, tiny_bit
-use variables,         only : E_mode, keff, k_col, k_tl
+use variables,         only : E_mode, keff, k_col, icore, score
 use material_header 
 use ace_header
 use ace_xs
@@ -19,9 +19,9 @@ contains
 ! ================================================== !
 subroutine collision_CE (p) 
     type(particle), intent(inout) :: p
-    integer :: iso, i, i_iso
+    integer :: iso, i, i_iso, xn
     real(8) :: rn, el, noel, r, sigt_sum, temp, sum1, sum2
-    real(8) :: micro_xs(6), macro_xs(4)
+    real(8) :: micro_xs(6), macro_xs(5)
     ! * microscopic cross section
     ! 1 : total
     ! 2 : elastic
@@ -29,9 +29,12 @@ subroutine collision_CE (p)
     ! 4 : fission
     ! 5 : nufission
     ! 6 : thermal elastic
+    real(8) :: ipfac
+    integer :: ierg
     
     p%n_collision = p%n_collision + 1
     p % n_coord = 1
+    xn = 1
     !===============================================
     ! Sample a target isotope in the mixture
     macro_xs = getMacroXS(materials(p%material), p%E)
@@ -58,32 +61,31 @@ subroutine collision_CE (p)
     !!===============================================
     !Sampling reaction: elastic vs.non-elastic
     el   = micro_xs(2)
-    noel = micro_xs(1)-micro_xs(3)-el
-    if (abs(noel) < 1.d-5) noel = 0 
-    r = rang()*(noel+el)-el
+    !noel = micro_xs(1)-micro_xs(3)-el
+    !if (abs(noel) < 1.d-5) noel = 0 
 
-    if ( ace(iso)%nxs(5) == 0 .or. r <= 0D0 ) then
-        if ( p%yes_sab ) then
-        call SAB_CE(p,iso,micro_xs(2),micro_xs(6))
-        else
+    noel = 0 
+    call getierg(iso,ierg,p%E)
+    ipfac = max(0.d0, min(1.d0,(p%E-ace(iso)%E(ierg))/(ace(iso)%E(ierg+1)-ace(iso)%E(ierg))))
+    do i = 1, ace(iso)%NXS(5) !> through the reaction types...
+        if (abs(ace(iso)%TY(i)) == 19) cycle 
+        noel = noel + ace(iso)%sig_MT(i)%cx(ierg) & 
+                    + ipfac*(ace(iso)%sig_MT(i)%cx(ierg+1) - ace(iso)%sig_MT(i)%cx(ierg))
+    enddo 
+
+    r = rang()*(noel+el)-el
+    if( ace(iso)%nxs(5) == 0 .or. r <= 0.0d0 ) then 
         call elastic_CE (p, iso)
-        end if
     else
-        call notElastic_CE (p, iso)
+        call notElastic_CE (p, iso, xn)
     end if
     
     p%wgt = p%wgt * ((el+noel)/micro_xs(1)) !(1 - micro_xs(3)/micro_xs(1))
     
-    
-    if (p%E /= p%E) then 
-        print *, ace(iso)%library, p%E
-        print*, "energy"
-        stop
-    endif 
+    !> (n, xn) reaction
+    p%wgt = p%wgt * dble(xn)
     
     call absorption_CE(p)
-
-    
     
     !print '(I3,F10.5,A4,2F10.5)', p%n_collision, p%last_E, '->', p%E!, 100*(p%last_E-p%E)/p%last_E
     !print *, p%n_collision, p%last_E, '->', p%E
@@ -282,8 +284,6 @@ subroutine acecos (erg, iso, mu, iMT)
         ipfac = max(0.d0, min(1.d0,(erg-an%E(pt1))/(an%E(pt2)-an%E(pt1))))
         IE = pt1
         if (rang()  < ipfac) IE = pt2
-        !if (erg < an%E(1)) IE = 1
-        
         
         LC = an%dist_flag(IE) 
         if (LC == 0) then   
@@ -315,12 +315,12 @@ subroutine acecos (erg, iso, mu, iMT)
                 endif
             enddo 
             
-            CSOUT1    = CSOUT(pt1)
-            CSOUT2    = CSOUT(pt2)
-            PDF1    = PDF(pt1)
-            PDF2    = PDF(pt2)
-            CDF1    = CDF(pt1)
-            CDF2    = CDF(pt2)
+            CSOUT1 = CSOUT(pt1)
+            CSOUT2 = CSOUT(pt2)
+            PDF1   = PDF(pt1)
+            PDF2   = PDF(pt2)
+            CDF1   = CDF(pt1)
+            CDF2   = CDF(pt2)
             
             JJ = an % dist(IE) % LDAT(1) !an % dist(IE) % JJ
             temp = (PDF2-PDF1)/(CSOUT2-CSOUT1)
@@ -372,12 +372,13 @@ end subroutine
 !    excluding elastic scattering. 
 !    Output :: Angle & Energy of p object
 ! ================================================== !
-subroutine notElastic_CE (p,iso)
+subroutine notElastic_CE (p,iso,xn)
     type(particle), intent(inout) :: p
     type (AngularDist), pointer :: an
     type (EnergyDist),  pointer :: eg
     type (CrossSectionDataForm), pointer :: sigmt
     integer, intent(in) :: iso
+    integer, intent(inout) :: xn
     integer :: i, j
     integer :: iMT, MT 
     integer :: pt1, pt2, pt3
@@ -390,8 +391,7 @@ subroutine notElastic_CE (p,iso)
     real(8) :: erg
     real(8) :: sig_arr(1:ace(iso)%NXS(5)), sig_sum, temp
     real(8) :: u, v, w, phi
-    
-    !real(8) :: micro(5)
+    real(8) :: micro(6)
     
     
     
@@ -422,7 +422,6 @@ subroutine notElastic_CE (p,iso)
     rn = rang()
     sig_sum = sum(sig_arr(:)); temp = 0; iMT = -10
     do i = 1, ace(iso)%NXS(5) !> through the reaction types...
-        !print *, i, sig_arr(i)
         temp = temp + sig_arr(i)
         if (rn < temp/sig_sum) then
             MT = ace(iso)%MT(i)
@@ -430,6 +429,20 @@ subroutine notElastic_CE (p,iso)
             exit
         endif 
     enddo 
+    
+    if (iMT < 0) then 
+        print *, '*********** warning :: iMT not selected ************'
+        print *, 'rn',rn
+        print *, 'NXS(5)', ace(iso)%NXS(5)
+        print *, 'sig_arr', sig_arr(:)
+        
+        micro = getMicroXS( iso, p%E)
+        
+        print *, '  elastic', micro(2)
+        print *, 'inelastic', micro(1)-micro(3)-micro(2)
+
+        stop 
+    endif
     
     rn = rang()
     !> determine collision law number
@@ -491,8 +504,8 @@ subroutine notElastic_CE (p,iso)
     
     call directionEnergy (p, mu, iMT, iso) 
     
-    p % wgt = p%wgt * dble(abs(ace(iso)%TY(iMT)))
-
+    xn = abs(ace(iso)%TY(iMT))
+    if(xn > 4 .or. xn == 0) xn = 1
     
 end subroutine
 
@@ -521,7 +534,6 @@ subroutine fissionSite_CE (p, iso, micro_xs)
     n = int(p%wgt*(micro_xs(5)/micro_xs(1))*(1.0/keff) + rang())
     do i_source = 1, n
         
-        !print *, 'fission site **********'
         bank_idx = bank_idx + 1
         thread_bank(bank_idx)%xyz = p%coord(1)%xyz
         thread_bank(bank_idx)%uvw = rand_vec()
@@ -619,8 +631,8 @@ subroutine absorption_CE (p)
         else
             p%wgt = 0 
             p%alive = .false.
-        endif 
-    endif 
+        endif
+    endif
     
     
 end subroutine
@@ -699,20 +711,6 @@ subroutine directionEnergy (p, mu, iMT, iso)
         !    p%coord(j)%uvw = rotate_angle (p%coord(j)%uvw, mu)
         !enddo 
     endif 
-
-    !do j = 1, p%n_coord
-    !    if (p % coord(j) % uvw(1) /= p % coord(j) % uvw(1)) then 
-    !        print *, j
-    !        print *, p % coord(j) % uvw(:)
-    !        print *, u, v, w
-    !        print *, mu, sqrt(1-mu**2)
-    !        print *, sqrt(1-w0**2), (1-w0**2)
-    !        
-    !        
-    !        print *, iMT, ace(iso)%library
-    !        stop
-    !    endif 
-    !enddo
     
 end subroutine 
 

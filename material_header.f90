@@ -4,17 +4,16 @@ module material_header
     implicit none 
 
     type Material_CE
-        character(len=20)    :: mat_name        ! User-defined name
-        integer              :: n_iso = 0          ! number of isotopes (nuclides)
-        integer, allocatable :: ace_idx(:)      ! index in nuclides array
-        real(8), allocatable :: numden(:)         ! nuclide atom density in atom/b-cm
-        real(8)              :: density_gpcc    ! total density in g/cm^3
+        character(len=20)    :: mat_name     ! User-defined name
+        integer              :: n_iso = 0    ! number of isotopes (nuclides)
+        integer, allocatable :: ace_idx(:)   ! index in nuclides array
+        real(8), allocatable :: numden(:)    ! nuclide atom density in atom/b-cm
+        real(8)              :: density_gpcc ! total density in g/cm^3
         
         ! Does this material contain fissionable nuclides? Is it depletable?
         logical :: fissionable = .false.
         logical :: depletable = .false.
-
-        ! Does this material contain isotopes for S(a,b)?
+        ! Isotopes for S(a,b)?
         logical :: sab = .false.
         
     end type Material_CE
