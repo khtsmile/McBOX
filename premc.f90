@@ -7,18 +7,17 @@ use simulation, only: bank_initialize
 
 implicit none
 
-
-
 !==============================================================================
 !Read input geometry and cross section data
 call init_var
 call read_ctrl
 if (E_mode == 0) then 
-	call read_MG_XS
+    if(icore==score) print '(A30)', '    Multi-group Energy Mode...' 
+    call read_MG_XS
 elseif (E_mode == 1) then 
-	if(icore==score) print '(A29)', '    Continuous Energy Mode...' 
-	call read_inventory
-	call read_CE_mat
+    if(icore==score) print '(A29)', '    Continuous Energy Mode...' 
+    call read_inventory
+    call read_CE_mat
 endif
 call read_geom 
 if(tally_switch > 0) call read_tally

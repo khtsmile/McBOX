@@ -1,0 +1,13 @@
+
+
+energy 1
+nugrid 8192
+
+% history total active
+pop 100000 300 50
+%pop 10000 1 1
+
+tally 0 
+%
+% CMFD 0
+

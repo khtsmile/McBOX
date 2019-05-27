@@ -312,7 +312,7 @@ module geometry
 			
 			! =======================================================================
 			! FIND MINIMUM DISTANCE TO LATTICE SURFACES		
-			!if ((p%coord(j) % dist > TOOLONG).and.(p % coord(j) % lattice /= NONE)) then
+			!if ((p%coord(j) % dist > TOOLONG).and.(p % coord(j) % lattice /= NONE)) then 
 			if (p % coord(j) % lattice /= NONE) then
 				i_xyz(1) = p % coord(j) % lattice_x
 				i_xyz(2) = p % coord(j) % lattice_y

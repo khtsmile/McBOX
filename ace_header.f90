@@ -88,14 +88,15 @@ type, extends (TabularDataForm) :: PrecursorDataForm
 end type
 
 type UNRtype 
-	integer :: N		!> Number of incident energies where there is a probability table
-	integer :: M		!> Length of table; i.e., number of probabilities, typically 20
-	integer :: INT 		!> Interpolation parameter between tables =2 lin-lin; =5 log-log
-	integer :: ILF		!> Inelastic competition flag
-	integer :: IOA		!> Other absorption flag
-	integer :: IFF		!> Factors flag
-	integer, allocatable :: E(:), P(:,:,:)
+    integer :: N        !> Number of incident energies where there is a probability table
+    integer :: M        !> Length of table; i.e., number of probabilities, typically 20
+    integer :: INT      !> Interpolation parameter between tables =2 lin-lin; =5 log-log
+    integer :: ILF      !> Inelastic competition flag
+    integer :: IOA      !> Other absorption flag
+    integer :: IFF      !> Factors flag
+    integer, allocatable :: E(:), P(:,:,:)
 endtype 
+
 
 
 !Nuclear data library in ace format
@@ -104,8 +105,10 @@ type AceFormat
   integer :: ZAID                !> ZAID number
   integer :: NXS(1:16)           !> number array in ace format
   integer :: JXS(1:32)           !> pointer array in ace format
-  real(8) :: kT                  !> temperature in [MeV]
+  real(8) :: temp                !> temperature in [MeV]
   real(8) :: atn                 !> ratio of atomic mass to neutron mass
+  integer :: sab_iso = 0         !> not zero, which isotope considered S(a,b)
+  integer :: resonant = 0        !> resonant isotope?
 
   !Data blocks in ace format
   !> ESZ_Block // FIS_Block
@@ -171,62 +174,94 @@ integer :: num_iso              !> total number of isotopes
 
 ! Hash-based Energy Search algorithm 
 real(8) :: Emax, Emin 
-integer, allocatable :: ugrid(:,:),&   !Lethargy-grid for hash-based search
-					  & ugrid0K(:,:)   !Lethargy-grid for hash-based search
+integer, allocatable :: ugrid(:,:),&     !Lethargy-grid for hash-based search
+                      & ugrid0K(:,:),&   !Lethargy-grid for hash-based search
+                      & ugridsab(:,:)
 real(8) :: udelta 
 integer :: nugrid
 
 
 
 
-!On-the-fly Doppler broadening
-logical :: do_OTFDB     !> on-the-fly Doppler broadening in resolved resonance region via Gauss Hermite Quadrature method (Y.G. Jo, KNS 2017)
-integer :: scat_kernel  !> scattering kernel : cons = 0, wcm = 1, dbrc = 2
-real(8) :: DBRC_min_E,  DBRC_max_E !>[MeV], For U-238, DBRC_min_E = 0.4eV, DBRC_max_E = 210eV
-integer :: num_iso0K    !> number of isotopes treated by exact scattering kernel 
+! Doppler broadening
+! on-the-fly Doppler broadening in resolved resonance region via Gauss Hermite
+! method (Y.G. Jo, KNS 2017)
+logical :: do_OTFDB
+integer :: scat_kernel  ! scattering kernel : cons = 0, wcm = 1, dbrc = 2
+real(8) :: DBRC_E_min,  DBRC_E_max  ! (MeV) For U-238, min = 0.4eV, max = 210eV
+integer :: n_iso0K      ! # of isotopes treated by exact scattering kernel 
 type AceFormat0K
   character(20) :: library      !> name of library for each isotope
-  integer :: ZAID !> ZAID number
-  integer :: NXS(1:16)  !> number array in ace format
-  integer :: JXS(1:32)  !> pointer array in ace format
-  real(8) :: kT !> temperature in [MeV]
-  real(8) :: atn  !> ratio of atomic mass to neutron mass
+  integer :: ZAID       ! ZAID number
+  integer :: NXS(1:16)  ! number array in ace format
+  integer :: JXS(1:32)  ! pointer array in ace format
+  real(8) :: temp       ! temperature in [MeV]
+  real(8) :: atn        ! ratio of atomic mass to neutron mass
 
   !Data block to read
   !> ESZ Block
-  real(8), allocatable :: E(:)
-  real(8), allocatable :: sigel(:)
+  real(8), allocatable :: ERG(:)    ! energy grid
+  real(8), allocatable :: XS0(:)    ! cross section at 0K
 
-  integer :: iso  !> mapping index to original ace library 
 end type
 type (AceFormat), pointer :: ace0Kptr
 type (AceFormat0K), allocatable, target :: ace0K(:)
 
 
-!S(alpha,beta) thermal scattering treatment
-!* Sab tables for different temperatures have same structures
-integer :: nsab
-logical :: do_sab
-type sab_AceFormat
-  integer :: iso
-  integer :: ntemp
-  real(8), allocatable :: kT(:)
-  character(20), allocatable :: library(:)
-  integer :: NXS(1:16)
-  integer :: JXS(1:32)
 
-  !data blocks in ace format S(alfa,beta)
-
-
-  real(8) :: esab  !> energy upper bound of S(alfa,beta) table
-  integer :: ierg_el, ierg_inel, itemp
-  real(8) :: inp_el, inp_inel
+! S(alpha,beta) : scattering law table
+type SAB_INEL_XS
+    integer:: NE
+    real(8), allocatable:: ERG(:)   !> energy
+    real(8), allocatable:: XS(:)    !> cross section
 end type
-type (sab_AceFormat), allocatable :: sab(:)
 
+type SAB_EL_XS
+    integer:: NE
+    real(8), allocatable:: ERG(:)   !> energy
+    real(8), allocatable:: XS(:)    !> cross section
+end type
+
+type SAB_INEL_E
+    real(8), allocatable:: ERG(:,:)     !> (Ein,Eout)
+    real(8), allocatable:: ANG(:,:,:)   !> (Ein,Eout,ang)
+end type
+
+type SAB_EL_ANG
+    real(8), allocatable:: ANG(:,:)     !> (Ein,ang)
+end type
+
+type SAB_ACEFORMAT
+    character(20):: library
+    integer:: NXS(1:16)
+    integer:: JXS(1:32)
+    integer:: ZAID                !> ZAID number
+    real(8):: temp                !> temperature in [MeV]
+    real(8):: atn                 !> ratio of atomic mass to neutron mass
+
+    type(SAB_INEL_XS):: ITIE
+    type(SAB_EL_XS)::   ITCE
+    type(SAB_INEL_E)::  ITXE
+    type(SAB_EL_ANG)::  ITCA
+
+end type
+type(Sab_AceFormat), allocatable, target:: sab(:)
+integer:: sab_iso   !> No. of isotopes considering thermal scattering S(a,b)
 
 real(8), allocatable :: XSS(:)        !> temporary XSS array for currently reading isotope
 real(8), allocatable :: sab_XSS(:,:)  !> temporary XSS array for currently reading isotope for S(alfa,beta)
+
+
+! Doppler broadening
+type DOPPLER_BROADEN
+    character(20):: library
+    real(8):: Elow
+    real(8):: Ehigh
+    real(8), allocatable:: ERG(:)   ! energy grid
+    real(8), allocatable:: XS0(:)   ! cross section at 0K
+end type
+type(DOPPLER_BROADEN), allocatable:: DB(:)
+integer:: db_iso    ! # of isotopes for DBRC
 
 
 !Fission energy spectrum
@@ -265,44 +300,61 @@ integer, parameter :: &
 
 
 !Gauss-Hermite Quadratures for on-the-fly Doppler broadening
-real(8),parameter :: node_ghq(1:16) = (/-4.688738939305818364688, -3.869447904860122698719, -3.176999161979956026814,&
- -2.546202157847481362159, -1.951787990916253977435, -1.380258539198880796372, -0.8229514491446558925825, &
- -0.2734810461381524521583, 0.2734810461381524521583, 0.8229514491446558925825, 1.380258539198880796372, &
- 1.951787990916253977435, 2.546202157847481362159, 3.176999161979956026814, 3.869447904860122698719, &
+real(8),parameter :: node_ghq(1:16) = (/-4.688738939305818364688, &
+ -3.869447904860122698719, -3.176999161979956026814, &
+ -2.546202157847481362159, -1.951787990916253977435, & 
+ -1.380258539198880796372, -0.8229514491446558925825, &
+ -0.2734810461381524521583, 0.2734810461381524521583, &
+ 0.8229514491446558925825, 1.380258539198880796372, &
+ 1.951787990916253977435, 2.546202157847481362159, &
+ 3.176999161979956026814, 3.869447904860122698719, &
  4.688738939305818364688/)
-real(8),parameter :: weight_ghq(1:16) = (/2.65480747401118224471d-10, 2.32098084486521065339d-7, 2.71186009253788151202d-5, &
- 9.32284008624180529914d-4, 0.01288031153550997368346d0, 0.0838100413989858294154d0, 0.2806474585285336753695d0, &
- 0.5079294790166137419135d0, 0.5079294790166137419135d0, 0.2806474585285336753695d0, 0.0838100413989858294154d0, &
- 0.01288031153550997368346d0, 9.32284008624180529914d-4, 2.71186009253788151202d-5, 2.32098084486521065339d-7, &
+real(8),parameter :: weight_ghq(1:16) = (/2.65480747401118224471d-10, &
+ 2.32098084486521065339d-7, 2.71186009253788151202d-5, &
+ 9.32284008624180529914d-4, 0.01288031153550997368346d0, &
+ 0.0838100413989858294154d0, 0.2806474585285336753695d0, &
+ 0.5079294790166137419135d0, 0.5079294790166137419135d0, &
+ 0.2806474585285336753695d0, 0.0838100413989858294154d0, &
+ 0.01288031153550997368346d0, 9.32284008624180529914d-4, &
+ 2.71186009253788151202d-5, 2.32098084486521065339d-7, &
  2.65480747401118224471d-10/)
-real(8),parameter :: node_ghq2(1:16) = (/1.94840741569E-01, 5.84978765436E-01, 9.76500463590E-01, 1.37037641095E+00, &
- 1.76765410946E+00, 2.16949918361E+00, 2.57724953773E+00, 2.99249082500E+00, 3.41716749282E+00, 3.85375548547E+00, &
- 4.30554795335E+00, 4.77716450350E+00, 5.27555098652E+00, 5.81222594952E+00, 6.40949814927E+00, 7.12581390983E+00/)
-real(8),parameter :: x2_ghq2(1:16) = (/3.7962914575E-02, 3.4220015601E-01, 9.5355315539E-01, 1.8779315077E+00, &
- 3.1246010507E+00, 4.7067267077E+00, 6.6422151797E+00, 8.9550013377E+00, 1.1677033674E+01, 1.4851431342E+01, &
- 1.8537743179E+01, 2.2821300694E+01, 2.7831438211E+01, 3.3781970488E+01, 4.1081666525E+01, 5.0777223878E+01/)
-real(8),parameter :: wx2_ghq2(1:16) = (/1.42451415249E-02, 9.49462195824E-02, 1.44243732244E-01, 1.13536229019E-01, &
- 5.48474621706E-02, 1.72025699141E-02, 3.56200987793E-03, 4.85055175195E-04, 4.26280054876E-05, 2.33786448915E-06, &
- 7.59830980027E-08, 1.35405428589E-09, 1.17309796257E-11, 4.04486402497E-14, 3.79255121844E-17, 3.71215853650E-21/)
+real(8),parameter :: node_ghq2(1:16) = (/1.94840741569E-01, &
+ 5.84978765436E-01, 9.76500463590E-01, 1.37037641095E+00, &
+ 1.76765410946E+00, 2.16949918361E+00, 2.57724953773E+00, &
+ 2.99249082500E+00, 3.41716749282E+00, 3.85375548547E+00, &
+ 4.30554795335E+00, 4.77716450350E+00, 5.27555098652E+00, &
+ 5.81222594952E+00, 6.40949814927E+00, 7.12581390983E+00/)
+real(8),parameter :: x2_ghq2(1:16) = (/3.7962914575E-02, &
+ 3.4220015601E-01, 9.5355315539E-01, 1.8779315077E+00, &
+ 3.1246010507E+00, 4.7067267077E+00, 6.6422151797E+00, &
+ 8.9550013377E+00, 1.1677033674E+01, 1.4851431342E+01, &
+ 1.8537743179E+01, 2.2821300694E+01, 2.7831438211E+01, &
+ 3.3781970488E+01, 4.1081666525E+01, 5.0777223878E+01/)
+real(8),parameter :: wx2_ghq2(1:16) = (/1.42451415249E-02, &
+ 9.49462195824E-02, 1.44243732244E-01, 1.13536229019E-01, &
+ 5.48474621706E-02, 1.72025699141E-02, 3.56200987793E-03, &
+ 4.85055175195E-04, 4.26280054876E-05, 2.33786448915E-06, &
+ 7.59830980027E-08, 1.35405428589E-09, 1.17309796257E-11, &
+ 4.04486402497E-14, 3.79255121844E-17, 3.71215853650E-21/)
 
  
  
-	contains 
-	function find_ACE_iso_idx (this, iso_id) result (idx) 
-		type(AceFormat) :: this(:) 
-		character(*) :: iso_id 
-		integer :: i, idx
-		
-		do i = 1, size(this) 
-			if (trim(this(i)%library) == iso_id) then 
-				idx = i 
-				return 
-			endif
-		enddo 
-		print *, "no such isotope id : ", iso_id 
-		stop 
-		
-	end function 
+    contains 
+    function find_ACE_iso_idx (this, iso_id) result (idx) 
+        type(AceFormat) :: this(:) 
+        character(*) :: iso_id 
+        integer :: i, idx
+        
+        do i = 1, size(this) 
+            if (trim(this(i)%library) == iso_id) then 
+                idx = i 
+                return 
+            endif
+        enddo 
+        print *, "no such isotope id : ", iso_id 
+        stop 
+        
+    end function 
 
 
 end module 

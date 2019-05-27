@@ -16,8 +16,8 @@ integer :: line
 integer :: iso, iso0K
 integer :: pt1, pt2
 integer :: anum, mnum
-integer, parameter :: ace_read_handler = 20171116
 integer :: ix, lmt 
+integer, parameter :: ace_read_handler = 20171116
 
 integer :: min_egrid, max_egrid, num_egrid, loc1, loc2, loc3, max_len
  
@@ -25,21 +25,16 @@ if(E_mode==0) return
 
 if(icore==score) print *, "   Start reading ace-format nuclear data"
 
-  
-
 !Ace-format data
 Emax = 0.d0
 READ_ACE_ISO:Do iso = 1, num_iso
   !Open ace format library
   if(icore==score) print *, iso, trim(ace(iso)%library)
-  
-  !open(ace_read_handler, file="../ACE_293K/94236.70c_0293", action="read")
-  !close(ace_read_handler)
-  
+
   open(ace_read_handler, file=trim(library_path)//trim(ace(iso)%library), action="read")
   
   !1st line
-  read(ace_read_handler,'(i6, 4X, f12.6, es12.4)') ace(iso)%ZAID, ace(iso)%atn, ace(iso)%kT
+  read(ace_read_handler,'(i6, 4X, f12.6, es12.4)') ace(iso)%ZAID, ace(iso)%atn, ace(iso)%temp
 
 
   !2~6 line
@@ -123,36 +118,83 @@ READ_ACE_ISO:Do iso = 1, num_iso
   deallocate( XSS )
   !Close file handler for current isotope
   close(ace_read_handler)
+
+  !open(ace_read_handler, file="../ACE_293K/94236.70c_0293", action="read")
+  !close(ace_read_handler)
+  
 End do READ_ACE_ISO
 
 
-if(num_iso0K==0) return 
+if ( sab_iso /= 0 ) then
+if ( icore == score ) print *, "   Read S(a,b) scattering law tables"
+READ_SAB_ISO : do iso = 1, sab_iso
 
-
-if(icore==score) print *, "Read ace-format nuclear data at 0K"
-READ_ACE0K_ISO:Do iso0K = 1, num_iso0K
   !Open ace format library
-  if(icore==score) print *, iso0K, ace0K(iso0K)%iso, trim(ace0K(iso0K)%library)
-  open(ace_read_handler, file=trim(library_path)//trim(ace0K(iso0K)%library), action="read")
+  if(icore==score) print *, iso, trim(sab(iso)%library)
+
+  open(ace_read_handler, file=trim(library_path)//trim(sab(iso)%library), action="read")
   
-  
-  !1st line
-  read(ace_read_handler,'(i6, 4X, f12.6, es12.4)') ace0K(iso0K)%ZAID, ace0K(iso0K)%atn, ace0K(iso0K)%kT
-  
-  
-  !2~6 line
-  Do line=2,6
-  read(ace_read_handler,*)  
+  !1~6 line
+  Do line=1,6
+    read(ace_read_handler,*)  
   Enddo
   
   
   !7~12 line
-  read(ace_read_handler,10) (ace0K(iso0K)%NXS(i), i=1,16), (ace0K(iso0K)%JXS(i),i=1,32)
-  
-  
-  !Allocate XSS
+  read(ace_read_handler,10) sab(iso)%NXS(1:16), sab(iso)%JXS(1:32)
+  !Allocate XSS array 
   if( allocated ( XSS ) ) deallocate ( XSS )
-  allocate( XSS( 1 : ace0K(iso0K)%NXS(3)*4 ) )
+  allocate( XSS(1:sab(iso)%NXS(1)) )
+  
+  
+  !Read XSS array 
+  pt1 = 1
+  pt2 = 4
+  do
+    if (pt2 >= sab(iso)%NXS(1)) then
+      read(ace_read_handler,*) XSS(pt1:sab(iso)%NXS(1))
+      exit
+    end if
+    read(ace_read_handler,*) XSS(pt1:pt2)
+    pt1 = pt1 + 4
+    pt2 = pt2 + 4
+  end do
+  
+  call set_ITIE( iso, sab(iso)%NXS, sab(iso)%JXS )
+  call set_ITCE( iso, sab(iso)%NXS, sab(iso)%JXS )
+  call set_ITXE( iso, sab(iso)%NXS, sab(iso)%JXS )
+  call set_ITCA( iso, sab(iso)%NXS, sab(iso)%JXS )
+
+  deallocate(XSS)
+  close(ace_read_handler)
+
+end do READ_SAB_ISO
+end if
+
+
+
+if ( n_iso0K /= 0 ) then
+if ( icore == score ) print *, "   Read ace-format nuclear data at 0K"
+READ_ACE0K_ISO : Do iso0K = 1, n_iso0K
+
+  !Open ace format library
+  if(icore==score) print *, iso0K, trim(ace0K(iso0K)%library)
+  open(ace_read_handler, file=trim(library_path)//trim(ace0K(iso0K)%library), action="read")
+  
+  ! 1st line
+  read(ace_read_handler,11) ace0K(iso0K)%ZAID, ace0K(iso0K)%atn, ace0K(iso0K)%temp
+  11 format(i6,4x,f12.6,es12.4)
+
+  ! 2~6 line
+  do line = 2, 6
+    read(ace_read_handler,*)  
+  enddo
+  
+  ! 7~12 line
+  read(ace_read_handler,10) ace0K(iso0K)%NXS(1:16), ace0K(iso0K)%JXS(1:32)
+  !Allocate XSS array 
+  if( allocated ( XSS ) ) deallocate ( XSS )
+  allocate( XSS(1:ace0K(iso0K)%NXS(1)) )
 
   
   !Set energy and elastic scattering cross section
@@ -170,17 +212,14 @@ READ_ACE0K_ISO:Do iso0K = 1, num_iso0K
 
   call set_ESZ0K( iso0K, ace0K(iso0K)%NXS, ace0K(iso0K)%JXS )
 
-  !Deallocate XSS array for current isotope
   deallocate( XSS )
-  !Close file handler for current isotope
   close(ace_read_handler)
 
 end do READ_ACE0K_ISO
+end if
 
 
 10 format(8i9/8i9/8i9/8i9/8i9/8i9)
-
-
 
 
 end subroutine set_ace
@@ -234,40 +273,115 @@ pt1 = pt2 + 1
 pt2 = pt1 + NXS(3) - 1
 ac % H( 1 : NXS(3) ) = XSS( pt1 : pt2 )
 
+!if (ac%library(1:5) == '92235') then 
+!    do pt1 = 1, NXS(3) 
+!        print *, ac%sigt(pt1), ac%sigd(pt1), ac%sigel(pt1)
+!    enddo 
+!    stop
+!endif 
+
+
+
 end subroutine set_ESZ
 
 
-!==============================================================================
 
+!==============================================================================
+! SET_ESZ0K
+!==============================================================================
 subroutine set_ESZ0K( iso, NXS, JXS )
-
-!==============================================================================
 implicit none
 integer, intent(in) :: iso
 integer, intent(in) :: NXS(1:16)
 integer, intent(in) :: JXS(1:32)
 integer :: pt1, pt2
 type (AceFormat0K), pointer :: ac0 
+integer:: imin, imax
 
-!Set pointer
+
+! Set pointer
 ac0 => ace0K(iso)
 
-!Allocate arrays 
-allocate( ac0 % E( 1 : NXS(3) ) )
-allocate( ac0 % sigel( 1 : NXS(3) ) )
-
-!Energies
+! Allocate arrays 
+allocate( ac0 % erg( 1 : NXS(3) ) )
+allocate( ac0 % xs0( 1 : NXS(3) ) )
+! Energies
 pt1 = JXS(1)
 pt2 = pt1 + NXS(3) - 1
-ac0 % E( 1 : NXS(3) ) = XSS( pt1 : pt2 )
-
-!Elastic scattering cross sections
+ac0 % erg( 1 : NXS(3) ) = XSS( pt1 : pt2 )
+! Elastic scattering cross sections
 pt1 = JXS(1) + 3*NXS(3)
 pt2 = pt1 + NXS(3) - 1
-ac0 % E( 1 : NXS(3) ) = XSS( pt1 : pt2 )
+ac0 % xs0( 1 : NXS(3) ) = XSS( pt1 : pt2 )
+
+
+!! Epithermal energy range
+!call GET_IERG_DBRC(iso,imin,DBRC_E_min)
+!call GET_IERG_DBRC(iso,imax,DBRC_E_max)
+!
+!
+!! Reallocate
+!deallocate(ac0%erg,ac0%xs0)
+!allocate(ac0%erg(1:(imax-imin+1)))
+!allocate(ac0%xs0(1:(imax-imin+1)))
+!!   energy
+!pt1 = jxs(1)+imin-1
+!pt2 = pt1+(imax-imin)
+!ac0%erg(1:) = XSS(pt1:pt2)
+!!   elastic scattering cross sections
+!pt1 = jxs(1)+3*nxs(3)+imin-1
+!pt2 = pt1+(imax-imin)
+!ac0%xs0(1:) = XSS(pt1:pt2)
+
 
 end subroutine set_ESZ0K
 
+
+! =============================================================================
+! GET_IERG_DBRC
+! =============================================================================
+subroutine GET_IERG_DBRC(iso_,ierg_,erg)
+    integer, intent(in)::  iso_
+    integer, intent(out):: ierg_
+    real(8), intent(in)::  erg
+    type(AceFormat0K), pointer:: ac
+    integer:: low, mid, high
+    integer:: ne
+
+    if ( associated(ac) ) nullify(ac)
+    ac => ace0K(iso_)
+
+!    ! beyond the energy boundary
+!    ne = size(ac%erg(:))
+!    if ( erg < ac%erg(1) ) then
+!        ierg_ = 1
+!        return
+!    elseif ( erg > ac%erg(ne) ) then    
+!        ierg_ = ne-1
+!        return
+!    end if
+
+    ! binary search
+    ne = size(ac%erg(:))
+    low = 1
+    high = ne
+    if ( erg > ac%erg(ne) ) then
+        ierg_ = ne-1
+    else
+    do while ( low+1 /= high ) 
+        mid = (low+high)/2
+        if ( erg < ac%erg(mid) ) then
+            high = mid
+        else
+            low = mid
+        end if
+    end do
+    ierg_ = low
+    end if
+
+    nullify(ac)
+
+end subroutine
 
 !==============================================================================
 
@@ -322,10 +436,10 @@ case(2) !> tabular data form
   ac % nu_tot % E( 1: NE ) = XSS( KNU+3+2*NR      : KNU+3+2*NR+NE-1 )
   ac % nu_tot % F( 1: NE ) = XSS( KNU+3+2*NR+NE   : KNU+3+2*NR+2*NE-1 )
 
-	!do IE = 1, NE
-	!	if (ac%library(1:5) == '92235') print *, IE, ac % nu_tot % E(IE), ac % nu_tot % F(IE)
-	!enddo 
-	!if (ac%library(1:5) == '92235') stop
+    !do IE = 1, NE
+    !    if (ac%library(1:5) == '92235') print *, IE, ac % nu_tot % E(IE), ac % nu_tot % F(IE)
+    !enddo 
+    !if (ac%library(1:5) == '92235') stop
   
 end select
 
@@ -388,7 +502,6 @@ integer, intent(in) :: JXS(1:32)
 if( NXS(4) == 0 ) return
 allocate( ace(iso) % MT( 1 : NXS(4) ) )
 ace(iso) % MT( 1 : NXS(4) ) = XSS( JXS(3) : JXS(3)+NXS(4)-1 )
-
 
 end subroutine set_MTR
 
@@ -510,14 +623,14 @@ do ii = 0, NXS(5)
     NE = nint( XSS( JXS(9)+LOCB-1 ) )
     an % NE = NE
     allocate( an % dist_flag( 1: NE ) )  !> LC
-    allocate( an % E( 1: NE ) )			 !> E 
+    allocate( an % E( 1: NE ) )             !> E 
     allocate( an % dist(1 : NE ) )
 
     do IE = 1, NE
-	  an % E(IE) = XSS( JXS(9)+LOCB+IE-1 )
+      an % E(IE) = XSS( JXS(9)+LOCB+IE-1 )
       LC = nint( XSS( JXS(9)+LOCB+NE+IE-1 ) )
       an % dist_flag(IE) = LC
-	  
+      
       if( LC == 0 ) then
         !isotropic case
         cycle
@@ -526,24 +639,24 @@ do ii = 0, NXS(5)
         allocate( an % dist(IE) % LDAT(1:33))
         loc = JXS(9) + LC - 1
         an % dist(IE) % LDAT(1:33) = XSS( loc : loc + 32)
-		
+        
       else 
         !tabular angular distribution given by PDF(1:NP) and CDF(1:NP)
         !loc = JXS(9) - LC - 1
         !NP = XSS(loc+1)
-		!an % dist(IE) % NP = NP 
-		!an % dist(IE) % JJ = XSS(loc)
-		!
+        !an % dist(IE) % NP = NP 
+        !an % dist(IE) % JJ = XSS(loc)
+        !
         !allocate( an % dist(IE) % CSOUT( 1 : NP ) )
         !allocate( an % dist(IE) % PDF( 1 : NP ) )
         !allocate( an % dist(IE) % CDF( 1 : NP ) )
-		!
-		!
+        !
+        !
         !!an % dist(IE) % LDAT( 1 : 3+3*NP-1 ) = XSS( loc : loc+3*3*NP-1 )
-		!loc = loc + 2;  an % dist(IE) % CSOUT( 1 : NP ) = XSS( loc : loc+NP-1 )
+        !loc = loc + 2;  an % dist(IE) % CSOUT( 1 : NP ) = XSS( loc : loc+NP-1 )
         !loc = loc + NP; an % dist(IE) % PDF( 1 : NP )   = XSS( loc : loc+NP-1 )
         !loc = loc + NP; an % dist(IE) % CDF( 1 : NP )   = XSS( loc : loc+NP-1 )
-		
+        
         loc = JXS(9) - LC - 1
         NP = XSS(loc+1)
         allocate( an % dist(IE) % LDAT( 1 : 3+3*NP-1 ) )
@@ -674,7 +787,7 @@ do ii = 1, NMT
     allocate( eg % dist(ilaw) % F( 1: NE ) )
     eg % dist(ilaw) % E( 1 : NE )   = XSS( loc_law+4+2*NR    : loc_law+4+2*NR+NE-1 )
     eg % dist(ilaw) % F( 1 : NE )   = XSS( loc_law+4+2*NR+NE : loc_law+4+2*NR+2*NE-1 )
-	
+    
     !set energy distribution array for this law
     IDAT = XSS( loc_law+1 )
     call set_LAW( LDIS, LDIS+IDAT-1, eg % dist(ilaw) )
@@ -931,14 +1044,14 @@ case( 44 )  !> Kalbach-87 Formalism (confirmed)
 !
 !    !update cumulative pointer
 !    ptr2 = ptr2 + 2+5*NP
-!	
+!    
 !   ! print '(4F10.4)', dist%ldat(3:100)
-!	print *, dist % LDAT( ptr1+IE )
-!	print *, dist % LDAT( ptr2 : ptr2+2+5*NP-1 )	
-!	print *, ''
-!	
-!	print *, dist%ldat(1:3+2*NR+2*NE+2+4*NP)
-!	stop 
+!    print *, dist % LDAT( ptr1+IE )
+!    print *, dist % LDAT( ptr2 : ptr2+2+5*NP-1 )    
+!    print *, ''
+!    
+!    print *, dist%ldat(1:3+2*NR+2*NE+2+4*NP)
+!    stop 
 !  end do
   
   ! ==================================================================
@@ -1130,8 +1243,8 @@ allocate( ace(iso) % nyd( 1 : NXS(4) ) )
 do ii = 1, NXS(4)
   if( abs( ace(iso) % TY(ii) ) > 100 ) then  !> neutron yields Y(E) provieded as function of neutron energy
     !set pointer
-	if(icore==score) print *, 'WARNING :: NYD block exists'
-	
+    if ( icore == score ) print *, '   WARNING :: NYD block exists'
+    
     ny => ace(iso) % nyd(ii)
 
     !find location of neutron yield data in XSS array
@@ -1157,7 +1270,7 @@ do ii = 1, NXS(4)
     !do IE = 1, NE
     !  print *, IE, ny % E(IE), ny % F(IE)
     !end do
-	
+    
     !check neutron yield data
 !    print *, ny % NE, NE
 !    do IE = 1, NE
@@ -1194,49 +1307,51 @@ type (AceFormat), pointer :: ac
 integer :: iMT, LOCA, nfis
 real(8), allocatable :: temp_XS(:,:)
 
+if ( JXS(21) == 0 ) return
+
 !Set pointer
 ac => ace(iso)
 
 !Allocate arrays 
 IE = XSS(JXS(21)); NE = XSS(JXS(21)+1);
-if (NE > 1 ) then 
-	allocate( ac % sigf( 1 : NXS(3) ) )
-	ac % sigf( : ) = 0 
-	ac % sigf( IE : IE+NE-1 ) = XSS( JXS(21)+2 : JXS(21)+2+NE-1 )
-	
-	!do IE = 1, NXS(3)
-	!	if (ac%library(1:5) == '92235') print *, IE, ac%E(IE), ac%sigf(IE)
-	!enddo 
-	!if (ac%library(1:5) == '92235') stop
-	
-	
+if ( NE > 1 ) then
+    allocate( ac % sigf( 1 : NXS(3) ) )
+    ac % sigf( : ) = 0 
+    ac % sigf( IE : IE+NE-1 ) = XSS( JXS(21)+2 : JXS(21)+2+NE-1 )
+    
+    !do IE = 1, NXS(3)
+    !    if (ac%library(1:5) == '92235') print *, IE, ac%E(IE), ac%sigf(IE)
+    !enddo 
+    !if (ac%library(1:5) == '92235') stop
+    
+    
 else 
-	nfis = 0 
-	do iMT = 1, nxs(4)
-		if (ac % ty(iMT) /= 19) cycle
-		nfis = nfis+1
-	enddo 
-	if (nfis == 0) return
-	
-	allocate(temp_XS(1:nfis, 1:NXS(3)))
-	temp_XS(:,:) = 0 
-	nfis = 0 
-	do iMT = 1, nxs(4)
-		if (ac % ty(iMT) /= 19) cycle
-		nfis = nfis+1
-		LOCA = XSS(JXS(6)+iMT-1)
-		IE = XSS(JXS(7)+LOCA-1)
-		NE = XSS(JXS(7)+LOCA)
-		temp_XS(nfis,IE:IE+NE-1) = XSS( JXS(7)+LOCA+1 : JXS(7)+LOCA+NE )
-	enddo 
-	
-	allocate( ac % sigf( 1 : NXS(3) ) )
-	ac % sigf( : ) = 0 
-	do IE = 1, NXS(3)
-		ac % sigf (IE) = sum(temp_XS(:,IE)) 
-		!if (ac%library(1:5) == '92235') print *, IE, ac%E(IE), ac%sigf(IE)
-	enddo 
-	!if (ac%library(1:5) == '92235') stop
+    nfis = 0 
+    do iMT = 1, nxs(4)
+        if (ac % ty(iMT) /= 19) cycle
+        nfis = nfis+1
+    enddo 
+    if (nfis == 0) return
+    
+    allocate(temp_XS(1:nfis, 1:NXS(3)))
+    temp_XS(:,:) = 0 
+    nfis = 0 
+    do iMT = 1, nxs(4)
+        if (ac % ty(iMT) /= 19) cycle
+        nfis = nfis+1
+        LOCA = XSS(JXS(6)+iMT-1)
+        IE = XSS(JXS(7)+LOCA-1)
+        NE = XSS(JXS(7)+LOCA)
+        temp_XS(nfis,IE:IE+NE-1) = XSS( JXS(7)+LOCA+1 : JXS(7)+LOCA+NE )
+    enddo 
+    
+    allocate( ac % sigf( 1 : NXS(3) ) )
+    ac % sigf( : ) = 0 
+    do IE = 1, NXS(3)
+        ac % sigf (IE) = sum(temp_XS(:,IE)) 
+        !if (ac%library(1:5) == '92235') print *, IE, ac%E(IE), ac%sigf(IE)
+    enddo 
+    !if (ac%library(1:5) == '92235') stop
 endif
 
 
@@ -1283,17 +1398,171 @@ ac % UNR % E (1:N) = XSS(JXS(23)+6:JXS(23)+N-1)
 pt1 = JXS(23)+6+N;
 pt2 = pt1 + M - 1
 do I = 1, N
-	do J = 1, 6 
-		ac % UNR % P (I,J,1:M) = XSS(pt1:pt2)
-		pt1 = pt2 + 1
-		pt2 = pt1 + M - 1
-	enddo 
+    do J = 1, 6 
+        ac % UNR % P (I,J,1:M) = XSS(pt1:pt2)
+        pt1 = pt2 + 1
+        pt2 = pt1 + M - 1
+    enddo 
 enddo
 
 end subroutine set_UNR
 
 
 
+!==============================================================================
+! set_ITIE reads energy-dependent inelastic scattering cross section
+!==============================================================================
+subroutine set_ITIE( iso, NXS, JXS )
+implicit none
+type (SAB_INEL_XS), pointer :: ab
+integer, intent(in) :: iso
+integer, intent(in) :: NXS(1:16)
+integer, intent(in) :: JXS(1:32)
+integer :: pt1, pt2
+integer:: ne
+
+!Set pointer
+ab => sab(iso)%itie
+
+!Allocate arrays 
+ab % ne = xss(jxs(1))
+ne = ab % ne
+allocate( ab % erg(1:ne) , ab % xs(1:ne) )
+
+!Energies
+pt1 = JXS(1)+1
+pt2 = JXS(1)+ne  
+ab % erg (1:ne) = xss(pt1:pt2)
+
+! Inelastic cross section
+pt1 = pt2+1
+pt2 = pt2+ne
+ab % xs (1:ne) = xss(pt1:pt2)
+
+if ( associated(ab) ) nullify(ab)
+
+end subroutine set_ITIE
+
+
+!==============================================================================
+! set_ITCE reads energy-dependent elastic scattering cross section
+!==============================================================================
+subroutine set_ITCE( iso, NXS, JXS )
+implicit none
+integer, intent(in) :: iso
+integer, intent(in) :: NXS(1:16)
+integer, intent(in) :: JXS(1:32)
+integer :: pt1, pt2
+integer:: ne
+type (SAB_EL_XS), pointer :: ab
+
+if ( jxs(4) == 0 ) return
+
+! set pointer
+ab => sab(iso)%itce
+
+! allocate arrays 
+ab % ne = xss(jxs(4))
+ne = ab % ne
+allocate( ab % erg(1:ne) , ab % xs(1:ne) )
+
+! energies
+pt1 = jxs(4)+1
+pt2 = jxs(4)+ne  
+ab % erg (1:ne) = xss(pt1:pt2)
+
+! elastic cross section
+pt1 = pt2+1
+pt2 = pt2+ne
+ab % xs (1:ne) = xss(pt1:pt2)
+
+if ( associated(ab) ) nullify(ab)
+
+end subroutine
+
+
+!==============================================================================
+! set_ITXE reads energy/angle distributions for inelastic scattering
+!==============================================================================
+subroutine set_ITXE( iso, NXS, JXS )
+implicit none
+type (SAB_INEL_E),  pointer:: ab
+type (SAB_INEL_XS), pointer:: ie
+integer, intent(in) :: iso
+integer, intent(in) :: NXS(1:16)
+integer, intent(in) :: JXS(1:32)
+integer :: pt1, pt2, pt3
+integer:: ne1, ne2, na
+integer:: i, j
+
+! set pointer
+ab => sab(iso)%itxe
+ie => sab(iso)%itie
+
+! allocate arrays 
+ne1 = ie % ne    ! incoming energy
+ne2 = nxs(4)     ! outgoing energy
+na  = nxs(3)+1   ! outgoing angle
+allocate( ab % erg(ne1,ne2) )
+allocate( ab % ang(ne1,ne2,na) ) 
+
+! energies & angles
+do i = 1, ne1
+do j = 1, ne2
+    pt1 = jxs(3)+(nxs(3)+2)*(j-1)+(nxs(3)+2)*ne2*(i-1)
+    pt2 = pt1 + nxs(3)+1
+
+    ab%erg(i,j) = xss(pt1)
+    ab%ang(i,j,:) = xss(pt1+1:pt2)
+end do
+end do
+
+if ( nxs(2) /= 3 ) then
+if ( icore == score ) then
+    print*, "no equally-likely cosine for thermal scattering"
+    stop
+end if
+end if
+
+if ( associated(ab) ) nullify(ab)
+if ( associated(ie) ) nullify(ie)
+
+end subroutine
+
+
+!==============================================================================
+! set_ITCA reads anglar distributions for elastic scattering
+!==============================================================================
+subroutine set_ITCA( iso, NXS, JXS )
+implicit none
+type (SAB_EL_ANG),  pointer :: ab
+type (SAB_INEL_XS), pointer :: ie
+integer, intent(in) :: iso
+integer, intent(in) :: NXS(1:16)
+integer, intent(in) :: JXS(1:32)
+integer :: pt1, pt2, pt3
+integer:: ne, na
+integer:: i, j
+
+if ( jxs(4) == 0 .or. nxs(6) == -1 ) return
+
+! set pointer
+ab => sab(iso)%itca
+ie => sab(iso)%itie
+
+! allocate arrays 
+ne = ie % ne    ! incoming energy
+na = nxs(3)+1   ! outgoing angle
+allocate( ab % ang(ne,na) ) 
+
+! energies & angles
+do i = 1, ne
+    pt1 = jxs(6)+(nxs(6)+1)*(i-1)
+    pt2 = pt1 + nxs(6)
+    ab%ang(i,:) = xss(pt1:pt2)
+end do
+
+end subroutine
 
 !  call set_LAND(iso, ace(iso)%NXS, ace(iso)%JXS )
 !  call set_LDLW(iso, ace(iso)%NXS, ace(iso)%JXS )
