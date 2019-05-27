@@ -113,12 +113,18 @@ module input_reader
                 call move_alloc(universes_temp, universes)
 
                 !> generage cell from pin
-                isize = 0
-                if (allocated(cells)) isize = size(cells) 
-                isize = isize + univptr%ncell
-                allocate(cells_temp(isize))
-                if (isize > 1) cells_temp(1:isize-univptr%ncell) = cells(:) 
-                if(allocated(cells)) deallocate(cells)
+                if (allocated(cells)) then 
+					isize = size(cells) 
+					isize = isize + univptr%ncell
+					allocate(cells_temp(isize))
+					if (isize > 1) cells_temp(1:isize-univptr%ncell) = cells(:) 
+					deallocate(cells)
+				else 
+					isize = 0
+					isize = isize + univptr%ncell
+					allocate(cells_temp(isize))
+				endif
+				
                 call move_alloc(cells_temp, cells)
                 
                 do i = 1, univptr%ncell-1
@@ -180,7 +186,13 @@ module input_reader
                                 call process_line(temp, idx, option) 
                             endif 
                             ix = ix+1 
-                            read (option, *) lat_ptr%lat(ix,mod(iy,lat_ptr%n_xyz(2)),int(iy/lat_ptr%n_xyz(2))+1)
+							if (mod(iy,lat_ptr%n_xyz(2)) == 0) then 
+								read (option, *) lat_ptr%lat(ix,lat_ptr%n_xyz(2), &
+													CEILING(dble(iy)/dble(lat_ptr%n_xyz(2))))
+							else 
+								read (option, *) lat_ptr%lat(ix,mod(iy,lat_ptr%n_xyz(2)), &
+													CEILING(dble(iy)/dble(lat_ptr%n_xyz(2))))
+							endif 
                         enddo 
                     endif 
                 enddo 
@@ -485,12 +497,15 @@ module input_reader
     
         idx = index(line, ' ') 
         
-        nsurf = 0 
+        nsurf = 0
         do i = 1, len(line) 
-            if ((line(i:i).eq.' ').and.(line(i-1:i-1).ne.' ')) nsurf = nsurf+1         
+			if ((line(i:i).eq.' ').and.(i == 1)) then
+				nsurf = nsurf+1
+            elseif ((line(i:i).eq.' ').and.(i > 1)) then 
+				if (line(i-1:i-1).ne.' ') nsurf = nsurf+1
+			endif
         enddo 
-        !print *, nsurf
-        
+		        
         allocate(Cellobj%list_of_surface_IDs(nsurf))
         
         idx_temp = 1; idx = 1; temp = line

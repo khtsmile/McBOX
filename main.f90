@@ -24,9 +24,6 @@ score = 0 !server core=0
 !> PreMC : Read input / Initialize / Set Random Seed etc. ========================
 call premc
 
-allocate(source_bank(n_history)) 
-call bank_initialize(source_bank)
-
 if(icore==score) then  
     print *, ''
     print *, ''

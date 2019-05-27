@@ -1,63 +1,6 @@
 #!/bin/bash
 
-########################################
-# input
-N0=$1
-N1=$2
-LIB=$3
-
-
-if [ -z $1 ]	# check if empty or not
-then
-	N0=1
-fi
-
-if [ -z $2 ]
-then
-	N1=$N0
-fi
-
-if [ -z $3 ]
-then
-	LIB=710
-fi
-
-
-########################################
-# change temperature
-./lib.sh $LIB
-
-
-#########################################
-## make a node file
-#if [ ${N0} == ${N1} ]; then
-#	NN=0${N0}
-#	NP=1
-#else
-#	NN=0${N0}0${N1}
-#	Np=$((${N1}-${N0}+1))
-#fi
-#
-#for (( I = ${N0}; I <= ${N1}; I++ ))
-#do
-#	echo spacen0${I} >> spacen${NN}
-#done
-
-
-########################################
-# run a simulation
-rm -f spacen0*
-export N_OMP=1
-for (( I=$N0; I<=$N1; I++ ))
-do
-	echo spacen0$I > spacen0$I
-	mpirun -machinefile spacen0$I -np 1 ./McCrit_beta.out N_OMP > log${I}.out &
-	#tail -f log${I}.out
-done
-
-
-
-
-
-
-
+#export OMP_NUM_THREADS=28
+rm -f profile.0.*
+mpirun -machinefile spacen02 -np 1 -x OMP_NUM_THREADS=28  ./McBOX_new.out # > log.out
+#mpirun  -np 1 -x OMP_NUM_THREADS=1  ./McBOX_new.out   #> log.out
