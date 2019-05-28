@@ -1,14 +1,9 @@
-
-
-
 SHELL = /bin/bash
-
 
 COMPILERC   = icc
 COMPILERF   = mpif90 
 FLAG  		= -openmp
-BUG		= -check all -traceback
-
+#BUG		= -check all -traceback
 
 ### TAU UTIL ### 
 #  #export PATH=$PATH:/home/guest/HyeonTae/Traiing/tau-2.28.1/bin
@@ -17,11 +12,6 @@ BUG		= -check all -traceback
 #  include $(TAU_PROFILE) 
 #  COMPILERF = TAU_PROFILE=$(TAU_PROFILE) /home/guest/HyeonTae/Training/tau-2.28.1/x86_64/bin/tau_f90.sh
 #  COMPILERC = TAU_PROFILE=$(TAU_PROFILE) /home/guest/HyeonTae/Training/tau-2.28.1/x86_64/bin/tau_cc.sh
-
-
-
-
-
 
 CODE 		= McBOX_new.out 
 
@@ -41,19 +31,19 @@ include FILE.list
 #	$(COMPILERF) $(FLAG) -c $<
 
 # Make CODE
-all : $(CODE)
+# all : $(CODE)
 
 $(CODE) : $(FOBJS) $(COBJS)
 	$(COMPILERF) $(FLAG) $(PROFILE) -o  $(CODE) $(FOBJS) $(COBJS)
 	
 # Make CODE - openmp
-omp : $(CODE)
-
-$(CODE) : $(FOBJS) $(COBJS)
-	$(COMPILERF) $(FLAG)  -o $(CODE) $(FOBJS) $(COBJS)
-
-noomp : $(CODE) 
-	$(COMPILERF) -o $(CODE) $(FOBJS) $(COBJS)
+#omp : $(CODE)
+#
+#$(CODE) : $(FOBJS) $(COBJS)
+#	$(COMPILERF) $(FLAG)  -o $(CODE) $(FOBJS) $(COBJS)
+#
+#noomp : $(CODE) 
+#	$(COMPILERF) -o $(CODE) $(FOBJS) $(COBJS)
 
 # Make clean
 clean :

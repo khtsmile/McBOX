@@ -871,23 +871,20 @@ end subroutine READ_SAB_MAT
         ! ======================================== !
         !                 ACE read start
         ! ======================================== !
-        if(icore==score) then
-            open(rd_inven, file="./inputfile/inventory.inp",action="read", status="old")
-            read(rd_inven,'(A)') library_path(:)
-            read(rd_inven,*) num_iso
-            allocate(ace(1:num_iso))
+        open(rd_inven, file="./inputfile/inventory.inp",action="read", status="old")
+        read(rd_inven,'(A)') library_path(:)
+        read(rd_inven,*) num_iso
+        allocate(ace(1:num_iso))
 
-            do iso =1, num_iso
-                read(rd_inven,*) i, ace(iso)%library
-            end do
-            close(rd_inven)
+        do iso =1, num_iso
+            read(rd_inven,*) i, ace(iso)%library
+        end do
+        close(rd_inven)
 
-            call SET_SAB
-            call SET_DBRC
-            call set_ace
-
-            print '(A29)', '    ACE Lib. READ COMPLETE...' 
-        end if
+        call SET_SAB
+        call SET_DBRC
+        call set_ace
+        if(icore==score) print '(A29)', '    ACE Lib. READ COMPLETE...' 
                 
     
     end subroutine

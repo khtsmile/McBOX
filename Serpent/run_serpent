@@ -1,5 +1,0 @@
-#!/bin/bash
-
-mpirun -machinefile spacen02 -np 1 sss2_129 PWR_lattice -omp 20 > log1.out
-
-

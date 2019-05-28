@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # A way to increase number by 1
 # 	- var=$((var+1))
 # 	- ((var=var+1))
@@ -41,19 +40,37 @@ do
 done < mpilog.txt
 rm -f mpilog.txt
 
+###############################################################################
+# setting node number
+if [ $N0 == $N1 ]; then
+	NN=0$N0
+else
+	NN=0${N0}0${N1}
+fi
+
 
 ###############################################################################
-# klling the job
+# 1) klling the job in each node
+#nl=${#script[*]}
+#for (( I=0; I<nl; I++ )); do
+#	str=($(echo "${script[$I]}" | tr ' ' '\n'))
+#	for  (( J=$N0; J<=$N1; J++)); do
+#		if [ "${str[9]}" == "spacen0"${J} ]
+#		then
+#			kill -9 ${str[1]}
+#			echo "[${str[9]}] job ${str[1]} has been killed"
+#		fi
+#	done
+#done
+
+
+# 2) klling the job in each node
 nl=${#script[*]}
 for (( I=0; I<nl; I++ )); do
 	str=($(echo "${script[$I]}" | tr ' ' '\n'))
-	for  (( J=$N0; J<=$N1; J++)); do
-		if [ "${str[9]}" == "spacen0"${J} ]
-		then
-			kill -9 ${str[1]}
-			echo "[${str[9]}] job ${str[1]} has been killed"
-		fi
-	done
+	if [ "${str[9]}" == "spacen"${NN} ]
+	then
+		kill -9 ${str[1]}
+		echo "[${str[9]}] job ${str[1]} has been killed"
+	fi
 done
-
-
