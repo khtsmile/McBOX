@@ -1,10 +1,11 @@
 program main
 use constants
 use variables
-use CMFD,         only : CMFD_lat, CMFD_type, n_acc
+use CMFD,       only : CMFD_lat, CMFD_type, n_acc
 use simulation 
 use omp_lib
 use mpi
+use ENTROPY,    only: entrp
 
 implicit none
 
@@ -19,79 +20,31 @@ call MPI_Init_thread(MPI_THREAD_SINGLE, provide, ierr)
 core = MPI_COMM_WORLD
 call MPI_COMM_RANK(core,icore,ierr)
 call MPI_COMM_SIZE(core,ncore,ierr)
-score = 0 !server core=0
 
 !> PreMC : Read input / Initialize / Set Random Seed etc. ========================
 call premc
 
-if(icore==score) then  
-    print *, ''
-    print *, ''
-    print '(A30, I9)', '  > Num of Threads per Node   ', omp_get_max_threads()
-    print '(A30, I9)', '  > Num of MPI Nodes          ', ncore
-    print '(A30, I9)', '  > Num of Histories per Cycle', n_history
-    print '(A16,I5,A19,I5)', '  > Skip Cycles:',n_inact ,'  /  Active Cycles:', n_totcyc-n_inact
-    print *, '' 
-    if (CMFD_lat <= 0) then 
-        print '(A16)', '  > CMFD is OFF ' 
-    elseif (CMFD_lat > 0 .and. CMFD_type == 1 ) then 
-        print '(A25,I4)', '  > CMFD is ON :: Lattice', CMFD_lat
-        print '(A22,I3)', '  > CMFD Accumulations', n_acc
-    elseif (CMFD_lat > 0 .and. CMFD_type == 2 ) then 
-        print '(A27,I4)', '  > p-CMFD is ON :: Lattice', CMFD_lat
-        print '(A22,I3)', '  > CMFD Accumulations', n_acc
-    endif 
-    print *, ''
-    if (tally_switch > 0) then 
-        print *, ' > Tally is On :: See tally.inp'
-    else 
-        print *, ' > Tally is OFF' 
-    endif 
-    print *, '' 
-    print *, '   Transport Simulation Starts...' 
-endif
-
 !> Stead-state Simlulation Start =================================================
+call START_MSG
 time3 = omp_get_wtime()
-Do curr_cyc=1, n_totcyc
+Do curr_cyc = 1, n_totcyc
     curr_act = curr_cyc - n_inact
     !> history wise transport simulation
     time1 = omp_get_wtime()
     call simulate_history()
     time2 = omp_get_wtime()
-
+    !> record results
     kprt(curr_cyc) = keff
-    if ( icore == score ) then
-    if ( curr_cyc <= n_inact+1 ) then
-        write(*,1), curr_cyc, time2-time1, "sec", keff
-    else
-        write(*,2), curr_cyc, time2-time1, "sec", keff, "|", &
-            sum(kprt(n_inact+1:curr_cyc))/dble(curr_cyc-n_inact), &
-            "+/-", std(kprt(n_inact+1:curr_cyc))
-    end if
-    end if
+    call RUN_MSG
 Enddo
-if ( icore == score ) print *, '   All Simulation Ends...' 
-
 time4 = omp_get_wtime()
-if(icore==score) write(*,3), '   elapsed time', time4 - time3, 'sec'
-
-1 format(i5,f9.3,1x,a,1x,f10.6)
-2 format(i5,f9.3,1x,a,1x,f10.6,2x,a,1x,f10.6,1x,a,f12.6)
-3 format(A16,F10.4,A5)
-
-print *
-write(*,4), "    Final keff : ", &
-    sum(kprt(n_inact+1:n_totcyc))/dble(n_totcyc-n_inact), &
-    "+/-", STD(kprt(n_inact+1:n_totcyc))
-4 format(a,F10.6,1x,a,F10.3)
+call END_MSG
 
 deallocate(source_bank)
 inquire(unit=prt_flux, opened=isopened)
 if ( isopened ) close(prt_flux)
 inquire(unit=prt_powr, opened=isopened)
 if ( isopened ) close(prt_powr)
-
 close(prt_keff)
 
 call MPI_FINALIZE(ierr)
@@ -110,6 +63,91 @@ function STD(val)
 
 end function
 
+! =============================================================================
+! START_MSG
+! =============================================================================
+subroutine START_MSG
 
+if(icore==score) then  
+
+    write(*,*)
+    write(*,*)
+    write(*,10), '  > Num of Threads per Node   ', omp_get_max_threads()
+    write(*,10), '  > Num of MPI Nodes          ', ncore
+    write(*,10), '  > Num of Histories per Cycle', n_history
+    write(*,11), '  > Skip Cycles:',n_inact , &
+                 '  /  Active Cycles:', n_totcyc-n_inact
+    write(*,*)
+    if (CMFD_lat <= 0) then 
+        write(*,12), '  > CMFD is OFF ' 
+    elseif (CMFD_lat > 0 .and. CMFD_type == 1 ) then 
+        write(*,13), '  > CMFD is ON :: Lattice', CMFD_lat
+        write(*,14), '  > CMFD Accumulations', n_acc
+    elseif (CMFD_lat > 0 .and. CMFD_type == 2 ) then 
+        write(*,15), '  > p-CMFD is ON :: Lattice', CMFD_lat
+        write(*,16), '  > CMFD Accumulations', n_acc
+    endif 
+    write(*,*)
+    if (tally_switch > 0) then 
+        write(*,*), ' > Tally is On :: See tally.inp'
+    else 
+        write(*,*), ' > Tally is OFF' 
+    endif 
+    write(*,*)
+    write(*,*), '   Transport Simulation Starts...' 
+
+endif
+
+10 format(A30,I9)
+11 format(A16,I5,A19,I5)
+12 format(A16)
+13 format(A25,I4)
+14 format(A22,I3)
+15 format(A27,I4)
+16 format(A22,I3)
+
+end subroutine
+
+! =============================================================================
+! RUN_MSG
+! =============================================================================
+subroutine RUN_MSG
+    
+if ( icore == score ) then
+    if ( curr_cyc <= n_inact+1 ) then
+        write(*,10), curr_cyc, time2-time1, "sec", entrp, " | ", "keff", keff
+    else
+        write(*,11), curr_cyc, time2-time1, "sec", entrp, " | ", &
+            "keff", keff, &
+            "avg", sum(kprt(n_inact+1:curr_cyc))/dble(curr_cyc-n_inact), &
+            "SD", std(kprt(n_inact+1:curr_cyc))
+    end if
+end if
+
+10 format(i8,f9.3,1x,a,f10.6,1x,a,1x,a,f9.5)
+11 format(i8,f9.3,1x,a,f10.6,1x,a,1x,2(a,f9.5,3x),a,f9.3)
+
+end subroutine
+
+
+! =============================================================================
+! END_MSG
+! =============================================================================
+subroutine END_MSG
+
+if ( icore == score ) then
+    write(*,*)
+    write(*,*), '   All Simulation Ends...' 
+    write(*,10), '    - Elapsed time : ', &
+        time4 - time3, 'sec', (time4-time3)/60, 'min'
+    write(*,11), "    - Final keff   : ", &
+        sum(kprt(n_inact+1:n_totcyc))/dble(n_totcyc-n_inact), &
+        "+/-", STD(kprt(n_inact+1:n_totcyc))
+end if
+
+10 format(A,F10.4,A4,F8.2,A4)
+11 format(A,F10.6,A4,F8.3)
+
+end subroutine
 
 end program 

@@ -5,9 +5,9 @@ nugrid 8192
 % dbrc 4E-6 2.1E-4 92238.70c_sss_0K
 
 % history inactive active
-pop 100000 30 300
+pop 100000 5 5
 
-tally 0 
+tally 0
 %
 % CMFD 0
 

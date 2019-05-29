@@ -2,6 +2,9 @@
 
 if [ -z $1 ]; then
 	N0=01
+elif [ $1 == rm ]; then
+	rm -f log*
+	exit 1
 else
 	N0=0$1
 fi

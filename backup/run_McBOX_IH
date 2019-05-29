@@ -1,0 +1,64 @@
+#!/bin/bash
+
+########################################
+# input
+N0=$1
+N1=$2
+LIB=$3
+
+
+if [ -z $1 ]	# check if empty or not
+then
+	N0=1
+fi
+
+if [ -z $2 ]
+then
+	N1=$N0
+fi
+
+if [ -z $3 ]
+then
+	LIB=710
+fi
+
+
+########################################
+# change temperature
+./lib.sh $LIB
+
+
+########################################
+# make a node file
+rm -f spacen0*
+if [ ${N0} == ${N1} ]; then
+	NN=0${N0}
+	NP=1
+else
+	NN=0${N0}0${N1}
+	NP=$((${N1}-${N0}+1))
+fi
+
+touch spacen$NN
+for (( I = ${N0}; I <= ${N1}; I++ ))
+do
+	echo spacen0${I} >> spacen${NN}
+done
+
+########################################
+## run in each node
+#rm -f spacen0*
+#export N_OMP=28
+#for (( I=$N0; I<=$N1; I++ ))
+#do
+#	echo spacen0$I > spacen0$I
+#	mpirun -machinefile spacen0$I -np 1 ./McBOX_new.out N_OMP > log${I}.out &
+#	#tail -f log${I}.out
+#done
+
+# run in nodes
+export N_OMP=28
+mpirun -machinefile spacen$NN -np $NP ./McBOX_new.out -x N_OMP > log${NN}.out &
+
+
+

@@ -156,6 +156,8 @@ module constants
        LATTICE_RECT = 1, & ! Rectangular lattice
        LATTICE_HEX  = 2    ! Hexagonal lattice
 
+  ! Base univer
+  integer, parameter :: BASE = 0
 
   ! Flag to say that the outside of a lattice is not defined
   integer, parameter :: NO_OUTER_UNIVERSE = -1

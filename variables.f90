@@ -19,7 +19,7 @@ implicit none
     integer ::    & 
     & ncore,      & !Total number of cores
     & icore,      & !My core id
-    & score,      & !Server rank
+    & score = 0 , & !Server rank
     & ierr,       & !Error
     & core        !Global communicator
 

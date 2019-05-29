@@ -5,7 +5,7 @@ module input_reader
     use variables
     use XS_header 
     use material_header
-    use tally,                only: TallyCoord, TallyFlux, TallyPower
+    use tally,                only: TallyCoord, TallyFlux, TallyPower, CoordStruct
     use CMFD,                 only: getXYZ, CMFD_lat, n_skip, n_acc, CMFD_type
     
     use ace_header
@@ -19,10 +19,10 @@ module input_reader
     
     subroutine init_var
         allocate(universes(0:0))
-        universes(0)%univ_type     = 0
-        universes(0)%univ_id     = 0
-        universes(0)%xyz(:)        = 0
-        universes(0)%ncell         = 0
+        universes(0)%univ_type = 0
+        universes(0)%univ_id   = 0
+        universes(0)%xyz(:)    = 0
+        universes(0)%ncell     = 0
         
         keff = 1
     end subroutine
@@ -114,17 +114,17 @@ module input_reader
 
                 !> generage cell from pin
                 if (allocated(cells)) then 
-					isize = size(cells) 
-					isize = isize + univptr%ncell
-					allocate(cells_temp(isize))
-					if (isize > 1) cells_temp(1:isize-univptr%ncell) = cells(:) 
-					deallocate(cells)
-				else 
-					isize = 0
-					isize = isize + univptr%ncell
-					allocate(cells_temp(isize))
-				endif
-				
+                    isize = size(cells) 
+                    isize = isize + univptr%ncell
+                    allocate(cells_temp(isize))
+                    if (isize > 1) cells_temp(1:isize-univptr%ncell) = cells(:) 
+                    deallocate(cells)
+                else 
+                    isize = 0
+                    isize = isize + univptr%ncell
+                    allocate(cells_temp(isize))
+                endif
+                
                 call move_alloc(cells_temp, cells)
                 
                 do i = 1, univptr%ncell-1
@@ -186,13 +186,13 @@ module input_reader
                                 call process_line(temp, idx, option) 
                             endif 
                             ix = ix+1 
-							if (mod(iy,lat_ptr%n_xyz(2)) == 0) then 
-								read (option, *) lat_ptr%lat(ix,lat_ptr%n_xyz(2), &
-													CEILING(dble(iy)/dble(lat_ptr%n_xyz(2))))
-							else 
-								read (option, *) lat_ptr%lat(ix,mod(iy,lat_ptr%n_xyz(2)), &
-													CEILING(dble(iy)/dble(lat_ptr%n_xyz(2))))
-							endif 
+                            if (mod(iy,lat_ptr%n_xyz(2)) == 0) then 
+                                read (option, *) lat_ptr%lat(ix,lat_ptr%n_xyz(2), &
+                                                    CEILING(dble(iy)/dble(lat_ptr%n_xyz(2))))
+                            else 
+                                read (option, *) lat_ptr%lat(ix,mod(iy,lat_ptr%n_xyz(2)), &
+                                                    CEILING(dble(iy)/dble(lat_ptr%n_xyz(2))))
+                            endif 
                         enddo 
                     endif 
                 enddo 
@@ -232,16 +232,16 @@ module input_reader
                         exit 
                     endif
                 enddo 
-                if (found == .false.) then 
+                if ( .not. found ) then 
                     isize = size(universes(1:))
                     allocate(universes_temp(0:isize+1))
                     do j = 1, isize 
                         universes_temp(j) = universes(j)
                     enddo
-                    obj_univ%univ_type     = 0
-                    obj_univ%univ_id     = cells(i)%univ_id
-                    obj_univ%xyz(:)        = 0 
-                    obj_univ%ncell         = 1
+                    obj_univ%univ_type = 0
+                    obj_univ%univ_id   = cells(i)%univ_id
+                    obj_univ%xyz(:)    = 0 
+                    obj_univ%ncell     = 1
                     universes_temp(isize+1) = obj_univ
                     call move_alloc(universes_temp, universes)
                 elseif (.not. allocated(universes(idx)%r)) then 
@@ -475,12 +475,12 @@ module input_reader
                 call process_line (line, j, temp ) 
                 
                 if (k.eq.1) read(temp, *) option
-                if (k.eq.2) read(temp, *) sgrid(1) 
-                if (k.eq.3) read(temp, *) sgrid(2) 
-                if (k.eq.4) read(temp, *) sgrid(3) 
-                if (k.eq.5) read(temp, *) sgrid(4) 
-                if (k.eq.6) read(temp, *) sgrid(5) 
-                if (k.eq.7) read(temp, *) sgrid(6) 
+                if (k.eq.2) read(temp, *) sgrid(1) ! x0
+                if (k.eq.3) read(temp, *) sgrid(2) ! y0
+                if (k.eq.4) read(temp, *) sgrid(3) ! z0
+                if (k.eq.5) read(temp, *) sgrid(4) ! x1
+                if (k.eq.6) read(temp, *) sgrid(5) ! y1
+                if (k.eq.7) read(temp, *) sgrid(6) ! z1
                 
             endif 
         enddo
@@ -499,13 +499,13 @@ module input_reader
         
         nsurf = 0
         do i = 1, len(line) 
-			if ((line(i:i).eq.' ').and.(i == 1)) then
-				nsurf = nsurf+1
+            if ((line(i:i).eq.' ').and.(i == 1)) then
+                nsurf = nsurf+1
             elseif ((line(i:i).eq.' ').and.(i > 1)) then 
-				if (line(i-1:i-1).ne.' ') nsurf = nsurf+1
-			endif
+                if (line(i-1:i-1).ne.' ') nsurf = nsurf+1
+            endif
         enddo 
-		        
+                
         allocate(Cellobj%list_of_surface_IDs(nsurf))
         
         idx_temp = 1; idx = 1; temp = line
@@ -711,7 +711,7 @@ module input_reader
                 open(prt_spec,file="power.out",action="write",status="replace")
                 end if
 
-            case ("dbrc")
+            case ("DBRC","dbrc")
                 n_iso0K = 1
                 call READ_DBRC(trim(line(j+1:)))
             case ("CMFD") 
@@ -957,236 +957,245 @@ function IS_SAB(name_of_lib) result(lib_type)
 !    end select
 
 end function
-
-
-
-
-
-
     
-    subroutine read_tally
-        integer :: i, j, k, idx, n, level, i_univ, i_lat, i_pin, n_pin
-        integer :: a,b,c, i_xyz(3), i_save
-        integer :: ierr
-        character(100) :: line
-        character(50)  :: option, temp, test
-        
-        
-        !Read tally.inp
-        open(rd_tally, file="./inputfile/tally.inp",action="read", status="old")
+
+subroutine read_tally
+    implicit none
+    integer :: i, j, k, idx, n, level, i_univ, i_lat, i_pin, n_pin
+    integer :: a,b,c, i_xyz(3), i_save
+    integer :: ierr
+    character(100) :: line
+    character(50)  :: option, temp, test
+    type(CoordStruct), pointer:: TC
     
-        ierr = 0;
-        do while (ierr.eq.0)
-            read (rd_tally, FMT='(A)', iostat=ierr) line 
-            if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle  
-            !> option identifier             
-            j = index(adjustl(line),' ') -1 
-            option = line(1:j)
-            
-            if (trim(option) /= "tally") then 
-                print *, 'ERROR Tally Read :: tally.inp     ', option
-                stop
-            end if
+    
+    !Read tally.inp
+    open(rd_tally, file="./inputfile/tally.inp",action="read", status="old")
 
-            line = adjustl(line(j+1:))
-            j = index(line,' ')-1
-            option = trim(line(1:j))
+    ierr = 0;
+    do while (ierr.eq.0)
+        read (rd_tally, FMT='(A)', iostat=ierr) line 
+        if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle  
+        !> option identifier             
+        j = index(adjustl(line),' ') -1 
+        option = line(1:j)
+        
+        if (trim(option) /= "tally") then 
+            print *, 'ERROR Tally Read :: tally.inp     ', option
+            stop
+        end if
 
-            select case (option)
-            case ("cell")
-                read(line(j+1:), *) n
-                allocate(TallyCoord(1:n))
-                allocate(TallyFlux(1:n))
-                allocate(TallyPower(1:n))
-                TallyCoord(:)%flag = 1
-                do i = 1, n
-10                    read (rd_tally, FMT='(A)', iostat=ierr) line 
-                    if ((len_trim(line)==0).or.(scan(line,"%"))/=0) goto 10  
-                    level = 0; idx = index(line,'>')
-                    do while (idx /= 0)
-                        level = level + 1 
-                        j = index(line,' '); read(line(1:j),*) temp ; line = line(j:) 
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_univ;  line = line(j:)
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_lat  ; line = line(j:)
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_x; line = line(j:)
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_y; line = line(j:)
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_z; line = line(j:)
-                        
-                        TallyCoord(i)%coord(level)%cell     = find_cell_idx(cells, adjustl(temp))
-                        if (i_univ == 0) then 
-                            TallyCoord(i)%coord(level)%universe = 0 
-                        else 
-                            TallyCoord(i)%coord(level)%universe = find_univ_idx(universes, i_univ)
-                        endif
-                        
-                        if (i_lat == 0) then 
-                            TallyCoord(i)%coord(level)%lattice = 0 
-                        else 
-                            TallyCoord(i)%coord(level)%lattice  =  find_lat_idx(lattices, i_lat)
-                        endif
-                        
-                        idx = index(line,'>')
-                        line = line(idx+1:); line = adjustl(line)
-                    enddo 
-                    idx = index(line, 'vol')
-                    line = adjustl(line(4:)); read(line(1:),*) TallyCoord(i)%vol
-                    TallyCoord(i)%n_coord = level
+        line = adjustl(line(j+1:))
+        j = index(line,' ')-1
+        option = trim(line(1:j))
+
+        select case (option)
+        case ("cell")
+            read(line(j+1:), *) n
+            allocate(TallyCoord(1:n))
+            allocate(TallyFlux(1:n))
+            allocate(TallyPower(1:n))
+            TallyCoord(:)%flag = 1
+            do i = 1, n
+                if ( associated(TC) ) nullify(TC)
+                TC => TallyCoord(i)
+                read (rd_tally, FMT='(A)', iostat=ierr) line 
+                if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle
+                level = 0; idx = index(line,'>')
+                do while (idx /= 0)
+                    level = level + 1 
+                    j = index(line,' '); read(line(1:j),*) temp ; line = line(j:) 
+                    line = adjustl(line);j = index(line,' ')
+                    read(line(1:j),*) i_univ;  line = line(j:)
+                    line = adjustl(line);j = index(line,' ')
+                    read(line(1:j),*) i_lat  ; line = line(j:)
+                    line = adjustl(line);j = index(line,' ')
+                    read(line(1:j),*) TC%coord(level)%lattice_x; line = line(j:)
+                    line = adjustl(line);j = index(line,' ')
+                    read(line(1:j),*) TC%coord(level)%lattice_y; line = line(j:)
+                    line = adjustl(line);j = index(line,' ')
+                    read(line(1:j),*) TC%coord(level)%lattice_z; line = line(j:)
+                    
+                    TC%coord(level)%cell     = find_cell_idx(cells, adjustl(temp))
+                    if (i_univ == 0) then 
+                        TC%coord(level)%universe = 0 
+                    else 
+                        TC%coord(level)%universe = find_univ_idx(universes, i_univ)
+                    endif
+                    
+                    if (i_lat == 0) then 
+                        TC%coord(level)%lattice = 0 
+                    else 
+                        TC%coord(level)%lattice = find_lat_idx(lattices, i_lat)
+                    endif
+                    
+                    idx = index(line,'>')
+                    line = line(idx+1:); line = adjustl(line)
                 enddo 
-                TallyFlux(:)  = 0
-                TallyPower(:) = 0 
+                idx = index(line, 'vol')
+                line = adjustl(line(4:)); read(line(1:),*) TC%vol
+                TC%n_coord = level
+            enddo 
+            TallyFlux(:)  = 0
+            TallyPower(:) = 0 
 
-            case("pin") 
-                read(line(j+1:), *) n
-                allocate(TallyCoord(1:n)); TallyCoord(n)%n_coord = 0 
-                allocate(TallyFlux(1:n))
-                allocate(TallyPower(1:n))
-                TallyCoord(:)%flag = 0
-                i = 1; 
-                do while ( i <= n) 
-                11  read (rd_tally, FMT='(A)', iostat=ierr) line
-                    if ((len_trim(line)==0).or.(scan(line,"%"))/=0) goto 11
+        case("pin") 
+            read(line(j+1:), *) n
+            allocate(TallyCoord(1:n)); TallyCoord(n)%n_coord = 0 
+            allocate(TallyFlux(1:n))
+            allocate(TallyPower(1:n))
+            TallyCoord(:)%flag = 0
+            i = 1; 
+            do while ( i <= n )
+                if ( associated(TC) ) nullify(TC)
+                TC => TallyCoord(i)
+                read (rd_tally, FMT='(A)', iostat=ierr) line
+                if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle
 
-                    level = 0; idx = index(line,'>')
-                    do while (idx /= 0)
-                        level = level + 1 
-                        !print *, 'level', level, line 
-                        j = index(line,' '); read(line(1:j),*) temp ; line = line(j:)                         
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_univ;  line = line(j:)
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_lat  ; line = line(j:)
-                        
-                        if (i_lat /= 0) i_lat = find_lat_idx(lattices, i_lat)
-                        line = adjustl(line);
-                        if (line(1:3) == 'all') then 
-                            a = lattices(i_lat)%n_xyz(1)
-                            b = lattices(i_lat)%n_xyz(2)
-                            c = lattices(i_lat)%n_xyz(3)
-                            n_pin = a*b*c
-                            i_save = i
-                            do i_pin = 1, n_pin
-                                i_xyz = getXYZ(i_pin, a,b,c)
-                                
-                                TallyCoord(i)%coord(1:level) = TallyCoord(i_save)%coord(1:level)
-                                
-                                TallyCoord(i)%coord(level)%lattice_x = i_xyz(1)
-                                TallyCoord(i)%coord(level)%lattice_y = i_xyz(2)
-                                TallyCoord(i)%coord(level)%lattice_z = i_xyz(3)
-                                
-                                if (i_lat == 0) then 
-                                    TallyCoord(i)%coord(level)%lattice = 0 
-                                else 
-                                    TallyCoord(i)%coord(level)%lattice  =  i_lat
-                                endif
-                                TallyCoord(i)%n_coord = level
-                                !> Reset the cell & univ designation (for pin only)
-                                TallyCoord(i)%coord(level)%cell = 0
-                                TallyCoord(i)%coord(level)%universe = 0 
-                                
-                                i = i + 1
-                                
-                            enddo 
-                            idx = 0 
-                        else
-                            line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_x; line = line(j:)
-                            line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_y; line = line(j:)
-                            line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_z; line = line(j:)
+                level = 0; idx = index(line,'>')
+                do while (idx /= 0)
+                    level = level + 1 
+                    !print *, 'level', level, line 
+                    j = index(line,' '); read(line(1:j),*) temp ; line = line(j:)                         
+                    line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_univ;  line = line(j:)
+                    line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_lat  ; line = line(j:)
+                    
+                    if (i_lat /= 0) i_lat = find_lat_idx(lattices, i_lat)
+                    line = adjustl(line);
+                    if (line(1:3) == 'all') then 
+                        a = lattices(i_lat)%n_xyz(1)
+                        b = lattices(i_lat)%n_xyz(2)
+                        c = lattices(i_lat)%n_xyz(3)
+                        n_pin = a*b*c
+                        i_save = i
+                        do i_pin = 1, n_pin
+                            i_xyz = getXYZ(i_pin, a,b,c)
                             
-                            TallyCoord(i)%coord(level)%cell     = find_cell_idx(cells, adjustl(temp))
+                            TallyCoord(i)%coord(1:level) = TallyCoord(i_save)%coord(1:level)
                             
-                            if (i_univ == 0) then 
-                                TallyCoord(i)%coord(level)%universe = 0 
-                            else 
-                                TallyCoord(i)%coord(level)%universe = find_univ_idx(universes, i_univ)
-                            endif
+                            TallyCoord(i)%coord(level)%lattice_x = i_xyz(1)
+                            TallyCoord(i)%coord(level)%lattice_y = i_xyz(2)
+                            TallyCoord(i)%coord(level)%lattice_z = i_xyz(3)
                             
                             if (i_lat == 0) then 
                                 TallyCoord(i)%coord(level)%lattice = 0 
                             else 
                                 TallyCoord(i)%coord(level)%lattice  =  i_lat
                             endif
+                            TallyCoord(i)%n_coord = level
+                            !> Reset the cell & univ designation (for pin only)
+                            TallyCoord(i)%coord(level)%cell = 0
+                            TallyCoord(i)%coord(level)%universe = 0 
                             
-                            idx = index(line,'>')
-                            line = line(idx+1:); line = adjustl(line)
+                            i = i + 1
                             
-                            if (idx == 0) then 
-                                i = i + 1
-                                TallyCoord(i)%n_coord = level
-                                !> Reset the cell designation (for pin only)
-                                TallyCoord(i)%coord(level)%cell = 0
-                            endif
-                        endif 
-                    enddo 
-                    !> pin volume is not needed (all same)
-                    TallyCoord(:)%vol = 1
-                enddo                     
-                TallyFlux(:)  = 0
-                TallyPower(:) = 0
-                
-            end select
-        enddo
-        
-        close(rd_tally)
-        if(icore==score) print '(A25)', '    TALLY READ COMPLETE...' 
-        
-    end subroutine
-    subroutine check_input_result(universes,lattices, cells,surfaces)
-        type(surface) :: surfaces(:)
-        type(lattice) :: lattices(:)
-        type(universe):: universes(0:)
-        type(cell)      :: cells(:)
-        integer :: i, j, iy, iz
-        
-        print *, ' ========== SURFACE CHECK =========='
-        print *, ' INDEX     ID      surf_type'
-        do i = 1, size(surfaces) 
-            print '(I5, A10, I10)', i, trim(surfaces(i)%surf_id), surfaces(i)%surf_type
-        enddo 
-        print *, ''
-        print *, ''
-        
-        
-        print *, ' ========== CELL CHECK =========='
-        do i = 1, size(cells) 
-            print *, 'cell number :', i 
-            print *, 'cell id:', cells(i)%cell_id!, cells(i)%univ_id, cells(i)%mat_id
-            print *, 'surf list: ', cells(i)%list_of_surface_IDs(:)
-            print *, 'neg : ', surfaces(cells(i)%neg_surf_idx(:))%surf_id
-            print *, 'pos : ', surfaces(cells(i)%pos_surf_idx(:))%surf_id
-            print *, 'operand : ',cells(i)%operand_flag
-            print *, 'fill type:', cells(i)%fill_type()
-            print *, 'material idx', cells(i)%mat_idx
-            print *, ''
-            print *, ''
-        enddo 
-        
-        
-        print *, ' ========== UNIVERSE CHECK =========='
-        do i = 0,size(universes(1:))
-            print *, ''
-            print *, 'univ_id = ', universes(i)%univ_id, '   # of cell', universes(i)%ncell 
-            do j = 1, universes(i)%ncell
-                print '(a4,I2,2A7)', 'cell',j,'    ', cells(universes(i)%cell(j))%cell_id
-            enddo 
-        enddo 
-        print *, ''
-        print *, ''
-        
-        
-        print *, ' ========== LATTICE CHECK =========='
-        do i = 1, size(lattices) 
-            print *, ''
-            print *, 'lattice id = ', lattices(i)%lat_id
-            do iz = 1, lattices(i)%n_xyz(3)
-                do iy = 1, lattices(i)%n_xyz(2)
-                    print '(17I2)', (universes(lattices(i)%lat(j,iy,iz))%univ_id, j = 1, lattices(i)%n_xyz(1))
+                        enddo 
+                        idx = 0 
+                    else
+                        line = adjustl(line);j = index(line,' ')
+                        read(line(1:j),*) TC%coord(level)%lattice_x; line = line(j:)
+                        line = adjustl(line);j = index(line,' ')
+                        read(line(1:j),*) TC%coord(level)%lattice_y; line = line(j:)
+                        line = adjustl(line);j = index(line,' ')
+                        read(line(1:j),*) TC%coord(level)%lattice_z; line = line(j:)
+                        
+                        TC%coord(level)%cell     = find_cell_idx(cells, adjustl(temp))
+                        
+                        if (i_univ == 0) then 
+                            TC%coord(level)%universe = 0 
+                        else 
+                            TC%coord(level)%universe = find_univ_idx(universes, i_univ)
+                        endif
+                        
+                        if (i_lat == 0) then 
+                            TC%coord(level)%lattice = 0 
+                        else 
+                            TC%coord(level)%lattice  =  i_lat
+                        endif
+                        
+                        idx = index(line,'>')
+                        line = line(idx+1:); line = adjustl(line)
+                        
+                        if (idx == 0) then 
+                            i = i + 1
+                            TC%n_coord = level
+                            !> Reset the cell designation (for pin only)
+                            TC%coord(level)%cell = 0
+                        endif
+                    endif 
                 enddo 
-                
-                print *, '' 
-            enddo 
-        enddo
-        
-        
-        
+                !> pin volume is not needed (all same)
+                TallyCoord(:)%vol = 1
+            enddo                     
+            TallyFlux(:)  = 0
+            TallyPower(:) = 0
             
-    end subroutine 
+        end select
+    enddo
+    
+    close(rd_tally)
+    if(icore==score) print '(A25)', '    TALLY READ COMPLETE...' 
+    
+end subroutine
+subroutine check_input_result(universes,lattices, cells,surfaces)
+    type(surface) :: surfaces(:)
+    type(lattice) :: lattices(:)
+    type(universe):: universes(0:)
+    type(cell)      :: cells(:)
+    integer :: i, j, iy, iz
+    
+    print *, ' ========== SURFACE CHECK =========='
+    print *, ' INDEX     ID      surf_type'
+    do i = 1, size(surfaces) 
+        print '(I5, A10, I10)', i, trim(surfaces(i)%surf_id), surfaces(i)%surf_type
+    enddo 
+    print *, ''
+    print *, ''
+    
+    
+    print *, ' ========== CELL CHECK =========='
+    do i = 1, size(cells) 
+        print *, 'cell number :', i 
+        print *, 'cell id:', cells(i)%cell_id!, cells(i)%univ_id, cells(i)%mat_id
+        print *, 'surf list: ', cells(i)%list_of_surface_IDs(:)
+        print *, 'neg : ', surfaces(cells(i)%neg_surf_idx(:))%surf_id
+        print *, 'pos : ', surfaces(cells(i)%pos_surf_idx(:))%surf_id
+        print *, 'operand : ',cells(i)%operand_flag
+        print *, 'fill type:', cells(i)%fill_type()
+        print *, 'material idx', cells(i)%mat_idx
+        print *, ''
+        print *, ''
+    enddo 
+    
+    
+    print *, ' ========== UNIVERSE CHECK =========='
+    do i = 0,size(universes(1:))
+        print *, ''
+        print *, 'univ_id = ', universes(i)%univ_id, '   # of cell', universes(i)%ncell 
+        do j = 1, universes(i)%ncell
+            print '(a4,I2,2A7)', 'cell',j,'    ', cells(universes(i)%cell(j))%cell_id
+        enddo 
+    enddo 
+    print *, ''
+    print *, ''
+    
+    
+    print *, ' ========== LATTICE CHECK =========='
+    do i = 1, size(lattices) 
+        print *, ''
+        print *, 'lattice id = ', lattices(i)%lat_id
+        do iz = 1, lattices(i)%n_xyz(3)
+            do iy = 1, lattices(i)%n_xyz(2)
+                print '(17I2)', (universes(lattices(i)%lat(j,iy,iz))%univ_id, j = 1, lattices(i)%n_xyz(1))
+            enddo 
+            
+            print *, '' 
+        enddo 
+    enddo
+    
+    
+    
+        
+end subroutine 
     
 end module

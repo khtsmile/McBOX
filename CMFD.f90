@@ -50,6 +50,7 @@ module CMFD
         integer :: a, b, c
         
         if (CMFD_lat < 0) return
+        d_CMFD = INFINITY
         
         ! Find lattice index from the particle
         do i = 1, p%n_coord 
