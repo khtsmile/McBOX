@@ -2,21 +2,22 @@ module simulation
     use omp_lib
     use mpi
     use constants
-    use tracking,             only : transport, transport_DT
+    use tracking,           only : transport, transport_DT
     use variables
     use particle_header
     use randoms
     use simulation_header
-    use bank_header,         only : source_bank, fission_bank, temp_bank, thread_bank, bank_idx
-    use geometry,             only : find_cell, find_cell_xyz, cell_contains
-    use geometry_header,     only : cells, surfaces, universes, sgrid, lattices, lattice_coord
+    use bank_header,        only : source_bank, fission_bank, temp_bank, thread_bank, bank_idx
+    use geometry,           only : find_cell, find_cell_xyz, cell_contains
+    use geometry_header,    only : cells, surfaces, universes, sgrid, lattices, lattice_coord
     use surface_header,     only : surface
     use XS_header
     use material_header
     use ENTROPY
+    use MPRUP,              only : GENSIZE
     use ace_header,         only : ace
-    use tally,                 only : TallyCoord, TallyFlux, TallyPower
-    use CMFD,                 only : CMFD_initialize_thread, CMFD_initialize, &
+    use tally,              only : TallyCoord, TallyFlux, TallyPower
+    use CMFD,               only : CMFD_initialize_thread, CMFD_initialize, &
                                     idx_lat, CMFD_solve, CMFD_lat, n_skip, n_acc, &
                                     process_cmfd_par, normalize_CMFD_par 
                                     
@@ -25,7 +26,8 @@ module simulation
     
     contains 
     
-subroutine simulate_history()
+subroutine simulate_history(cyc)
+    integer, intent(in):: cyc
     integer :: i, j, k, isize, i_surf
     integer :: a,b,c, n
     type(particle) :: p
@@ -41,7 +43,10 @@ subroutine simulate_history()
     integer, allocatable :: ircnt(:), idisp(:) 
      
     if (allocated(fission_bank)) call move_alloc(fission_bank, source_bank)
-    if ( icore == score ) call SHENTROPY(source_bank)
+    if ( icore == score ) then
+        call SHENTROPY(source_bank)
+        if ( mprupon .or. genup ) call GENSIZE(cyc)
+    end if
     allocate(fission_bank(0))
     isize = size(source_bank)
     
@@ -74,7 +79,7 @@ subroutine simulate_history()
                 deallocate(fission_bank)
                 temp_bank(isize+1:isize+bank_idx) = thread_bank(1:bank_idx)
                 call move_alloc(temp_bank, fission_bank)
-             !$omp end critical
+              !$omp end critical
                 bank_idx = 0
             endif
         enddo
@@ -109,8 +114,8 @@ subroutine simulate_history()
     
     
     !> Calculate k_eff ==========================================================
-    k_col = k_col / real(n_history,8)
-    k_tl  = k_tl  / real(n_history,8) 
+    k_col = k_col / real(ngen,8)
+    k_tl  = k_tl  / real(ngen,8) 
     !keff  = (k_tl + k_col) / 2.0d0 ; 
     keff = k_col
     
@@ -157,7 +162,7 @@ subroutine simulate_history()
     
     !> Normalize source weight  =================================================
     isize = size(fission_bank)
-    fission_bank(:)%wgt = real(n_history,8)/real(isize,8)
+    fission_bank(:)%wgt = real(ngen,8)/real(isize,8)
     
     !> Solve CMFD and apply FSD shape feedback ==================================
     if (CMFD_lat > 0 .and. curr_cyc > n_skip) then 
@@ -186,8 +191,8 @@ subroutine simulate_history()
         !> Calculate tallied flux 
         isize = size(TallyFlux) 
         do i = 1, isize
-            TallyFlux(i)  = TallyFlux(i)/(real(n_history,8)*TallyCoord(i)%vol)
-            TallyPower(i) = TallyPower(i)/(real(n_history,8)*TallyCoord(i)%vol)
+            TallyFlux(i)  = TallyFlux(i)/(real(ngen,8)*TallyCoord(i)%vol)
+            TallyPower(i) = TallyPower(i)/(real(ngen,8)*TallyCoord(i)%vol)
         enddo
         call MPI_REDUCE(TallyFlux,TallyFlux,isize,MPI_DOUBLE_PRECISION,MPI_SUM,score,MPI_COMM_WORLD,ierr)
         call MPI_REDUCE(TallyPower,TallyPower,isize,MPI_DOUBLE_PRECISION,MPI_SUM,score,MPI_COMM_WORLD,ierr)

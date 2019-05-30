@@ -18,11 +18,49 @@
  
   > Num of Threads per Node          28
   > Num of MPI Nodes                  1
-  > Num of Histories per Cycle   100000
-  > Skip Cycles:    5  /  Active Cycles:    5
+  > Num of Histories per Cycle    50000
+  > Skip Cycles: 1000  /  Active Cycles:  100
  
   > CMFD is OFF 
  
   > Tally is OFF
  
     Transport Simulation Starts...
+       1    1.896 sec  3.999862  |  keff  1.26519
+       2    2.446 sec  3.979034  |  keff  1.35450
+       3    2.149 sec  3.948922  |  keff  1.39611
+       4    2.098 sec  3.920182  |  keff  1.41119
+       5    2.086 sec  3.900705  |  keff  1.41184
+       6    2.053 sec  3.880168  |  keff  1.41890
+       7    2.066 sec  3.863792  |  keff  1.42202
+       8    2.072 sec  3.846276  |  keff  1.42612
+       9    2.075 sec  3.835258  |  keff  1.42562
+      10    2.071 sec  3.831792  |  keff  1.43828
+      11    2.092 sec  3.830562  |  keff  1.43864
+      12    2.081 sec  3.820948  |  keff  1.43909
+      13    2.071 sec  3.821607  |  keff  1.43999
+      14    2.074 sec  3.826563  |  keff  1.43609
+      15    2.073 sec  3.825852  |  keff  1.44285
+      16    2.080 sec  3.820892  |  keff  0.72293
+      17    2.423 sec  3.816691  |  keff  1.43944
+      18    7.806 sec  3.821945  |  keff  1.43995
+      19    4.143 sec  3.823453  |  keff  1.43494
+      20    4.098 sec  3.821624  |  keff  1.44065
+      21    4.136 sec  3.820323  |  keff  1.44404
+      22    4.158 sec  3.823589  |  keff  0.96531
+      23    4.446 sec  3.825501  |  keff  1.43731
+      24    8.949 sec  3.823278  |  keff  1.43914
+      25    6.197 sec  3.818909  |  keff  1.43666
+      26    6.183 sec  3.817040  |  keff  1.44124
+      27    6.195 sec  3.818005  |  keff  1.44236
+      28    6.121 sec  3.820165  |  keff  1.43934
+      29    6.127 sec  3.819190  |  keff  1.43948
+      30    6.102 sec  3.822676  |  keff  1.43749
+      31    6.141 sec  3.820988  |  keff  1.43604
+      32    6.137 sec  3.820351  |  keff  1.08083
+      33    6.431 sec  3.818998  |  keff  1.43878
+      34   10.630 sec  3.820358  |  keff  1.44161
+      35    8.186 sec  3.816411  |  keff  1.43764
+      36    8.150 sec  3.816713  |  keff  1.44118
+      37    8.168 sec  3.819209  |  keff  1.15192
+      38    8.433 sec  3.821293  |  keff  1.44174

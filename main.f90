@@ -31,10 +31,8 @@ Do curr_cyc = 1, n_totcyc
     curr_act = curr_cyc - n_inact
     !> history wise transport simulation
     time1 = omp_get_wtime()
-    call simulate_history()
+    call simulate_history(curr_cyc)
     time2 = omp_get_wtime()
-    !> record results
-    kprt(curr_cyc) = keff
     call RUN_MSG
 Enddo
 time4 = omp_get_wtime()
@@ -60,6 +58,7 @@ function STD(val)
     length = size(val)
     avg = sum(val)/length
     std = sqrt(dot_product((val-avg),(val-avg))/(length*length))*1E5
+    if ( isnan(std) ) std = 0
 
 end function
 
@@ -114,13 +113,14 @@ end subroutine
 subroutine RUN_MSG
     
 if ( icore == score ) then
-    if ( curr_cyc <= n_inact+1 ) then
+    if ( curr_cyc <= n_inact ) then
         write(*,10), curr_cyc, time2-time1, "sec", entrp, " | ", "keff", keff
     else
+        kprt(curr_act) = keff
         write(*,11), curr_cyc, time2-time1, "sec", entrp, " | ", &
             "keff", keff, &
-            "avg", sum(kprt(n_inact+1:curr_cyc))/dble(curr_cyc-n_inact), &
-            "SD", std(kprt(n_inact+1:curr_cyc))
+            "avg", sum(kprt(1:curr_act))/dble(curr_act), &
+            "SD", std(kprt(1:curr_act))
     end if
 end if
 
@@ -141,11 +141,10 @@ if ( icore == score ) then
     write(*,10), '    - Elapsed time : ', &
         time4 - time3, 'sec', (time4-time3)/60, 'min'
     write(*,11), "    - Final keff   : ", &
-        sum(kprt(n_inact+1:n_totcyc))/dble(n_totcyc-n_inact), &
-        "+/-", STD(kprt(n_inact+1:n_totcyc))
+        sum(kprt(:))/dble(n_act), "+/-", STD(kprt(:))
 end if
 
-10 format(A,F10.4,A4,F8.2,A4)
+10 format(A,F10.3,A4,F8.2,A4)
 11 format(A,F10.6,A4,F8.3)
 
 end subroutine

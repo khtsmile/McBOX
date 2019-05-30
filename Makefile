@@ -13,7 +13,7 @@ FLAG  		= -openmp
 #  COMPILERF = TAU_PROFILE=$(TAU_PROFILE) /home/guest/HyeonTae/Training/tau-2.28.1/x86_64/bin/tau_f90.sh
 #  COMPILERC = TAU_PROFILE=$(TAU_PROFILE) /home/guest/HyeonTae/Training/tau-2.28.1/x86_64/bin/tau_cc.sh
 
-CODE 		= McBOX_new.out 
+CODE 		= McBOX.out 
 
 include FILE.list
 

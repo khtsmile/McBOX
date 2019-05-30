@@ -68,7 +68,7 @@ fi
 nl=${#script[*]}
 for (( I=0; I<nl; I++ )); do
 	str=($(echo "${script[$I]}" | tr ' ' '\n'))
-	if [ "${str[9]}" == "spacen"${NN} ]
+	if [ "${str[9]}" == "spacen"${NN}"_IH" ]
 	then
 		kill -9 ${str[1]}
 		echo "[${str[9]}] job ${str[1]} has been killed"

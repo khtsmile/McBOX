@@ -6,6 +6,7 @@ implicit none
     integer :: n_totcyc, n_inact, n_act
     integer :: curr_cyc, curr_act
     integer :: n_history
+    integer :: ngen         ! neutron generation size
     
     integer :: E_mode !> 0 for MG // 1 for CE
     

@@ -842,22 +842,22 @@ module CMFD
     
         if (CMFD_lat <= 0) return
         
-        CMFD_par_thread(:) % phi     = CMFD_par_thread(:) % phi        / real(n_history,8) / CMFD_volume
-        CMFD_par_thread(:) % sig_t   = CMFD_par_thread(:) % sig_t      / real(n_history,8) / CMFD_volume
-        CMFD_par_thread(:) % sig_a   = CMFD_par_thread(:) % sig_a      / real(n_history,8) / CMFD_volume
-        CMFD_par_thread(:) % nusig_f = CMFD_par_thread(:) % nusig_f    / real(n_history,8) / CMFD_volume
-        CMFD_par_thread(:) % J_pp(1) = CMFD_par_thread(:) % J_pp(1) / real(n_history,8)
-        CMFD_par_thread(:) % J_pp(2) = CMFD_par_thread(:) % J_pp(2) / real(n_history,8)
-        CMFD_par_thread(:) % J_pp(3) = CMFD_par_thread(:) % J_pp(3) / real(n_history,8)
-        CMFD_par_thread(:) % J_pp(4) = CMFD_par_thread(:) % J_pp(4) / real(n_history,8)
-        CMFD_par_thread(:) % J_pp(5) = CMFD_par_thread(:) % J_pp(5) / real(n_history,8)
-        CMFD_par_thread(:) % J_pp(6) = CMFD_par_thread(:) % J_pp(6) / real(n_history,8)
-        CMFD_par_thread(:) % J_pn(1) = CMFD_par_thread(:) % J_pn(1) / real(n_history,8)
-        CMFD_par_thread(:) % J_pn(2) = CMFD_par_thread(:) % J_pn(2) / real(n_history,8)
-        CMFD_par_thread(:) % J_pn(3) = CMFD_par_thread(:) % J_pn(3) / real(n_history,8)
-        CMFD_par_thread(:) % J_pn(4) = CMFD_par_thread(:) % J_pn(4) / real(n_history,8)
-        CMFD_par_thread(:) % J_pn(5) = CMFD_par_thread(:) % J_pn(5) / real(n_history,8)
-        CMFD_par_thread(:) % J_pn(6) = CMFD_par_thread(:) % J_pn(6) / real(n_history,8)
+        CMFD_par_thread(:) % phi     = CMFD_par_thread(:) % phi     / real(ngen,8) / CMFD_volume
+        CMFD_par_thread(:) % sig_t   = CMFD_par_thread(:) % sig_t   / real(ngen,8) / CMFD_volume
+        CMFD_par_thread(:) % sig_a   = CMFD_par_thread(:) % sig_a   / real(ngen,8) / CMFD_volume
+        CMFD_par_thread(:) % nusig_f = CMFD_par_thread(:) % nusig_f / real(ngen,8) / CMFD_volume
+        CMFD_par_thread(:) % J_pp(1) = CMFD_par_thread(:) % J_pp(1) / real(ngen,8)
+        CMFD_par_thread(:) % J_pp(2) = CMFD_par_thread(:) % J_pp(2) / real(ngen,8)
+        CMFD_par_thread(:) % J_pp(3) = CMFD_par_thread(:) % J_pp(3) / real(ngen,8)
+        CMFD_par_thread(:) % J_pp(4) = CMFD_par_thread(:) % J_pp(4) / real(ngen,8)
+        CMFD_par_thread(:) % J_pp(5) = CMFD_par_thread(:) % J_pp(5) / real(ngen,8)
+        CMFD_par_thread(:) % J_pp(6) = CMFD_par_thread(:) % J_pp(6) / real(ngen,8)
+        CMFD_par_thread(:) % J_pn(1) = CMFD_par_thread(:) % J_pn(1) / real(ngen,8)
+        CMFD_par_thread(:) % J_pn(2) = CMFD_par_thread(:) % J_pn(2) / real(ngen,8)
+        CMFD_par_thread(:) % J_pn(3) = CMFD_par_thread(:) % J_pn(3) / real(ngen,8)
+        CMFD_par_thread(:) % J_pn(4) = CMFD_par_thread(:) % J_pn(4) / real(ngen,8)
+        CMFD_par_thread(:) % J_pn(5) = CMFD_par_thread(:) % J_pn(5) / real(ngen,8)
+        CMFD_par_thread(:) % J_pn(6) = CMFD_par_thread(:) % J_pn(6) / real(ngen,8)
                     
         
         !> gather thread CMFD parameters

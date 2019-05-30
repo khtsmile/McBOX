@@ -696,7 +696,8 @@ module input_reader
             case ("pop")
                 read(line(j+1:), *) n_history, n_inact, n_act
                 n_totcyc = n_inact + n_act
-                allocate(kprt(n_totcyc))
+                ngen = n_history
+                allocate(kprt(n_act))
                 
             case ("energy") 
                 read(line(j+1:), *) E_mode
@@ -722,6 +723,9 @@ module input_reader
                 CMFD_type = 2 
             case ("power") 
                 read(line(j+1:), *) Nominal_Power
+            case ("PRUP","prup")
+                call PRUP_INITIAL
+                call READ_PRUP(adjustl(line(5:)))
             end select
         enddo
         close(rd_ctrl)
@@ -730,6 +734,68 @@ module input_reader
         
     end subroutine
 
+
+    ! =========================================================================
+    ! PRUP_INTIAL
+    ! =========================================================================
+    subroutine PRUP_INITIAL
+        use ENTROPY, only: rampup, ccrt, scrt, elength, mprupon, shannon, &
+                           dshannon, entrp1, entrp2, genup
+        implicit none
+        mprupon  = .true.
+        genup    = .true.
+        rampup   = ngen
+        ccrt     = 1
+        scrt     = 1
+        elength  = 2
+        n_inact  = 1000
+        n_totcyc = n_inact + n_act
+        allocate(shannon(2*elength))
+        shannon  = 0
+        dshannon = 0
+        entrp1   = 0
+        entrp2   = 0
+        if ( icore == score ) open(101,file='entrp.log')
+    end subroutine
+
+    ! =========================================================================
+    ! READ_PRUP
+    ! =========================================================================
+    subroutine READ_PRUP(line)
+        use ENTROPY, only: rampup, ccrt, scrt, crt1, crt2, crt3, elength, &
+                           shannon
+        implicit none
+        character(*), intent(in):: line
+        integer:: ii
+        character(10):: para
+
+        ii = 1
+        do
+        call process_line(line,ii,para); if ( len_trim(para) == 0 ) exit
+        read(para,*), rampup
+        call process_line(line,ii,para); if ( len_trim(para) == 0 ) exit
+        read(para,*), crt1
+        call process_line(line,ii,para); if ( len_trim(para) == 0 ) exit
+        read(para,*), crt2
+        call process_line(line,ii,para); if ( len_trim(para) == 0 ) exit
+        read(para,*), elength
+        deallocate(shannon); allocate(shannon(2*elength)); shannon = 0
+        end do
+
+        ! type of criteria
+        if ( crt1 > 0 ) then
+            ccrt = 2
+        end if
+        if ( crt2 > 0 ) then
+            scrt = 2
+        end if
+
+        ! initial criteria
+        if ( ccrt == 1 ) crt1 = 9D-2/sqrt(dble(ngen))
+        if ( scrt == 1 ) crt2 = 3D-2/sqrt(dble(ngen))
+        crt3 = crt1
+
+    end subroutine
 
     ! =========================================================================
     ! READ_DBRC
@@ -1137,6 +1203,7 @@ subroutine read_tally
     if(icore==score) print '(A25)', '    TALLY READ COMPLETE...' 
     
 end subroutine
+
 subroutine check_input_result(universes,lattices, cells,surfaces)
     type(surface) :: surfaces(:)
     type(lattice) :: lattices(:)

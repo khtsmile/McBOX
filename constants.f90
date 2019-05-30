@@ -17,8 +17,8 @@ module constants
     !integer, parameter :: rd_burn         = 5  !I/O unit for burnup calculation
     integer, parameter :: prt_keff        = 10  !I/O unit for keff
     integer, parameter :: prt_ntpy        = 11  !I/O unit for ntpy 
-    integer, parameter :: prt_flux           = 12  !I/O unit for flux
-    integer, parameter :: prt_powr           = 13  !I/O unit for power
+    integer, parameter :: prt_flux        = 12  !I/O unit for flux
+    integer, parameter :: prt_powr        = 13  !I/O unit for power
     
     
     !integer, parameter :: prt_assflux      = 10 !I/O unit for flux

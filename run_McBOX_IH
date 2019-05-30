@@ -39,10 +39,10 @@ else
 	NP=$((${N1}-${N0}+1))
 fi
 
-touch spacen$NN
+touch spacen${NN}_IH
 for (( I = ${N0}; I <= ${N1}; I++ ))
 do
-	echo spacen0${I} >> spacen${NN}
+	echo spacen0${I} >> spacen${NN}_IH
 done
 
 ########################################
@@ -58,7 +58,7 @@ done
 
 # run in nodes
 export N_OMP=28
-mpirun -machinefile spacen$NN -np $NP ./McBOX_new.out -x N_OMP > log${NN}.out &
+mpirun -machinefile spacen${NN}_IH -np $NP ./McBOX.out -x N_OMP > log${NN}.out &
 
 
 

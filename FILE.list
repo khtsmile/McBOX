@@ -20,9 +20,10 @@ FSRCS := \
 		geometry.f90\
 		physics.f90\
 		simulation_header.f90\
+		entropy.f90\
 		input_reader.f90\
 		tracking.f90\
-		entropy.f90\
+		mprup.f90\
 		simulation.f90\
 		premc.f90\
 		process_line.f90\

@@ -1,30 +1,31 @@
-subroutine process_line (line, ids, output ) 
-    
+! =============================================================================
+! PROCESS_LINE extracts the first term / parameter in the line
+! =============================================================================
+subroutine process_line (line, ids, output) 
     implicit none 
-    
     character(*), intent(in) :: line 
-    integer :: i, ids, j, ide 
+    integer :: ip, ids, jp, ide 
     character(30) :: output 
     
-    j = ids 
+    jp = ids 
     do while (.true.) 
-        j = j+1 
-        if (line(j:j).eq.' ') then 
-            ide = j-1
-            goto 10 
+        jp = jp + 1 
+        if (line(jp:jp).eq.' ') then 
+            ide = jp - 1
+            exit
         endif 
     enddo 
     
-10    output = line(ids:ide) 
+    output = line(ids:ide) 
 
-    i = 0 
+    ip = 0 
     do
-        if (line(j+i:j+i).eq.' ' .and. (j+i) < len(line)) then 
-            i = i+1
+        if (line(jp+ip:jp+ip).eq.' ' .and. (jp+ip) < len(line)) then 
+            ip = ip + 1
         else
             exit
         endif 
     enddo 
-    ids = j-1+i
+    ids = jp - 1 + ip
 
 end subroutine 
