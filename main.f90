@@ -141,7 +141,7 @@ if ( icore == score ) then
     write(*,10), '    - Elapsed time : ', &
         time4 - time3, 'sec', (time4-time3)/60, 'min'
     write(*,11), "    - Final keff   : ", &
-        sum(kprt(:))/dble(n_act), "+/-", STD(kprt(:))
+        sum(kprt(1:n_act))/dble(n_act), "+/-", STD(kprt(1:n_act))
 end if
 
 10 format(A,F10.3,A4,F8.2,A4)

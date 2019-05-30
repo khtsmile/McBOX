@@ -1,0 +1,52 @@
+    CTRL  READ COMPLETE..
+    Continuous Energy Mode...
+    Start reading ace-format nuclear data
+           1 1001.710nc
+           2 8016.710nc
+    WARNING :: NYD block exists
+           3 92235.710nc
+           4 92238.710nc
+    Read S(a,b) scattering law tables
+           1 hh2o.71t_0293
+    ACE Lib. READ COMPLETE...
+    CE MAT READ COMPLETE...
+    GEOM  READ COMPLETE..
+    Setting ugrid...
+    Initializing Source...
+    Source Initializing Complete...
+ 
+ 
+  > Num of Threads per Node          28
+  > Num of MPI Nodes                  1
+  > Num of Histories per Cycle    50000
+  > Skip Cycles:   10  /  Active Cycles:   10
+ 
+  > CMFD is OFF 
+ 
+  > Tally is OFF
+ 
+    Transport Simulation Starts...
+       1    1.963 sec  3.999862  |  keff  1.26519
+       2    2.425 sec  3.979034  |  keff  1.36206
+       3    2.131 sec  3.948908  |  keff  1.39097
+       4    2.055 sec  3.919957  |  keff  1.40553
+       5    2.041 sec  3.895165  |  keff  1.41786
+       6    2.050 sec  3.875967  |  keff  1.42154
+       7    2.048 sec  3.860446  |  keff  1.42971
+       8    2.053 sec  3.850071  |  keff  1.42771
+       9    2.050 sec  3.846494  |  keff  1.43067
+      10    2.040 sec  3.839779  |  keff  1.43283
+      11    2.061 sec  3.833296  |  keff  1.43321   avg  1.43321   SD    0.000
+      12    2.057 sec  3.833343  |  keff  1.43972   avg  1.43646   SD  230.134
+      13    2.074 sec  3.828013  |  keff  1.44195   avg  1.43829   SD  214.145
+      14    2.048 sec  3.826391  |  keff  1.43476   avg  1.43741   SD  177.886
+      15    2.059 sec  3.824940  |  keff  1.44341   avg  1.43861   SD  178.266
+      16    2.074 sec  3.824042  |  keff  1.44147   avg  1.43908   SD  154.790
+      17    2.052 sec  3.825957  |  keff  1.43478   avg  1.43847   SD  144.381
+      18    2.057 sec  3.819420  |  keff  1.43478   avg  1.43801   SD  133.480
+      19    2.076 sec  3.820243  |  keff  1.43784   avg  1.43799   SD  118.661
+      20    2.069 sec  3.818081  |  keff  1.44091   avg  1.43828   SD  110.326
+ 
+    All Simulation Ends...
+    - Elapsed time :     41.483 sec    0.69 min
+    - Final keff   :   1.438282 +/- 110.326

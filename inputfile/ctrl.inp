@@ -5,10 +5,10 @@ nugrid 8192
 % dbrc 4E-6 2.1E-4 92238.70c_sss_0K
 
 % history inactive active
-pop 50000 10 100
+pop 50000 10 10
 
 % PRUP : rampup crt1 crt2 elength
-PRUP 5e4
+%PRUP 5e4
 
 
 tally 0

@@ -19,15 +19,19 @@
   > Num of Threads per Node          28
   > Num of MPI Nodes                  1
   > Num of Histories per Cycle    50000
-  > Skip Cycles: 1000  /  Active Cycles: -890
+  > Skip Cycles:   10  /  Active Cycles:   10
  
   > CMFD is OFF 
  
   > Tally is OFF
  
     Transport Simulation Starts...
-       1    2.190 sec  3.999862  |  keff  1.26519
-       2    2.607 sec  3.979034  |  keff  1.36303
-       3    2.190 sec  3.948895  |  keff  1.39277
-       4    2.136 sec  3.918557  |  keff  1.40450
-       5    2.092 sec  3.896729  |  keff  1.41838
+       1    1.745 sec  3.999862  |  keff  1.26519
+       2    2.248 sec  3.979034  |  keff  1.36100
+       3    1.975 sec  3.948849  |  keff  1.38919
+       4    1.915 sec  3.918064  |  keff  1.41344
+       5    1.911 sec  3.892362  |  keff  1.41418
+       6    1.892 sec  3.873629  |  keff  1.41817
+       7    1.890 sec  3.859397  |  keff  1.42326
+       8    1.922 sec  3.857440  |  keff  1.43105
+       9    1.912 sec  3.847900  |  keff  1.43432

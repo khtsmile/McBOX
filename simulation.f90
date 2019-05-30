@@ -106,10 +106,10 @@ subroutine simulate_history(cyc)
     call process_CMFD_par()
     
     !> Gather keff from the slave nodes =========================================
-    call MPI_REDUCE(k_col, rcv_buf, 1, MPI_REAL8, MPI_SUM, score, MPI_COMM_WORLD, ierr)
+    call MPI_REDUCE(k_col,rcv_buf,1,MPI_REAL8,MPI_SUM,score,MPI_COMM_WORLD,ierr)
     k_col = rcv_buf
     
-    call MPI_REDUCE(k_tl, rcv_buf, 1, MPI_REAL8, MPI_SUM, score, MPI_COMM_WORLD, ierr)
+    call MPI_REDUCE(k_tl,rcv_buf,1,MPI_REAL8,MPI_SUM,score,MPI_COMM_WORLD,ierr)
     k_tl = rcv_buf
     
     
