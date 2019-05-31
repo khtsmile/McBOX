@@ -43,7 +43,6 @@ subroutine GENSIZE(cyc)
         entrp1 = entrp2
 
         call GENSIZEUP
-        !print*, "up", ngen
 
     case(2)
         if ( ngen >= crt2 ) then
@@ -51,7 +50,6 @@ subroutine GENSIZE(cyc)
             return
         end if
         call GENSIZEUP
-        !print*, "up", ngen
 
     end select
 
@@ -78,6 +76,7 @@ subroutine GENSIZEUP
 
     ngen = ngen + rampup
     source_bank(:)%wgt  = ngen/size(source_bank)
+    print*, "up", ngen
 
     ! update criteria
 !    if ( fmfdon ) then
@@ -108,7 +107,7 @@ subroutine CYCLECHANGE(cyc)
 
     n_inact  = cyc + 1
     n_totcyc = n_inact + n_act
-    !print*, "end", n_inact, ngen
+    print*, "end", n_inact, ngen, n_totcyc
 
 end subroutine
 

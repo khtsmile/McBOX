@@ -1,0 +1,35 @@
+#!/bin/bash
+
+#######################################
+### set node number ###
+N0=$1	# node number
+N1=$2
+
+if [ -z $1 ]; then
+	N0=1
+fi
+if [ -z $2 ]; then
+	N1=$N0
+fi
+
+
+#######################################
+### create node file ###
+rm -f spacen*
+if [ ${N0} == ${N1} ]; then
+	NN=0${N0}
+	NP=1
+else
+	NN=0${N0}0${N1}
+	NP=$((${N1}-${N0}+1))
+fi
+for (( I=${N0}; I<=${N1}; I++ ))
+do
+	echo spacen0${I} >> spacen${NN}_IH
+done
+
+
+#######################################
+### run simulation ###
+mpirun -machinefile spacen${NN}_IH -np ${NP} sss2_129 SMR1 -omp 28 > log${N0}.out &
+

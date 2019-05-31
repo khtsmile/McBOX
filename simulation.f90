@@ -342,6 +342,7 @@ subroutine para_range(n1, n2, nprocs, irank, ista, iend)
     ista = irank * iwork1 + n1 + MIN(irank, iwork2)
     iend = ista + iwork1 - 1
     if (iwork2 > irank) iend = iend + 1
+
 end subroutine 
 
 end module

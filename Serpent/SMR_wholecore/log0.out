@@ -1,0 +1,2145 @@
+
+  _                   .-=-.           .-=-.          .-==-.       
+ { }      __        .' O o '.       .' O o '.       /  -<' )--<   
+ { }    .' O'.     / o .-. O \     / o .-. O \     /  .---`       
+ { }   / .-. o\   /O  /   \  o\   /O  /   \  o\   /O /            
+  \ `-` /   \ O`-'o  /     \  O`-'o  /     \  O`-`o /             
+   `-.-`     '.____.'       `._____.'       `.____.'              
+
+Serpent 2 beta
+
+A Continuous-energy Monte Carlo Reactor Physics Burnup Calculation Code
+
+ - Version 2.1.29 (June 12, 2017) -- Contact: serpent@vtt.fi
+
+ - Reference: J. Leppanen, et al. "The Serpent Monte Carlo code: Status,
+              development and applications in 2013." Ann. Nucl. Energy,
+              82 (2015) 142-150.
+
+ - Compiled Feb 20 2018 17:24:27
+
+ - MPI Parallel calculation mode available
+
+ - OpenMP Parallel calculation mode available
+
+ - Geometry and mesh plotting available
+
+ - Default data path not set
+
+Begin calculation on Thu May 30 19:49:03 2019
+
+Reading input file "SMR"...
+
+Checking duplicate input definitions...
+OK.
+
+Creating geometry...
+OK.
+
+Counting geometry zones...
+
+The geometry consists of 5 levels:
+
+Level 0 size: max 2 zones
+Level 1 size: max 64 zones
+Level 2 size: max 2 zones
+Level 3 size: max 289 zones
+Level 4 size: max 2 zones
+
+
+ ***** Warning: Cell 200 is not used in geometry
+
+
+ ***** Warning: Cell 201 is not used in geometry
+
+
+ ***** Warning: Lattice 220 is not used in geometry
+
+Processing cells...
+OK.
+
+Linking materials to geometry...
+OK.
+
+Counting cells...
+OK.
+
+Processing data for group constant generation:
+
+ - 70 energy groups in micro-group structure
+ - 2 energy groups in macro-group structure
+ - B1 fundamental mode calculation is not run
+ - Group constants generated in 1 universes
+ - Discontinuity factors are not calculated
+ - Pin-power distributions are not calculated
+ - Albedos are not calculated
+ - Poison cross sections are not calculated
+
+Reading ACE directory files...
+OK.
+
+Adding nuclides in material UO2...
+
+Nuclide  92235.80c -- uranium 235 at 294K (U-235)
+Nuclide  92238.80c -- uranium 238 at 294K (U-238)
+Nuclide   8016.80c -- oxygen 16 at 294K (O-16)
+
+Adding nuclides in material water...
+
+Nuclide   1001.80c -- hydrogen at 294K (H-1)
+
+Checking data and printing output...
+OK.
+
+
+***** Thu May 30 19:49:07 2019 (seed = 1559213343, MPI task = 0)
+Warning message from function ProcessNuclides:
+
+Minimum photon cross section energy 1.000000E+37 MeV is
+above the energy grid minimum 1.000000E-03 MeV.
+The energy grid minimum is set to 1.000000E+37 MeV.
+Possible changes in energy cutoff cards (warned if any).
+
+
+***** Thu May 30 19:49:07 2019 (seed = 1559213343, MPI task = 0)
+Warning message from function ProcessNuclides:
+
+Photon energy cutoff 1.000000E-03 MeV is changed to 1.000000E+37.
+
+
+Sharing input data to MPI tasks...
+OK.
+
+Generating unionize energy grids...
+
+Adding points:
+
+  1001.80c -- Points added in neutron grid: 592
+  8016.80c -- Points added in neutron grid: 2780
+ 92235.80c -- Points added in neutron grid: 76095
+ 92238.80c -- Points added in neutron grid: 156746
+
+Generating unionized energy grid:
+
+ - Unionization performed without grid thinning
+   between 1.00E-11 and 20.0 MeV.
+
+ - Final neutron grid size: 236040 points.
+
+ - 14.95 Mb of memory allocated for grid data
+
+OK.
+
+Processing cross sections and ENDF reaction laws...
+
+Nuclide   1001.80c -- hydrogen at 294K (H-1)
+Nuclide   8016.80c -- oxygen 16 at 294K (O-16)
+Nuclide  92235.80c -- uranium 235 at 294K (U-235)
+Nuclide  92238.80c -- uranium 238 at 294K (U-238)
+
+SUMMARY -- 4 nuclides included in calculation:
+
+ - 4 transport nuclides
+ - Neutron energy cut-offs at 1.00E-11 and 20.0 MeV
+ - 115 transport reactions
+ - 32 special reactions
+ - 49.15 Mb of memory allocated for data
+
+Normalizing compositions and processing mixtures...
+OK.
+
+Allocating memory for macroscopic cross section data...
+OK.
+
+Allocating memory for particle structures...
+OK.
+
+Calculating maximum densities...
+OK.
+
+Performing density cut-off...
+OK.
+
+Sorting material-wise reaction lists:
+
+   0% complete
+ 100% complete
+
+Calculating macroscopic cross sections:
+
+   0% complete
+ 100% complete
+
+Waiting for results from other MPI tasks...
+OK.
+
+Calculating DT neutron majorant cross section:
+
+   0% complete
+ 100% complete
+
+Clearing results and statistics...
+OK.
+
+Sampling initial source...
+OK.
+
+Inactive cycle   1 /  50: k-eff = 1.00000
+Inactive cycle   2 /  50: k-eff = 1.41135
+Inactive cycle   3 /  50: k-eff = 1.47554
+Inactive cycle   4 /  50: k-eff = 1.49503
+Inactive cycle   5 /  50: k-eff = 1.50796
+Inactive cycle   6 /  50: k-eff = 1.50984
+Inactive cycle   7 /  50: k-eff = 1.51952
+Inactive cycle   8 /  50: k-eff = 1.51826
+Inactive cycle   9 /  50: k-eff = 1.52436
+Inactive cycle  10 /  50: k-eff = 1.52510
+Inactive cycle  11 /  50: k-eff = 1.53020
+Inactive cycle  12 /  50: k-eff = 1.52598
+Inactive cycle  13 /  50: k-eff = 1.52734
+Inactive cycle  14 /  50: k-eff = 1.52967
+Inactive cycle  15 /  50: k-eff = 1.53621
+Inactive cycle  16 /  50: k-eff = 1.53981
+Inactive cycle  17 /  50: k-eff = 1.53902
+Inactive cycle  18 /  50: k-eff = 1.53882
+Inactive cycle  19 /  50: k-eff = 1.53638
+Inactive cycle  20 /  50: k-eff = 1.53927
+Inactive cycle  21 /  50: k-eff = 1.53519
+Inactive cycle  22 /  50: k-eff = 1.53854
+Inactive cycle  23 /  50: k-eff = 1.54137
+Inactive cycle  24 /  50: k-eff = 1.53791
+Inactive cycle  25 /  50: k-eff = 1.53946
+Inactive cycle  26 /  50: k-eff = 1.54246
+Inactive cycle  27 /  50: k-eff = 1.54198
+Inactive cycle  28 /  50: k-eff = 1.54242
+Inactive cycle  29 /  50: k-eff = 1.54079
+Inactive cycle  30 /  50: k-eff = 1.53994
+Inactive cycle  31 /  50: k-eff = 1.54079
+Inactive cycle  32 /  50: k-eff = 1.53912
+Inactive cycle  33 /  50: k-eff = 1.54238
+Inactive cycle  34 /  50: k-eff = 1.54422
+Inactive cycle  35 /  50: k-eff = 1.54508
+Inactive cycle  36 /  50: k-eff = 1.54464
+Inactive cycle  37 /  50: k-eff = 1.54135
+Inactive cycle  38 /  50: k-eff = 1.54237
+Inactive cycle  39 /  50: k-eff = 1.54290
+Inactive cycle  40 /  50: k-eff = 1.54030
+Inactive cycle  41 /  50: k-eff = 1.54243
+Inactive cycle  42 /  50: k-eff = 1.54292
+Inactive cycle  43 /  50: k-eff = 1.54113
+Inactive cycle  44 /  50: k-eff = 1.53669
+Inactive cycle  45 /  50: k-eff = 1.53691
+Inactive cycle  46 /  50: k-eff = 1.54033
+Inactive cycle  47 /  50: k-eff = 1.54340
+Inactive cycle  48 /  50: k-eff = 1.54777
+Inactive cycle  49 /  50: k-eff = 1.54493
+Inactive cycle  50 /  50: k-eff = 1.54152
+
+----- Begin active cycles -----
+
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle    1 / 100  Source neutrons : 334396
+
+Running time :                  0:02:22
+Estimated running time :        0:08:08
+Estimated running time left :   0:05:45
+
+Estimated relative CPU usage :  1172.6%
+
+k-eff (analog)    = 1.54643 +/- 0.00000  [1.54643  1.54643]
+k-eff (implicit)  = 1.54235 +/- 0.00000  [1.54235  1.54235]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle    2 / 100  Source neutrons : 332703
+
+Running time :                  0:02:26
+Estimated running time :        0:08:01
+Estimated running time left :   0:05:34
+
+Estimated relative CPU usage :  1139.7%
+
+k-eff (analog)    = 1.54497 +/- 0.00146  [1.54211  1.54784]
+k-eff (implicit)  = 1.54263 +/- 0.00028  [1.54208  1.54318]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle    3 / 100  Source neutrons : 333653
+
+Running time :                  0:02:29
+Estimated running time :        0:07:58
+Estimated running time left :   0:05:28
+
+Estimated relative CPU usage :  1198.9%
+
+k-eff (analog)    = 1.54498 +/- 0.00084  [1.54332  1.54663]
+k-eff (implicit)  = 1.54216 +/- 0.00050  [1.54118  1.54314]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle    4 / 100  Source neutrons : 332045
+
+Running time :                  0:02:32
+Estimated running time :        0:07:56
+Estimated running time left :   0:05:23
+
+Estimated relative CPU usage :  1179.2%
+
+k-eff (analog)    = 1.54349 +/- 0.00160  [1.54035  1.54663]
+k-eff (implicit)  = 1.54185 +/- 0.00047  [1.54094  1.54277]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle    5 / 100  Source neutrons : 333153
+
+Running time :                  0:02:36
+Estimated running time :        0:07:55
+Estimated running time left :   0:05:19
+
+Estimated relative CPU usage :  1194.4%
+
+k-eff (analog)    = 1.54243 +/- 0.00163  [1.53923  1.54563]
+k-eff (implicit)  = 1.54196 +/- 0.00038  [1.54122  1.54270]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle    6 / 100  Source neutrons : 334304
+
+Running time :                  0:02:39
+Estimated running time :        0:07:54
+Estimated running time left :   0:05:15
+
+Estimated relative CPU usage :  1252.1%
+
+k-eff (analog)    = 1.54247 +/- 0.00133  [1.53986  1.54508]
+k-eff (implicit)  = 1.54177 +/- 0.00036  [1.54106  1.54248]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle    7 / 100  Source neutrons : 332941
+
+Running time :                  0:02:42
+Estimated running time :        0:07:53
+Estimated running time left :   0:05:11
+
+Estimated relative CPU usage :  1253.1%
+
+k-eff (analog)    = 1.54224 +/- 0.00115  [1.53998  1.54450]
+k-eff (implicit)  = 1.54184 +/- 0.00032  [1.54123  1.54246]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle    8 / 100  Source neutrons : 334159
+
+Running time :                  0:02:46
+Estimated running time :        0:07:52
+Estimated running time left :   0:05:06
+
+Estimated relative CPU usage :  1252.6%
+
+k-eff (analog)    = 1.54254 +/- 0.00104  [1.54050  1.54459]
+k-eff (implicit)  = 1.54184 +/- 0.00027  [1.54130  1.54237]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle    9 / 100  Source neutrons : 332490
+
+Running time :                  0:02:49
+Estimated running time :        0:07:51
+Estimated running time left :   0:05:02
+
+Estimated relative CPU usage :  1275.8%
+
+k-eff (analog)    = 1.54235 +/- 0.00094  [1.54050  1.54419]
+k-eff (implicit)  = 1.54185 +/- 0.00024  [1.54138  1.54232]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   10 / 100  Source neutrons : 333403
+
+Running time :                  0:02:52
+Estimated running time :        0:07:51
+Estimated running time left :   0:04:58
+
+Estimated relative CPU usage :  1301.7%
+
+k-eff (analog)    = 1.54222 +/- 0.00085  [1.54056  1.54389]
+k-eff (implicit)  = 1.54180 +/- 0.00022  [1.54137  1.54224]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   11 / 100  Source neutrons : 332781
+
+Running time :                  0:02:56
+Estimated running time :        0:07:53
+Estimated running time left :   0:04:57
+
+Estimated relative CPU usage :  1214.4%
+
+k-eff (analog)    = 1.54189 +/- 0.00084  [1.54024  1.54353]
+k-eff (implicit)  = 1.54183 +/- 0.00020  [1.54143  1.54222]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   12 / 100  Source neutrons : 333600
+
+Running time :                  0:02:59
+Estimated running time :        0:07:55
+Estimated running time left :   0:04:55
+
+Estimated relative CPU usage :  1183.7%
+
+k-eff (analog)    = 1.54171 +/- 0.00079  [1.54017  1.54325]
+k-eff (implicit)  = 1.54183 +/- 0.00018  [1.54147  1.54219]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   13 / 100  Source neutrons : 333872
+
+Running time :                  0:03:03
+Estimated running time :        0:07:56
+Estimated running time left :   0:04:53
+
+Estimated relative CPU usage :  1202.0%
+
+k-eff (analog)    = 1.54175 +/- 0.00072  [1.54033  1.54317]
+k-eff (implicit)  = 1.54184 +/- 0.00017  [1.54151  1.54218]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   14 / 100  Source neutrons : 333445
+
+Running time :                  0:03:06
+Estimated running time :        0:07:57
+Estimated running time left :   0:04:50
+
+Estimated relative CPU usage :  1191.2%
+
+k-eff (analog)    = 1.54183 +/- 0.00067  [1.54051  1.54315]
+k-eff (implicit)  = 1.54179 +/- 0.00017  [1.54146  1.54211]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   15 / 100  Source neutrons : 332718
+
+Running time :                  0:03:10
+Estimated running time :        0:07:58
+Estimated running time left :   0:04:48
+
+Estimated relative CPU usage :  1107.4%
+
+k-eff (analog)    = 1.54170 +/- 0.00064  [1.54045  1.54296]
+k-eff (implicit)  = 1.54177 +/- 0.00016  [1.54146  1.54207]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   16 / 100  Source neutrons : 334480
+
+Running time :                  0:03:14
+Estimated running time :        0:08:00
+Estimated running time left :   0:04:46
+
+Estimated relative CPU usage :   983.2%
+
+k-eff (analog)    = 1.54192 +/- 0.00064  [1.54067  1.54317]
+k-eff (implicit)  = 1.54170 +/- 0.00016  [1.54138  1.54202]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   17 / 100  Source neutrons : 332626
+
+Running time :                  0:03:17
+Estimated running time :        0:08:01
+Estimated running time left :   0:04:43
+
+Estimated relative CPU usage :  1001.7%
+
+k-eff (analog)    = 1.54192 +/- 0.00060  [1.54075  1.54310]
+k-eff (implicit)  = 1.54164 +/- 0.00016  [1.54132  1.54196]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   18 / 100  Source neutrons : 333107
+
+Running time :                  0:03:20
+Estimated running time :        0:08:01
+Estimated running time left :   0:04:40
+
+Estimated relative CPU usage :  1016.0%
+
+k-eff (analog)    = 1.54187 +/- 0.00057  [1.54075  1.54298]
+k-eff (implicit)  = 1.54172 +/- 0.00018  [1.54138  1.54207]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   19 / 100  Source neutrons : 334407
+
+Running time :                  0:03:24
+Estimated running time :        0:08:02
+Estimated running time left :   0:04:38
+
+Estimated relative CPU usage :   949.5%
+
+k-eff (analog)    = 1.54208 +/- 0.00058  [1.54095  1.54321]
+k-eff (implicit)  = 1.54178 +/- 0.00017  [1.54143  1.54212]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   20 / 100  Source neutrons : 332982
+
+Running time :                  0:03:27
+Estimated running time :        0:08:00
+Estimated running time left :   0:04:32
+
+Estimated relative CPU usage :  1275.5%
+
+k-eff (analog)    = 1.54219 +/- 0.00056  [1.54109  1.54328]
+k-eff (implicit)  = 1.54181 +/- 0.00017  [1.54148  1.54214]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   21 / 100  Source neutrons : 333841
+
+Running time :                  0:03:30
+Estimated running time :        0:07:58
+Estimated running time left :   0:04:27
+
+Estimated relative CPU usage :  1336.1%
+
+k-eff (analog)    = 1.54240 +/- 0.00057  [1.54128  1.54352]
+k-eff (implicit)  = 1.54186 +/- 0.00017  [1.54153  1.54218]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   22 / 100  Source neutrons : 333076
+
+Running time :                  0:03:33
+Estimated running time :        0:07:56
+Estimated running time left :   0:04:23
+
+Estimated relative CPU usage :  1406.9%
+
+k-eff (analog)    = 1.54253 +/- 0.00056  [1.54143  1.54363]
+k-eff (implicit)  = 1.54180 +/- 0.00017  [1.54147  1.54213]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   23 / 100  Source neutrons : 332599
+
+Running time :                  0:03:36
+Estimated running time :        0:07:54
+Estimated running time left :   0:04:18
+
+Estimated relative CPU usage :  1516.9%
+
+k-eff (analog)    = 1.54251 +/- 0.00054  [1.54146  1.54356]
+k-eff (implicit)  = 1.54183 +/- 0.00016  [1.54151  1.54214]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   24 / 100  Source neutrons : 333793
+
+Running time :                  0:03:39
+Estimated running time :        0:07:53
+Estimated running time left :   0:04:14
+
+Estimated relative CPU usage :  1306.1%
+
+k-eff (analog)    = 1.54258 +/- 0.00052  [1.54156  1.54359]
+k-eff (implicit)  = 1.54183 +/- 0.00016  [1.54152  1.54213]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   25 / 100  Source neutrons : 333106
+
+Running time :                  0:03:42
+Estimated running time :        0:07:52
+Estimated running time left :   0:04:10
+
+Estimated relative CPU usage :  1160.4%
+
+k-eff (analog)    = 1.54260 +/- 0.00050  [1.54162  1.54357]
+k-eff (implicit)  = 1.54186 +/- 0.00015  [1.54156  1.54217]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   26 / 100  Source neutrons : 332938
+
+Running time :                  0:03:45
+Estimated running time :        0:07:51
+Estimated running time left :   0:04:06
+
+Estimated relative CPU usage :  1199.5%
+
+k-eff (analog)    = 1.54255 +/- 0.00048  [1.54160  1.54349]
+k-eff (implicit)  = 1.54189 +/- 0.00015  [1.54160  1.54218]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   27 / 100  Source neutrons : 334226
+
+Running time :                  0:03:48
+Estimated running time :        0:07:50
+Estimated running time left :   0:04:02
+
+Estimated relative CPU usage :  1197.1%
+
+k-eff (analog)    = 1.54265 +/- 0.00047  [1.54172  1.54358]
+k-eff (implicit)  = 1.54194 +/- 0.00015  [1.54164  1.54223]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   28 / 100  Source neutrons : 333365
+
+Running time :                  0:03:51
+Estimated running time :        0:07:49
+Estimated running time left :   0:03:57
+
+Estimated relative CPU usage :  1341.7%
+
+k-eff (analog)    = 1.54275 +/- 0.00047  [1.54184  1.54367]
+k-eff (implicit)  = 1.54190 +/- 0.00015  [1.54160  1.54219]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   29 / 100  Source neutrons : 332365
+
+Running time :                  0:03:54
+Estimated running time :        0:07:48
+Estimated running time left :   0:03:53
+
+Estimated relative CPU usage :  1490.7%
+
+k-eff (analog)    = 1.54270 +/- 0.00046  [1.54180  1.54359]
+k-eff (implicit)  = 1.54190 +/- 0.00015  [1.54162  1.54219]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   30 / 100  Source neutrons : 333127
+
+Running time :                  0:03:57
+Estimated running time :        0:07:47
+Estimated running time left :   0:03:49
+
+Estimated relative CPU usage :  1410.5%
+
+k-eff (analog)    = 1.54261 +/- 0.00045  [1.54173  1.54349]
+k-eff (implicit)  = 1.54193 +/- 0.00014  [1.54165  1.54221]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   31 / 100  Source neutrons : 332979
+
+Running time :                  0:04:00
+Estimated running time :        0:07:46
+Estimated running time left :   0:03:45
+
+Estimated relative CPU usage :  1242.8%
+
+k-eff (analog)    = 1.54247 +/- 0.00045  [1.54158  1.54337]
+k-eff (implicit)  = 1.54195 +/- 0.00014  [1.54167  1.54222]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   32 / 100  Source neutrons : 334204
+
+Running time :                  0:04:03
+Estimated running time :        0:07:44
+Estimated running time left :   0:03:40
+
+Estimated relative CPU usage :  1533.7%
+
+k-eff (analog)    = 1.54247 +/- 0.00044  [1.54161  1.54334]
+k-eff (implicit)  = 1.54201 +/- 0.00015  [1.54172  1.54230]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   33 / 100  Source neutrons : 333407
+
+Running time :                  0:04:05
+Estimated running time :        0:07:42
+Estimated running time left :   0:03:36
+
+Estimated relative CPU usage :  1567.5%
+
+k-eff (analog)    = 1.54249 +/- 0.00043  [1.54165  1.54332]
+k-eff (implicit)  = 1.54203 +/- 0.00015  [1.54174  1.54231]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   34 / 100  Source neutrons : 333260
+
+Running time :                  0:04:08
+Estimated running time :        0:07:40
+Estimated running time left :   0:03:32
+
+Estimated relative CPU usage :  1496.7%
+
+k-eff (analog)    = 1.54249 +/- 0.00041  [1.54167  1.54330]
+k-eff (implicit)  = 1.54202 +/- 0.00014  [1.54175  1.54230]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   35 / 100  Source neutrons : 332681
+
+Running time :                  0:04:11
+Estimated running time :        0:07:39
+Estimated running time left :   0:03:27
+
+Estimated relative CPU usage :  1279.7%
+
+k-eff (analog)    = 1.54240 +/- 0.00041  [1.54159  1.54320]
+k-eff (implicit)  = 1.54198 +/- 0.00014  [1.54170  1.54226]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   36 / 100  Source neutrons : 333346
+
+Running time :                  0:04:14
+Estimated running time :        0:07:38
+Estimated running time left :   0:03:24
+
+Estimated relative CPU usage :  1225.2%
+
+k-eff (analog)    = 1.54232 +/- 0.00041  [1.54152  1.54312]
+k-eff (implicit)  = 1.54195 +/- 0.00014  [1.54166  1.54223]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   37 / 100  Source neutrons : 333429
+
+Running time :                  0:04:17
+Estimated running time :        0:07:37
+Estimated running time left :   0:03:20
+
+Estimated relative CPU usage :  1337.7%
+
+k-eff (analog)    = 1.54226 +/- 0.00040  [1.54147  1.54304]
+k-eff (implicit)  = 1.54199 +/- 0.00015  [1.54170  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   38 / 100  Source neutrons : 334765
+
+Running time :                  0:04:21
+Estimated running time :        0:07:39
+Estimated running time left :   0:03:18
+
+Estimated relative CPU usage :   933.4%
+
+k-eff (analog)    = 1.54237 +/- 0.00041  [1.54157  1.54317]
+k-eff (implicit)  = 1.54202 +/- 0.00015  [1.54173  1.54230]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   39 / 100  Source neutrons : 332585
+
+Running time :                  0:04:24
+Estimated running time :        0:07:40
+Estimated running time left :   0:03:15
+
+Estimated relative CPU usage :   973.3%
+
+k-eff (analog)    = 1.54239 +/- 0.00040  [1.54161  1.54317]
+k-eff (implicit)  = 1.54199 +/- 0.00014  [1.54171  1.54227]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   40 / 100  Source neutrons : 332081
+
+Running time :                  0:04:28
+Estimated running time :        0:07:41
+Estimated running time left :   0:03:13
+
+Estimated relative CPU usage :  1080.2%
+
+k-eff (analog)    = 1.54226 +/- 0.00041  [1.54146  1.54306]
+k-eff (implicit)  = 1.54200 +/- 0.00014  [1.54173  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   41 / 100  Source neutrons : 334719
+
+Running time :                  0:04:31
+Estimated running time :        0:07:41
+Estimated running time left :   0:03:10
+
+Estimated relative CPU usage :  1057.1%
+
+k-eff (analog)    = 1.54230 +/- 0.00040  [1.54152  1.54308]
+k-eff (implicit)  = 1.54198 +/- 0.00014  [1.54170  1.54225]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   42 / 100  Source neutrons : 331908
+
+Running time :                  0:04:34
+Estimated running time :        0:07:42
+Estimated running time left :   0:03:07
+
+Estimated relative CPU usage :  1091.8%
+
+k-eff (analog)    = 1.54217 +/- 0.00041  [1.54137  1.54297]
+k-eff (implicit)  = 1.54197 +/- 0.00014  [1.54170  1.54224]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   43 / 100  Source neutrons : 334235
+
+Running time :                  0:04:38
+Estimated running time :        0:07:42
+Estimated running time left :   0:03:04
+
+Estimated relative CPU usage :  1149.9%
+
+k-eff (analog)    = 1.54215 +/- 0.00040  [1.54137  1.54293]
+k-eff (implicit)  = 1.54199 +/- 0.00013  [1.54172  1.54225]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   44 / 100  Source neutrons : 333590
+
+Running time :                  0:04:41
+Estimated running time :        0:07:43
+Estimated running time left :   0:03:01
+
+Estimated relative CPU usage :  1071.5%
+
+k-eff (analog)    = 1.54216 +/- 0.00039  [1.54139  1.54292]
+k-eff (implicit)  = 1.54199 +/- 0.00013  [1.54174  1.54225]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   45 / 100  Source neutrons : 333586
+
+Running time :                  0:04:45
+Estimated running time :        0:07:43
+Estimated running time left :   0:02:58
+
+Estimated relative CPU usage :  1099.5%
+
+k-eff (analog)    = 1.54219 +/- 0.00038  [1.54144  1.54294]
+k-eff (implicit)  = 1.54200 +/- 0.00013  [1.54175  1.54225]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   46 / 100  Source neutrons : 332421
+
+Running time :                  0:04:48
+Estimated running time :        0:07:43
+Estimated running time left :   0:02:54
+
+Estimated relative CPU usage :  1150.9%
+
+k-eff (analog)    = 1.54213 +/- 0.00038  [1.54139  1.54287]
+k-eff (implicit)  = 1.54205 +/- 0.00013  [1.54178  1.54231]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   47 / 100  Source neutrons : 334957
+
+Running time :                  0:04:51
+Estimated running time :        0:07:43
+Estimated running time left :   0:02:51
+
+Estimated relative CPU usage :  1211.0%
+
+k-eff (analog)    = 1.54223 +/- 0.00038  [1.54148  1.54299]
+k-eff (implicit)  = 1.54200 +/- 0.00014  [1.54172  1.54227]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   48 / 100  Source neutrons : 331833
+
+Running time :                  0:04:55
+Estimated running time :        0:07:43
+Estimated running time left :   0:02:48
+
+Estimated relative CPU usage :  1182.7%
+
+k-eff (analog)    = 1.54218 +/- 0.00038  [1.54144  1.54293]
+k-eff (implicit)  = 1.54201 +/- 0.00014  [1.54174  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   49 / 100  Source neutrons : 333614
+
+Running time :                  0:04:58
+Estimated running time :        0:07:43
+Estimated running time left :   0:02:45
+
+Estimated relative CPU usage :  1087.3%
+
+k-eff (analog)    = 1.54217 +/- 0.00037  [1.54144  1.54289]
+k-eff (implicit)  = 1.54201 +/- 0.00014  [1.54174  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   50 / 100  Source neutrons : 333573
+
+Running time :                  0:05:01
+Estimated running time :        0:07:44
+Estimated running time left :   0:02:42
+
+Estimated relative CPU usage :  1147.1%
+
+k-eff (analog)    = 1.54217 +/- 0.00036  [1.54145  1.54288]
+k-eff (implicit)  = 1.54203 +/- 0.00013  [1.54176  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   51 / 100  Source neutrons : 333880
+
+Running time :                  0:05:05
+Estimated running time :        0:07:44
+Estimated running time left :   0:02:39
+
+Estimated relative CPU usage :  1170.2%
+
+k-eff (analog)    = 1.54222 +/- 0.00036  [1.54151  1.54293]
+k-eff (implicit)  = 1.54202 +/- 0.00013  [1.54176  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   52 / 100  Source neutrons : 332178
+
+Running time :                  0:05:08
+Estimated running time :        0:07:44
+Estimated running time left :   0:02:36
+
+Estimated relative CPU usage :  1220.4%
+
+k-eff (analog)    = 1.54217 +/- 0.00036  [1.54147  1.54287]
+k-eff (implicit)  = 1.54203 +/- 0.00013  [1.54177  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   53 / 100  Source neutrons : 334179
+
+Running time :                  0:05:11
+Estimated running time :        0:07:44
+Estimated running time left :   0:02:32
+
+Estimated relative CPU usage :  1268.1%
+
+k-eff (analog)    = 1.54219 +/- 0.00035  [1.54150  1.54288]
+k-eff (implicit)  = 1.54204 +/- 0.00013  [1.54178  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   54 / 100  Source neutrons : 333258
+
+Running time :                  0:05:15
+Estimated running time :        0:07:44
+Estimated running time left :   0:02:29
+
+Estimated relative CPU usage :  1256.6%
+
+k-eff (analog)    = 1.54221 +/- 0.00035  [1.54153  1.54289]
+k-eff (implicit)  = 1.54204 +/- 0.00013  [1.54180  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   55 / 100  Source neutrons : 333066
+
+Running time :                  0:05:18
+Estimated running time :        0:07:44
+Estimated running time left :   0:02:26
+
+Estimated relative CPU usage :  1286.4%
+
+k-eff (analog)    = 1.54220 +/- 0.00034  [1.54154  1.54287]
+k-eff (implicit)  = 1.54206 +/- 0.00012  [1.54181  1.54230]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   56 / 100  Source neutrons : 332696
+
+Running time :                  0:05:21
+Estimated running time :        0:07:44
+Estimated running time left :   0:02:23
+
+Estimated relative CPU usage :  1256.8%
+
+k-eff (analog)    = 1.54215 +/- 0.00034  [1.54148  1.54281]
+k-eff (implicit)  = 1.54207 +/- 0.00012  [1.54183  1.54232]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   57 / 100  Source neutrons : 334419
+
+Running time :                  0:05:24
+Estimated running time :        0:07:44
+Estimated running time left :   0:02:19
+
+Estimated relative CPU usage :  1285.3%
+
+k-eff (analog)    = 1.54218 +/- 0.00033  [1.54152  1.54283]
+k-eff (implicit)  = 1.54209 +/- 0.00012  [1.54185  1.54233]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   58 / 100  Source neutrons : 333366
+
+Running time :                  0:05:28
+Estimated running time :        0:07:44
+Estimated running time left :   0:02:16
+
+Estimated relative CPU usage :  1304.9%
+
+k-eff (analog)    = 1.54221 +/- 0.00033  [1.54156  1.54286]
+k-eff (implicit)  = 1.54209 +/- 0.00012  [1.54185  1.54232]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   59 / 100  Source neutrons : 332113
+
+Running time :                  0:05:31
+Estimated running time :        0:07:45
+Estimated running time left :   0:02:13
+
+Estimated relative CPU usage :  1249.1%
+
+k-eff (analog)    = 1.54215 +/- 0.00033  [1.54150  1.54279]
+k-eff (implicit)  = 1.54209 +/- 0.00012  [1.54186  1.54232]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   60 / 100  Source neutrons : 334204
+
+Running time :                  0:05:34
+Estimated running time :        0:07:45
+Estimated running time left :   0:02:10
+
+Estimated relative CPU usage :  1358.4%
+
+k-eff (analog)    = 1.54215 +/- 0.00033  [1.54151  1.54279]
+k-eff (implicit)  = 1.54207 +/- 0.00012  [1.54184  1.54230]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   61 / 100  Source neutrons : 332192
+
+Running time :                  0:05:37
+Estimated running time :        0:07:44
+Estimated running time left :   0:02:06
+
+Estimated relative CPU usage :  1264.4%
+
+k-eff (analog)    = 1.54207 +/- 0.00033  [1.54142  1.54271]
+k-eff (implicit)  = 1.54207 +/- 0.00012  [1.54185  1.54230]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   62 / 100  Source neutrons : 334094
+
+Running time :                  0:05:40
+Estimated running time :        0:07:43
+Estimated running time left :   0:02:03
+
+Estimated relative CPU usage :  1482.6%
+
+k-eff (analog)    = 1.54205 +/- 0.00033  [1.54141  1.54268]
+k-eff (implicit)  = 1.54207 +/- 0.00011  [1.54185  1.54230]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   63 / 100  Source neutrons : 333628
+
+Running time :                  0:05:42
+Estimated running time :        0:07:41
+Estimated running time left :   0:01:59
+
+Estimated relative CPU usage :  1806.8%
+
+k-eff (analog)    = 1.54205 +/- 0.00032  [1.54142  1.54267]
+k-eff (implicit)  = 1.54207 +/- 0.00011  [1.54185  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   64 / 100  Source neutrons : 332826
+
+Running time :                  0:05:45
+Estimated running time :        0:07:41
+Estimated running time left :   0:01:55
+
+Estimated relative CPU usage :  1351.2%
+
+k-eff (analog)    = 1.54201 +/- 0.00032  [1.54139  1.54263]
+k-eff (implicit)  = 1.54206 +/- 0.00011  [1.54184  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   65 / 100  Source neutrons : 333552
+
+Running time :                  0:05:48
+Estimated running time :        0:07:40
+Estimated running time left :   0:01:52
+
+Estimated relative CPU usage :  1383.8%
+
+k-eff (analog)    = 1.54199 +/- 0.00031  [1.54137  1.54260]
+k-eff (implicit)  = 1.54203 +/- 0.00011  [1.54181  1.54225]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   66 / 100  Source neutrons : 333598
+
+Running time :                  0:05:50
+Estimated running time :        0:07:39
+Estimated running time left :   0:01:48
+
+Estimated relative CPU usage :  1656.4%
+
+k-eff (analog)    = 1.54199 +/- 0.00031  [1.54138  1.54259]
+k-eff (implicit)  = 1.54205 +/- 0.00011  [1.54183  1.54227]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   67 / 100  Source neutrons : 333191
+
+Running time :                  0:05:53
+Estimated running time :        0:07:38
+Estimated running time left :   0:01:45
+
+Estimated relative CPU usage :  1522.2%
+
+k-eff (analog)    = 1.54198 +/- 0.00030  [1.54138  1.54257]
+k-eff (implicit)  = 1.54208 +/- 0.00012  [1.54185  1.54231]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   68 / 100  Source neutrons : 334140
+
+Running time :                  0:05:56
+Estimated running time :        0:07:38
+Estimated running time left :   0:01:41
+
+Estimated relative CPU usage :  1256.2%
+
+k-eff (analog)    = 1.54202 +/- 0.00030  [1.54143  1.54261]
+k-eff (implicit)  = 1.54205 +/- 0.00012  [1.54182  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   69 / 100  Source neutrons : 332610
+
+Running time :                  0:05:58
+Estimated running time :        0:07:37
+Estimated running time left :   0:01:38
+
+Estimated relative CPU usage :  1607.8%
+
+k-eff (analog)    = 1.54202 +/- 0.00030  [1.54143  1.54260]
+k-eff (implicit)  = 1.54207 +/- 0.00012  [1.54184  1.54230]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   70 / 100  Source neutrons : 333323
+
+Running time :                  0:06:01
+Estimated running time :        0:07:36
+Estimated running time left :   0:01:35
+
+Estimated relative CPU usage :  1605.1%
+
+k-eff (analog)    = 1.54201 +/- 0.00029  [1.54143  1.54259]
+k-eff (implicit)  = 1.54207 +/- 0.00012  [1.54184  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   71 / 100  Source neutrons : 333595
+
+Running time :                  0:06:04
+Estimated running time :        0:07:35
+Estimated running time left :   0:01:31
+
+Estimated relative CPU usage :  1217.8%
+
+k-eff (analog)    = 1.54202 +/- 0.00029  [1.54145  1.54259]
+k-eff (implicit)  = 1.54206 +/- 0.00011  [1.54184  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   72 / 100  Source neutrons : 333218
+
+Running time :                  0:06:07
+Estimated running time :        0:07:36
+Estimated running time left :   0:01:28
+
+Estimated relative CPU usage :   973.3%
+
+k-eff (analog)    = 1.54202 +/- 0.00029  [1.54146  1.54259]
+k-eff (implicit)  = 1.54206 +/- 0.00011  [1.54184  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   73 / 100  Source neutrons : 333793
+
+Running time :                  0:06:11
+Estimated running time :        0:07:37
+Estimated running time left :   0:01:25
+
+Estimated relative CPU usage :  1053.7%
+
+k-eff (analog)    = 1.54206 +/- 0.00028  [1.54150  1.54261]
+k-eff (implicit)  = 1.54209 +/- 0.00012  [1.54186  1.54232]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   74 / 100  Source neutrons : 333950
+
+Running time :                  0:06:15
+Estimated running time :        0:07:37
+Estimated running time left :   0:01:22
+
+Estimated relative CPU usage :  1023.8%
+
+k-eff (analog)    = 1.54213 +/- 0.00029  [1.54156  1.54269]
+k-eff (implicit)  = 1.54208 +/- 0.00011  [1.54186  1.54230]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   75 / 100  Source neutrons : 332367
+
+Running time :                  0:06:18
+Estimated running time :        0:07:38
+Estimated running time left :   0:01:19
+
+Estimated relative CPU usage :  1063.2%
+
+k-eff (analog)    = 1.54214 +/- 0.00029  [1.54158  1.54270]
+k-eff (implicit)  = 1.54209 +/- 0.00011  [1.54187  1.54231]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   76 / 100  Source neutrons : 333740
+
+Running time :                  0:06:22
+Estimated running time :        0:07:39
+Estimated running time left :   0:01:16
+
+Estimated relative CPU usage :  1013.5%
+
+k-eff (analog)    = 1.54217 +/- 0.00028  [1.54161  1.54273]
+k-eff (implicit)  = 1.54209 +/- 0.00011  [1.54187  1.54231]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   77 / 100  Source neutrons : 332693
+
+Running time :                  0:06:26
+Estimated running time :        0:07:39
+Estimated running time left :   0:01:13
+
+Estimated relative CPU usage :  1167.3%
+
+k-eff (analog)    = 1.54216 +/- 0.00028  [1.54162  1.54271]
+k-eff (implicit)  = 1.54209 +/- 0.00011  [1.54187  1.54230]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   78 / 100  Source neutrons : 332791
+
+Running time :                  0:06:29
+Estimated running time :        0:07:40
+Estimated running time left :   0:01:10
+
+Estimated relative CPU usage :  1272.4%
+
+k-eff (analog)    = 1.54213 +/- 0.00028  [1.54158  1.54267]
+k-eff (implicit)  = 1.54207 +/- 0.00011  [1.54185  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   79 / 100  Source neutrons : 333737
+
+Running time :                  0:06:32
+Estimated running time :        0:07:40
+Estimated running time left :   0:01:07
+
+Estimated relative CPU usage :  1389.5%
+
+k-eff (analog)    = 1.54211 +/- 0.00028  [1.54157  1.54265]
+k-eff (implicit)  = 1.54206 +/- 0.00011  [1.54185  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   80 / 100  Source neutrons : 333586
+
+Running time :                  0:06:35
+Estimated running time :        0:07:40
+Estimated running time left :   0:01:04
+
+Estimated relative CPU usage :  1268.2%
+
+k-eff (analog)    = 1.54211 +/- 0.00027  [1.54158  1.54265]
+k-eff (implicit)  = 1.54206 +/- 0.00011  [1.54185  1.54227]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   81 / 100  Source neutrons : 333771
+
+Running time :                  0:06:39
+Estimated running time :        0:07:40
+Estimated running time left :   0:01:00
+
+Estimated relative CPU usage :  1172.6%
+
+k-eff (analog)    = 1.54214 +/- 0.00027  [1.54161  1.54267]
+k-eff (implicit)  = 1.54206 +/- 0.00011  [1.54185  1.54227]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   82 / 100  Source neutrons : 332932
+
+Running time :                  0:06:42
+Estimated running time :        0:07:40
+Estimated running time left :   0:00:57
+
+Estimated relative CPU usage :  1080.1%
+
+k-eff (analog)    = 1.54214 +/- 0.00027  [1.54162  1.54267]
+k-eff (implicit)  = 1.54208 +/- 0.00011  [1.54187  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   83 / 100  Source neutrons : 333160
+
+Running time :                  0:06:46
+Estimated running time :        0:07:40
+Estimated running time left :   0:00:54
+
+Estimated relative CPU usage :  1032.4%
+
+k-eff (analog)    = 1.54214 +/- 0.00026  [1.54162  1.54265]
+k-eff (implicit)  = 1.54208 +/- 0.00011  [1.54188  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   84 / 100  Source neutrons : 333125
+
+Running time :                  0:06:49
+Estimated running time :        0:07:41
+Estimated running time left :   0:00:51
+
+Estimated relative CPU usage :   975.8%
+
+k-eff (analog)    = 1.54212 +/- 0.00026  [1.54161  1.54263]
+k-eff (implicit)  = 1.54207 +/- 0.00010  [1.54187  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   85 / 100  Source neutrons : 333488
+
+Running time :                  0:06:52
+Estimated running time :        0:07:40
+Estimated running time left :   0:00:48
+
+Estimated relative CPU usage :  1387.2%
+
+k-eff (analog)    = 1.54211 +/- 0.00026  [1.54160  1.54262]
+k-eff (implicit)  = 1.54208 +/- 0.00010  [1.54188  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   86 / 100  Source neutrons : 334322
+
+Running time :                  0:06:54
+Estimated running time :        0:07:39
+Estimated running time left :   0:00:44
+
+Estimated relative CPU usage :  1584.0%
+
+k-eff (analog)    = 1.54215 +/- 0.00026  [1.54165  1.54266]
+k-eff (implicit)  = 1.54208 +/- 0.00010  [1.54188  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   87 / 100  Source neutrons : 333067
+
+Running time :                  0:06:57
+Estimated running time :        0:07:39
+Estimated running time left :   0:00:41
+
+Estimated relative CPU usage :  1408.5%
+
+k-eff (analog)    = 1.54218 +/- 0.00026  [1.54168  1.54269]
+k-eff (implicit)  = 1.54208 +/- 0.00010  [1.54189  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   88 / 100  Source neutrons : 332742
+
+Running time :                  0:07:00
+Estimated running time :        0:07:38
+Estimated running time left :   0:00:38
+
+Estimated relative CPU usage :  1233.9%
+
+k-eff (analog)    = 1.54218 +/- 0.00025  [1.54168  1.54268]
+k-eff (implicit)  = 1.54210 +/- 0.00010  [1.54190  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   89 / 100  Source neutrons : 333296
+
+Running time :                  0:07:03
+Estimated running time :        0:07:38
+Estimated running time left :   0:00:35
+
+Estimated relative CPU usage :  1410.6%
+
+k-eff (analog)    = 1.54218 +/- 0.00025  [1.54168  1.54267]
+k-eff (implicit)  = 1.54208 +/- 0.00010  [1.54188  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   90 / 100  Source neutrons : 334013
+
+Running time :                  0:07:05
+Estimated running time :        0:07:37
+Estimated running time left :   0:00:31
+
+Estimated relative CPU usage :  1574.1%
+
+k-eff (analog)    = 1.54221 +/- 0.00025  [1.54172  1.54270]
+k-eff (implicit)  = 1.54207 +/- 0.00010  [1.54188  1.54227]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   91 / 100  Source neutrons : 333252
+
+Running time :                  0:07:08
+Estimated running time :        0:07:37
+Estimated running time left :   0:00:28
+
+Estimated relative CPU usage :  1466.3%
+
+k-eff (analog)    = 1.54223 +/- 0.00025  [1.54174  1.54272]
+k-eff (implicit)  = 1.54209 +/- 0.00010  [1.54190  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   92 / 100  Source neutrons : 332864
+
+Running time :                  0:07:11
+Estimated running time :        0:07:36
+Estimated running time left :   0:00:25
+
+Estimated relative CPU usage :  1233.5%
+
+k-eff (analog)    = 1.54223 +/- 0.00025  [1.54175  1.54272]
+k-eff (implicit)  = 1.54211 +/- 0.00010  [1.54191  1.54231]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   93 / 100  Source neutrons : 334092
+
+Running time :                  0:07:13
+Estimated running time :        0:07:35
+Estimated running time left :   0:00:22
+
+Estimated relative CPU usage :  2149.6%
+
+k-eff (analog)    = 1.54227 +/- 0.00025  [1.54179  1.54276]
+k-eff (implicit)  = 1.54209 +/- 0.00010  [1.54189  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   94 / 100  Source neutrons : 331535
+
+Running time :                  0:07:15
+Estimated running time :        0:07:34
+Estimated running time left :   0:00:18
+
+Estimated relative CPU usage :  2157.8%
+
+k-eff (analog)    = 1.54222 +/- 0.00025  [1.54173  1.54271]
+k-eff (implicit)  = 1.54209 +/- 0.00010  [1.54189  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   95 / 100  Source neutrons : 333563
+
+Running time :                  0:07:17
+Estimated running time :        0:07:33
+Estimated running time left :   0:00:15
+
+Estimated relative CPU usage :  2161.5%
+
+k-eff (analog)    = 1.54219 +/- 0.00025  [1.54170  1.54268]
+k-eff (implicit)  = 1.54210 +/- 0.00010  [1.54190  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   96 / 100  Source neutrons : 333930
+
+Running time :                  0:07:19
+Estimated running time :        0:07:31
+Estimated running time left :   0:00:12
+
+Estimated relative CPU usage :  2164.3%
+
+k-eff (analog)    = 1.54218 +/- 0.00025  [1.54169  1.54266]
+k-eff (implicit)  = 1.54209 +/- 0.00010  [1.54190  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   97 / 100  Source neutrons : 333791
+
+Running time :                  0:07:21
+Estimated running time :        0:07:30
+Estimated running time left :   0:00:09
+
+Estimated relative CPU usage :  1812.7%
+
+k-eff (analog)    = 1.54219 +/- 0.00025  [1.54171  1.54267]
+k-eff (implicit)  = 1.54210 +/- 0.00010  [1.54191  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   98 / 100  Source neutrons : 333156
+
+Running time :                  0:07:24
+Estimated running time :        0:07:30
+Estimated running time left :   0:00:06
+
+Estimated relative CPU usage :  1432.3%
+
+k-eff (analog)    = 1.54220 +/- 0.00024  [1.54172  1.54267]
+k-eff (implicit)  = 1.54210 +/- 0.00010  [1.54191  1.54229]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle   99 / 100  Source neutrons : 333188
+
+Running time :                  0:07:26
+Estimated running time :        0:07:29
+Estimated running time left :   0:00:03
+
+Estimated relative CPU usage :  1330.6%
+
+k-eff (analog)    = 1.54219 +/- 0.00024  [1.54172  1.54266]
+k-eff (implicit)  = 1.54209 +/- 0.00010  [1.54190  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+------------------------------------------------------------
+
+Serpent 2.1.29 -- Static criticality source simulation
+
+Title: "PWR Fuel Assembly" 
+
+Active cycle  100 / 100  Source neutrons : 332854
+
+Running time :                  0:07:29
+Estimated running time :        0:07:29
+Estimated running time left :   0:00:00
+
+Estimated relative CPU usage :  1500.6%
+
+k-eff (analog)    = 1.54217 +/- 0.00024  [1.54170  1.54264]
+k-eff (implicit)  = 1.54209 +/- 0.00009  [1.54191  1.54228]
+
+(O4) (MPI=3) (OMP=28) 
+------------------------------------------------------------
+
+Transport cycle completed in 7.22 minutes.
+
+Waiting for results from other MPI tasks...
+OK.
+

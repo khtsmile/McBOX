@@ -16,6 +16,7 @@ real(8) :: k_sum
 logical :: isopened
 
 !> Preparation for parallelization ===============================================
+!call omp_set_num_threads(14)
 call MPI_Init_thread(MPI_THREAD_SINGLE, provide, ierr)
 core = MPI_COMM_WORLD
 call MPI_COMM_RANK(core,icore,ierr)
@@ -27,13 +28,16 @@ call premc
 !> Stead-state Simlulation Start =================================================
 call START_MSG
 time3 = omp_get_wtime()
-Do curr_cyc = 1, n_totcyc
+curr_cyc = 0
+Do
+    curr_cyc = curr_cyc + 1
     curr_act = curr_cyc - n_inact
     !> history wise transport simulation
     time1 = omp_get_wtime()
     call simulate_history(curr_cyc)
     time2 = omp_get_wtime()
     call RUN_MSG
+    if ( curr_cyc == n_totcyc ) exit
 Enddo
 time4 = omp_get_wtime()
 call END_MSG

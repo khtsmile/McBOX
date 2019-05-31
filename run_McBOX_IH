@@ -61,4 +61,3 @@ export N_OMP=1
 mpirun -machinefile spacen${NN}_IH -np $NP ./McBOX.out -x N_OMP > log${NN}.out &
 
 
-

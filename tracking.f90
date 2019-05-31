@@ -90,7 +90,7 @@ subroutine transport(p)
     
     
     !> CMFD Tally (track length) 
-    if (i_xyz(1) > 0) call CMFD_tally(p%wgt, distance, macro_xs, idx_xyz, inside_CMFD)
+    if (i_xyz(1) > 0) call CMFD_tally(p%wgt,distance,macro_xs,idx_xyz,inside_CMFD)
 
     !> Advance particle
     do j = 1, p % n_coord
