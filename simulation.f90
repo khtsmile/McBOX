@@ -17,9 +17,9 @@ module simulation
     use MPRUP,              only : GENSIZE
     use ace_header,         only : ace
     use tally,              only : TallyCoord, TallyFlux, TallyPower
-    use CMFD,               only : CMFD_initialize_thread, CMFD_initialize, &
-                                    idx_lat, CMFD_solve, CMFD_lat, n_skip, n_acc, &
-                                    process_cmfd_par, normalize_CMFD_par 
+    use FMFD,               only : FMFD_initialize_thread, FMFD_initialize, &
+                                   idx_lat, FMFD_solve, CMFD_lat, n_skip, n_acc, &
+                                   process_FMFD, normalize_FMFD, fmfdon
                                     
     
     implicit none 
@@ -53,11 +53,11 @@ subroutine simulate_history(cyc)
     !> Distribute source_bank to slave nodes 
     call para_range(1, isize, ncore, icore, ista, iend)        
     k_col = 0; k_tl = 0;
-    if (CMFD_lat > 0) call CMFD_initialize()
+    if ( fmfdon ) call FMFD_initialize()
 
     !$omp parallel private(p) shared(source_bank, fission_bank, temp_bank)
       thread_bank(:)%wgt = 0; bank_idx = 0
-      if (CMFD_lat > 0) call CMFD_initialize_thread()
+      if ( fmfdon ) call FMFD_initialize_thread()
       !$omp do reduction(+:k_col, k_tl)
         !do i=1, isize 
         do i= ista, iend 
@@ -65,8 +65,8 @@ subroutine simulate_history(cyc)
             call p%set(source_bank(i))
             
             do while ((p%alive == .true.).and.(p%wgt > wgt_min))
-                !call transport(p)
-                call transport_DT(p)
+                call transport(p)
+                !call transport_DT(p)
             enddo 
             
             !if buffer is almost full -> add to the fission bank
@@ -95,15 +95,15 @@ subroutine simulate_history(cyc)
         temp_bank(isize+1:isize+bank_idx) = thread_bank(1:bank_idx)
         call move_alloc(temp_bank, fission_bank)
         
-        !> normalize thread CMFD parameters (can be done outside critical)
-        call normalize_CMFD_par()
+        !> normalize thread FMFD parameters (can be done outside critical)
+        call normalize_FMFD()
         
       !$omp end critical
     !$omp end parallel
     
     !call MPI_BARRIER(MPI_COMM_WORLD, ierr)
-    !> Process tallied CMFD parameters ==========================================
-    call process_CMFD_par()
+    !> Process tallied FMFD parameters ==========================================
+    call process_FMFD()
     
     !> Gather keff from the slave nodes =========================================
     call MPI_REDUCE(k_col,rcv_buf,1,MPI_REAL8,MPI_SUM,score,MPI_COMM_WORLD,ierr)
@@ -164,15 +164,15 @@ subroutine simulate_history(cyc)
     isize = size(fission_bank)
     fission_bank(:)%wgt = real(ngen,8)/real(isize,8)
     
-    !> Solve CMFD and apply FSD shape feedback ==================================
-    if (CMFD_lat > 0 .and. curr_cyc > n_skip) then 
+    !> Solve FMFD and apply FSD shape feedback ==================================
+    if ( fmfdon .and. curr_cyc > n_skip) then 
         a = lattices(idx_lat)%n_xyz(1)
         b = lattices(idx_lat)%n_xyz(2)
         c = lattices(idx_lat)%n_xyz(3)
         allocate(shape(a*b*c)) 
         
         if (icore == score) then 
-            call CMFD_solve(lattices(idx_lat)%n_xyz(1),lattices(idx_lat)%n_xyz(2), &
+            call FMFD_solve(lattices(idx_lat)%n_xyz(1),lattices(idx_lat)%n_xyz(2), &
                             lattices(idx_lat)%n_xyz(3), shape) 
         endif 
         call MPI_BCAST(shape, a*b*c, MPI_DOUBLE_PRECISION, score, MPI_COMM_WORLD, ierr) 

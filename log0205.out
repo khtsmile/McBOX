@@ -17,15 +17,14 @@
  
  
   > Num of Threads per Node          28
-  > Num of MPI Nodes                  1
+  > Num of MPI Nodes                  4
   > Num of Histories per Cycle   100000
   > Skip Cycles:   50  /  Active Cycles:  100
  
   > Tally is OFF
  
     Transport Simulation Starts...
-       1    8.892 sec 15.255201  |  keff  1.45093
-       2   12.946 sec 15.295255  |  keff  1.49612
-       3    9.487 sec 15.200208  |  keff  1.51409
-       4    9.444 sec 15.148350  |  keff  1.52185
-       5    9.411 sec 15.140202  |  keff  1.52880
+       1    2.707 sec 15.612648  |  keff  1.44721
+       2    3.634 sec 15.690484  |  keff  1.49560
+       3    2.678 sec 15.564874  |  keff  1.51471
+       4    2.594 sec 15.521540  |  keff  1.52737

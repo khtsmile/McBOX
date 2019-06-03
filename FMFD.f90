@@ -1,14 +1,14 @@
-module CMFD 
+module FMFD
     use omp_lib 
     use mpi 
     use geometry_header,    only : lattices, find_lat_idx, lattice_coord
     use variables
-    use constants,             only : INFINITY, TiNY_BIT, prt_keff
+    use constants,          only : INFINITY, TiNY_BIT, prt_keff
     use particle_header,    only : particle
     
     implicit none
 
-    type :: CMFD_parameter
+    type :: FMFD_parameters
         real(8) :: phi
         real(8) :: sig_t 
         real(8) :: sig_a 
@@ -17,6 +17,7 @@ module CMFD
         real(8) :: J_pn(6)
         real(8) :: J_pp(6)
     end type
+    logical :: fmfdon = .false.
     integer :: CMFD_lat = -1
     integer :: n_skip, n_acc
     integer :: CMFD_type
@@ -24,19 +25,24 @@ module CMFD
     integer :: idx_lat
     real(8) :: pitch(3)
     
-    type :: CMFD_acc 
-        type(CMFD_parameter),allocatable :: par(:)
+    type :: FMFD_accumulation
+        type(FMFD_parameters), allocatable :: par(:)
     endtype 
     
-    type(CMFD_parameter), allocatable :: CMFD_par(:), CMFD_par_avg(:), CMFD_par_thread(:)
-    !$OMP THREADPRIVATE(CMFD_par_thread)
-    type(CMFD_acc),target, allocatable :: CMFD_par_acc(:)
-    
-     
+    type(FMFD_parameters), allocatable :: fm(:), fmavg(:), fmthread(:)
+    !$OMP THREADPRIVATE(fmthread)
+    type(FMFD_accumulation),target, allocatable :: fmacc(:)
+
+    ! FMFD grid
+    real(8):: fm0(3)    ! (x0,y0,z0)
+    real(8):: fm1(3)    ! (x1,y1,z1)
+    real(8):: fm2(3)    ! (x1-x0,y1-y0,z1-z0)
+    integer:: nfm(3)    ! (nx,ny,nz)
+    real(8):: dfm(3)    ! (dx,dy,dz)
     
     contains 
 
-    subroutine CMFD_distance (p, i_xyz, idx_xyz, d_CMFD, inside_CMFD,i_surf)
+    subroutine CMFD_distance (p,i_xyz,idx_xyz,d_CMFD,inside_CMFD,i_surf)
         type(particle), intent(in) :: p
         integer, intent(inout) :: i_xyz(3), idx_xyz
         real(8), intent(inout) :: d_CMFD
@@ -49,8 +55,8 @@ module CMFD
         real(8) :: J_temp
         integer :: a, b, c
         
-        if (CMFD_lat < 0) return
         d_CMFD = INFINITY
+        if (CMFD_lat < 0) return
         
         ! Find lattice index from the particle
         do i = 1, p%n_coord 
@@ -105,6 +111,122 @@ module CMFD
         idx_xyz = a*b*(i_xyz(3)-1) + a*(i_xyz(2)-1) + i_xyz(1)
 
     end subroutine
+    
+! =========================================================================
+! FMFD_DISTANCE by Inny
+! =========================================================================
+subroutine FMFD_distance (p, i_xyz, idx_xyz, d_CMFD, inside_CMFD,i_surf)
+    type(particle), intent(in) :: p
+    integer, intent(inout) :: i_xyz(3), idx_xyz
+    real(8), intent(inout) :: d_CMFD
+    logical, intent(inout) :: inside_CMFD 
+    integer, intent(inout) :: i_surf
+    real(8) :: xyz(3), uvw(3)
+    real(8) :: d_temp(6)
+    integer :: i,j, i_coord
+    integer :: idx_temp, idx_surf
+    real(8) :: J_temp
+    integer :: a, b, c
+    
+    if (CMFD_lat < 0) return
+
+    ! Find lattice index in FMFD grid
+    i_xyz = FMFD_ID(p%coord(1)%xyz(:))
+    
+    ! check if the particle is inside the FMFD grid
+    inside_CMFD = .true.
+    do i = 1, 3
+        if ( i_xyz(i) < 0 .or. i_xyz(i) > nfm(i) ) then
+            inside_CMFD = .false.
+            exit
+        end if
+    end do
+
+    ! find the closest distance to the gird surface
+    d_CMFD = INFINITY
+    if ( inside_CMFD ) then
+        uvw(:) = p%coord(1)%uvw(:)
+        d_temp(1) = ((dfm(1)*(i_xyz(1)-1))-xyz(1))/uvw(1)   ! x0
+        d_temp(2) = ((dfm(1)*(i_xyz(1)  ))-xyz(1))/uvw(1)   ! x1
+        d_temp(3) = ((dfm(2)*(i_xyz(2)-1))-xyz(2))/uvw(2)   ! y0
+        d_temp(4) = ((dfm(2)*(i_xyz(2)  ))-xyz(2))/uvw(2)   ! y1
+        d_temp(5) = ((dfm(3)*(i_xyz(3)-1))-xyz(3))/uvw(3)   ! y0
+        d_temp(6) = ((dfm(3)*(i_xyz(3)  ))-xyz(3))/uvw(3)   ! y1
+
+        do i = 1, 6
+        if ( d_temp(i) > 0 .and. d_CMFD > d_temp(i) ) then
+            d_CMFD = d_temp(i)
+            i_surf = i
+        end if
+        end do
+    end if
+
+    idx_xyz = nfm(1)*nfm(2)*(i_xyz(3)-1) + nfm(1)*(i_xyz(2)-1) + i_xyz(1)
+
+!    ! Find lattice index from the particle
+!    do i = 1, p%n_coord 
+!        if (p%coord(i)%lattice == idx_lat) then 
+!            i_xyz(1) = p%coord(i)%lattice_x
+!            i_xyz(2) = p%coord(i)%lattice_y
+!            i_xyz(3) = p%coord(i)%lattice_z
+!            
+!            xyz(:) = p%coord(i)%xyz(:)
+!            uvw(:) = p%coord(i)%uvw(:)
+!            i_coord = i
+!            exit
+!        endif
+!    enddo
+
+!    !> Check if the particle is outside the CMFD grid
+!    inside_CMFD = .true. 
+!    do i = 1, 3
+!        if (abs(xyz(i)) > pitch(i)/2.0d0) then 
+!            inside_CMFD = .false.
+!            exit 
+!        endif 
+!    enddo 
+!    d_CMFD = INFINITY
+!    if (inside_CMFD) then
+!        d_temp(1) = (-pitch(1)/2.0 - xyz(1))/uvw(1)
+!        d_temp(6) = ( pitch(1)/2.0 - xyz(1))/uvw(1)
+!        d_temp(2) = (-pitch(2)/2.0 - xyz(2))/uvw(2)
+!        d_temp(5) = ( pitch(2)/2.0 - xyz(2))/uvw(2)
+!        d_temp(3) = (-pitch(3)/2.0 - xyz(3))/uvw(3)
+!        d_temp(4) = ( pitch(3)/2.0 - xyz(3))/uvw(3)
+!        
+!         
+!        do i = 1, 6 
+!            if (d_temp(i) < 0) cycle
+!            if (d_CMFD > d_temp(i)) then 
+!                d_CMFD = d_temp(i)
+!                i_surf = i
+!            endif 
+!        enddo 
+!    
+!    else !> the particle is outside the CMFD grid
+!        ! 여기서 xyz는 윗단계 universe의 xyz
+!        call distance_cuboid(lattices(idx_lat)%n_xyz, &
+!                    p%coord(i_coord-1)%xyz, p%coord(i_coord-1)%uvw, i_xyz, d_CMFD,i_surf)
+!        
+!    endif
+!    a = lattices(idx_lat)%n_xyz(1)
+!    b = lattices(idx_lat)%n_xyz(2)
+!    c = lattices(idx_lat)%n_xyz(3)
+!    
+!    idx_xyz = a*b*(i_xyz(3)-1) + a*(i_xyz(2)-1) + i_xyz(1)
+
+end subroutine
+
+! =============================================================================
+! FMFD_ID finds the x, y, z indice in the FMFD mesh grid
+! =============================================================================
+function FMFD_ID(fmxyz) result(fmid)
+    real(8), intent(in):: fmxyz(:)  ! coordinate
+    integer:: fmid(3)               ! indice
+       
+    fmid(:) = int((fmxyz(:)-fm0(:))/dfm(:))+1
+
+end function
     
     
     
@@ -186,26 +308,23 @@ module CMFD
     !  CMFD_Tally Cell-wise    :: flux, Sig_t, Sig_a, nuSig_f
     !                Surface-wise :: (net)current
     ! ========================================================= !
-    subroutine CMFD_tally(wgt, distance, macro_xs, idx_xyz, inside_CMFD)
+    subroutine CMFD_tally(wgt,distance,macro_xs,idx_xyz)
         real(8), intent(in) :: wgt
         real(8), intent(in) :: distance
         real(8), intent(in) :: macro_xs(5)
         integer, intent(in) :: idx_xyz
-        logical, intent(in) :: inside_CMFD
         real(8) :: flux
-        
-        if (.not. inside_CMFD) return 
         
         flux = wgt * distance
         
-        CMFD_par_thread(idx_xyz) % phi = & 
-        CMFD_par_thread(idx_xyz) % phi + flux
-        CMFD_par_thread(idx_xyz) % sig_t = &
-        CMFD_par_thread(idx_xyz) % sig_t + flux*macro_xs(1)
-        CMFD_par_thread(idx_xyz) % sig_a    = &
-        CMFD_par_thread(idx_xyz) % sig_a + flux*macro_xs(2)
-        CMFD_par_thread(idx_xyz) % nusig_f =&
-        CMFD_par_thread(idx_xyz) % nusig_f +    flux*macro_xs(4)
+        fmthread(idx_xyz) % phi = & 
+        fmthread(idx_xyz) % phi + flux
+        fmthread(idx_xyz) % sig_t = &
+        fmthread(idx_xyz) % sig_t + flux*macro_xs(1)
+        fmthread(idx_xyz) % sig_a = &
+        fmthread(idx_xyz) % sig_a + flux*macro_xs(2)
+        fmthread(idx_xyz) % nusig_f = &
+        fmthread(idx_xyz) % nusig_f + flux*macro_xs(4)
         
     end subroutine
     
@@ -220,14 +339,14 @@ module CMFD
         
         flux = wgt / macro_xs(1)
         
-        CMFD_par_thread(idx_xyz) % phi = & 
-        CMFD_par_thread(idx_xyz) % phi + flux
-        CMFD_par_thread(idx_xyz) % sig_t = &
-        CMFD_par_thread(idx_xyz) % sig_t + flux*macro_xs(1)
-        CMFD_par_thread(idx_xyz) % sig_a    = &
-        CMFD_par_thread(idx_xyz) % sig_a + flux*macro_xs(2)
-        CMFD_par_thread(idx_xyz) % nusig_f =&
-        CMFD_par_thread(idx_xyz) % nusig_f +    flux*macro_xs(4)
+        fmthread(idx_xyz) % phi = & 
+        fmthread(idx_xyz) % phi + flux
+        fmthread(idx_xyz) % sig_t = &
+        fmthread(idx_xyz) % sig_t + flux*macro_xs(1)
+        fmthread(idx_xyz) % sig_a = &
+        fmthread(idx_xyz) % sig_a + flux*macro_xs(2)
+        fmthread(idx_xyz) % nusig_f = &
+        fmthread(idx_xyz) % nusig_f + flux*macro_xs(4)
         
     end subroutine
     
@@ -241,103 +360,91 @@ module CMFD
         
         if (inside_CMFD == .true. ) then 
             if (i_surf <= 3) then 
-                CMFD_par_thread(idx_xyz) % J_pn(i_surf) = &
-                CMFD_par_thread(idx_xyz) % J_pn(i_surf) + wgt / CMFD_area(i_surf)
+                fmthread(idx_xyz) % J_pn(i_surf) = &
+                fmthread(idx_xyz) % J_pn(i_surf) + wgt / CMFD_area(i_surf)
                 if (bc == 2) then 
-                    CMFD_par_thread(idx_xyz) % J_pp(i_surf) = &
-                    CMFD_par_thread(idx_xyz) % J_pp(i_surf) + wgt / CMFD_area(i_surf)
+                    fmthread(idx_xyz) % J_pp(i_surf) = &
+                    fmthread(idx_xyz) % J_pp(i_surf) + wgt / CMFD_area(i_surf)
                 endif
             else 
-                CMFD_par_thread(idx_xyz) % J_pp(i_surf) = &
-                CMFD_par_thread(idx_xyz) % J_pp(i_surf) + wgt / CMFD_area(i_surf)
+                fmthread(idx_xyz) % J_pp(i_surf) = &
+                fmthread(idx_xyz) % J_pp(i_surf) + wgt / CMFD_area(i_surf)
                 if (bc == 2) then 
-                    CMFD_par_thread(idx_xyz) % J_pn(i_surf) = &
-                    CMFD_par_thread(idx_xyz) % J_pn(i_surf) + wgt / CMFD_area(i_surf)
+                    fmthread(idx_xyz) % J_pn(i_surf) = &
+                    fmthread(idx_xyz) % J_pn(i_surf) + wgt / CMFD_area(i_surf)
                 endif
             endif
         else 
             if (i_surf > 3) then 
-                CMFD_par_thread(idx_xyz) % J_pn(i_surf) = &
-                CMFD_par_thread(idx_xyz) % J_pn(i_surf) + wgt / CMFD_area(i_surf)
+                fmthread(idx_xyz) % J_pn(i_surf) = &
+                fmthread(idx_xyz) % J_pn(i_surf) + wgt / CMFD_area(i_surf)
             else 
-                CMFD_par_thread(idx_xyz) % J_pp(i_surf) = &
-                CMFD_par_thread(idx_xyz) % J_pp(i_surf) + wgt / CMFD_area(i_surf)
+                fmthread(idx_xyz) % J_pp(i_surf) = &
+                fmthread(idx_xyz) % J_pp(i_surf) + wgt / CMFD_area(i_surf)
             endif
         endif 
                 
     end subroutine
     
     ! ========================================================= !
-    !  CMFD_initialize :: initialize CMFD tally bins
+    !  FMFD_initialize :: initialize CMFD tally bins
     ! ========================================================= !
-    subroutine CMFD_initialize()
+    subroutine FMFD_initialize()
         integer :: i 
         real(8) :: pitch_temp(6)
-        type(CMFD_acc), pointer :: par_acc
+        type(FMFD_accumulation), pointer :: acc
         
-        if (.not. allocated(CMFD_par)) then 
-            idx_lat = find_lat_idx(lattices, CMFD_lat)
-            allocate(CMFD_par(lattices(idx_lat)%n_xyz(1)*&
-                    lattices(idx_lat)%n_xyz(2)*lattices(idx_lat)%n_xyz(3)))
-            allocate(CMFD_par_avg(lattices(idx_lat)%n_xyz(1)* &
-                    lattices(idx_lat)%n_xyz(2)*lattices(idx_lat)%n_xyz(3)))
-                    
-                    
-            allocate(CMFD_par_acc(n_acc)) 
-            do i = 1, n_acc 
-                par_acc => CMFD_par_acc(i)
-                allocate(par_acc%par(lattices(idx_lat)%n_xyz(1)* &
-                        lattices(idx_lat)%n_xyz(2)*lattices(idx_lat)%n_xyz(3)))
-            enddo
-            
-            
-            do i = 1, 3 
-                if (lattices(idx_lat)%n_xyz(i) == 1) then 
-                    pitch(i) = INFINITY
-                    pitch_temp(i) = 1 
-                else 
-                    pitch(i) = lattices(idx_lat)%pitch(i)
-                    pitch_temp(i) = lattices(idx_lat)%pitch(i)
-                endif
-            enddo 
-            
-            CMFD_area(1) = pitch_temp(2)*pitch_temp(3)
-            CMFD_area(6) = pitch_temp(2)*pitch_temp(3)
-            CMFD_area(2) = pitch_temp(1)*pitch_temp(3)
-            CMFD_area(5) = pitch_temp(1)*pitch_temp(3)
-            CMFD_area(3:4) = pitch_temp(1)*pitch_temp(2)
-            
-            CMFD_volume = pitch_temp(1)*pitch_temp(2)*pitch_temp(3)
-        endif
+        allocate(fm(nfm(1)*nfm(2)*nfm(3)))
+        allocate(fmavg(nfm(1)*nfm(2)*nfm(3)))
+                
+        allocate(fmacc(n_acc)) 
+        do i = 1, n_acc 
+            acc => fmacc(i)
+            allocate(acc%par(nfm(1)*nfm(2)*nfm(3)))
+        enddo
+        
+        do i = 1, 3 
+            if (lattices(idx_lat)%n_xyz(i) == 1) then 
+                pitch(i) = INFINITY
+                pitch_temp(i) = 1 
+            else 
+                pitch(i) = lattices(idx_lat)%pitch(i)
+                pitch_temp(i) = lattices(idx_lat)%pitch(i)
+            endif
+        enddo 
+        
+        CMFD_area(1) = pitch_temp(2)*pitch_temp(3)
+        CMFD_area(6) = pitch_temp(2)*pitch_temp(3)
+        CMFD_area(2) = pitch_temp(1)*pitch_temp(3)
+        CMFD_area(5) = pitch_temp(1)*pitch_temp(3)
+        CMFD_area(3:4) = pitch_temp(1)*pitch_temp(2)
+        CMFD_volume = pitch_temp(1)*pitch_temp(2)*pitch_temp(3)
 
-        CMFD_par(:) % phi        = 0 
-        CMFD_par(:) % sig_t     = 0 
-        CMFD_par(:) % sig_a     = 0 
-        CMFD_par(:) % nusig_f    = 0 
+        fm(:) % phi     = 0 
+        fm(:) % sig_t   = 0 
+        fm(:) % sig_a   = 0 
+        fm(:) % nusig_f = 0 
         do i = 1, 6
-            CMFD_par(:) % J(i)         = 0 
-            CMFD_par(:) % J_pn(i)    = 0 
-            CMFD_par(:) % J_pp(i)    = 0 
+            fm(:) % J(i)    = 0 
+            fm(:) % J_pn(i) = 0 
+            fm(:) % J_pp(i) = 0 
         enddo 
             
     end subroutine
     
-    subroutine CMFD_initialize_thread() 
+    subroutine FMFD_initialize_thread() 
         integer :: i 
         
-        if (.not. allocated(CMFD_par_thread)) then 
-            allocate(CMFD_par_thread(lattices(idx_lat)%n_xyz(1)* &
-                    lattices(idx_lat)%n_xyz(2)*lattices(idx_lat)%n_xyz(3)))
-        endif 
+        allocate(fmthread(nfm(1)*nfm(2)*nfm(3)))
         
-        CMFD_par_thread(:) % phi        = 0 
-        CMFD_par_thread(:) % sig_t         = 0 
-        CMFD_par_thread(:) % sig_a         = 0 
-        CMFD_par_thread(:) % nusig_f    = 0 
+        fmthread(:) % phi     = 0 
+        fmthread(:) % sig_t   = 0 
+        fmthread(:) % sig_a   = 0 
+        fmthread(:) % nusig_f = 0 
         do i = 1, 6
-            CMFD_par_thread(:) % J(i)         = 0 
-            CMFD_par_thread(:) % J_pn(i)    = 0 
-            CMFD_par_thread(:) % J_pp(i)    = 0 
+        fmthread(:) % J(i)    = 0 
+        fmthread(:) % J_pn(i) = 0 
+        fmthread(:) % J_pp(i) = 0 
         enddo 
         
     end subroutine
@@ -345,7 +452,7 @@ module CMFD
     ! ========================================================= !
     !  CMFD_solve 
     ! ========================================================= !
-    subroutine CMFD_solve(a,b,c,shape)
+    subroutine FMFD_solve(a,b,c,shape)
         integer, intent(in) :: a,b,c 
         real(8), intent(inout) :: shape(:) 
         
@@ -357,15 +464,15 @@ module CMFD
         real(8) :: keff_CMFD, phi(a*b*c), phi0(a*b*c), phi_CMFD(a*b*c), phi_noacc(a*b*c)
                 
         do i = 1, a*b*c
-            sig_a(i)   = CMFD_par_avg(i)%sig_a
-            nusig_f(i) = CMFD_par_avg(i)%nusig_f 
-            D(i)       = 1. / (3. * CMFD_par_avg(i)%sig_t) 
-            Js(i,:)    = CMFD_par_avg(i)%J(:) 
-            J_pn(i,:)  = CMFD_par_avg(i)%J_pn(:) 
-            J_pp(i,:)  = CMFD_par_avg(i)%J_pp(:) 
-            phi(i)     = CMFD_par_avg(i)%phi
+            sig_a(i)   = fmavg(i)%sig_a
+            nusig_f(i) = fmavg(i)%nusig_f 
+            D(i)       = 1. / (3. * fmavg(i)%sig_t) 
+            Js(i,:)    = fmavg(i)%J(:) 
+            J_pn(i,:)  = fmavg(i)%J_pn(:) 
+            J_pp(i,:)  = fmavg(i)%J_pp(:) 
+            phi(i)     = fmavg(i)%phi
             
-            phi_noacc(i) = CMFD_par(i)%phi
+            phi_noacc(i) = fm(i)%phi
         enddo 
         
         
@@ -838,56 +945,41 @@ module CMFD
     
     
 
-    subroutine normalize_CMFD_par()
+    subroutine normalize_FMFD()
+        integer:: i
     
         if (CMFD_lat <= 0) return
         
-        CMFD_par_thread(:) % phi     = CMFD_par_thread(:) % phi     / real(ngen,8) / CMFD_volume
-        CMFD_par_thread(:) % sig_t   = CMFD_par_thread(:) % sig_t   / real(ngen,8) / CMFD_volume
-        CMFD_par_thread(:) % sig_a   = CMFD_par_thread(:) % sig_a   / real(ngen,8) / CMFD_volume
-        CMFD_par_thread(:) % nusig_f = CMFD_par_thread(:) % nusig_f / real(ngen,8) / CMFD_volume
-        CMFD_par_thread(:) % J_pp(1) = CMFD_par_thread(:) % J_pp(1) / real(ngen,8)
-        CMFD_par_thread(:) % J_pp(2) = CMFD_par_thread(:) % J_pp(2) / real(ngen,8)
-        CMFD_par_thread(:) % J_pp(3) = CMFD_par_thread(:) % J_pp(3) / real(ngen,8)
-        CMFD_par_thread(:) % J_pp(4) = CMFD_par_thread(:) % J_pp(4) / real(ngen,8)
-        CMFD_par_thread(:) % J_pp(5) = CMFD_par_thread(:) % J_pp(5) / real(ngen,8)
-        CMFD_par_thread(:) % J_pp(6) = CMFD_par_thread(:) % J_pp(6) / real(ngen,8)
-        CMFD_par_thread(:) % J_pn(1) = CMFD_par_thread(:) % J_pn(1) / real(ngen,8)
-        CMFD_par_thread(:) % J_pn(2) = CMFD_par_thread(:) % J_pn(2) / real(ngen,8)
-        CMFD_par_thread(:) % J_pn(3) = CMFD_par_thread(:) % J_pn(3) / real(ngen,8)
-        CMFD_par_thread(:) % J_pn(4) = CMFD_par_thread(:) % J_pn(4) / real(ngen,8)
-        CMFD_par_thread(:) % J_pn(5) = CMFD_par_thread(:) % J_pn(5) / real(ngen,8)
-        CMFD_par_thread(:) % J_pn(6) = CMFD_par_thread(:) % J_pn(6) / real(ngen,8)
-                    
+        fmthread(:) % phi     = fmthread(:) % phi     / dble(ngen) / CMFD_volume
+        fmthread(:) % sig_t   = fmthread(:) % sig_t   / dble(ngen) / CMFD_volume
+        fmthread(:) % sig_a   = fmthread(:) % sig_a   / dble(ngen) / CMFD_volume
+        fmthread(:) % nusig_f = fmthread(:) % nusig_f / dble(ngen) / CMFD_volume
+        do i = 1, 6
+        fmthread(:) % J_pp(i) = fmthread(:) % J_pp(i) / dble(ngen)
+        fmthread(:) % J_pn(i) = fmthread(:) % J_pn(i) / dble(ngen)
+        end do
         
         !> gather thread CMFD parameters
-        CMFD_par(:) % phi     = CMFD_par(:) % phi     + CMFD_par_thread(:)%phi
-        CMFD_par(:) % sig_t   = CMFD_par(:) % sig_t   + CMFD_par_thread(:)%sig_t 
-        CMFD_par(:) % sig_a   = CMFD_par(:) % sig_a   + CMFD_par_thread(:)%sig_a 
-        CMFD_par(:) % nusig_f = CMFD_par(:) % nusig_f + CMFD_par_thread(:)%nusig_f 
-        CMFD_par(:) % J_pp(1) = CMFD_par(:) % J_pp(1) + CMFD_par_thread(:)%J_pp(1)
-        CMFD_par(:) % J_pp(2) = CMFD_par(:) % J_pp(2) + CMFD_par_thread(:)%J_pp(2)
-        CMFD_par(:) % J_pp(3) = CMFD_par(:) % J_pp(3) + CMFD_par_thread(:)%J_pp(3)
-        CMFD_par(:) % J_pp(4) = CMFD_par(:) % J_pp(4) + CMFD_par_thread(:)%J_pp(4)
-        CMFD_par(:) % J_pp(5) = CMFD_par(:) % J_pp(5) + CMFD_par_thread(:)%J_pp(5)
-        CMFD_par(:) % J_pp(6) = CMFD_par(:) % J_pp(6) + CMFD_par_thread(:)%J_pp(6)
-        CMFD_par(:) % J_pn(1) = CMFD_par(:) % J_pn(1) + CMFD_par_thread(:)%J_pn(1)
-        CMFD_par(:) % J_pn(2) = CMFD_par(:) % J_pn(2) + CMFD_par_thread(:)%J_pn(2)
-        CMFD_par(:) % J_pn(3) = CMFD_par(:) % J_pn(3) + CMFD_par_thread(:)%J_pn(3)
-        CMFD_par(:) % J_pn(4) = CMFD_par(:) % J_pn(4) + CMFD_par_thread(:)%J_pn(4)
-        CMFD_par(:) % J_pn(5) = CMFD_par(:) % J_pn(5) + CMFD_par_thread(:)%J_pn(5)
-        CMFD_par(:) % J_pn(6) = CMFD_par(:) % J_pn(6) + CMFD_par_thread(:)%J_pn(6)
+        fm(:) % phi     = fm(:) % phi     + fmthread(:)%phi
+        fm(:) % sig_t   = fm(:) % sig_t   + fmthread(:)%sig_t 
+        fm(:) % sig_a   = fm(:) % sig_a   + fmthread(:)%sig_a 
+        fm(:) % nusig_f = fm(:) % nusig_f + fmthread(:)%nusig_f 
+        do i = 1, 6
+        fm(:) % J_pp(i) = fm(:) % J_pp(i) + fmthread(:)%J_pp(i)
+        fm(:) % J_pn(i) = fm(:) % J_pn(i) + fmthread(:)%J_pn(i)
+        end do
+
     end subroutine
     
     
-    subroutine process_CMFD_par() 
+    subroutine process_FMFD() 
 
         integer :: a, b, c, n
         integer :: i, xyz(3), idx, i_surf, i_acc, i_curr
         !> MPI derived type reduce parameters 
         integer, dimension(7) :: CMFD_blocklength, CMFD_displacement, CMFD_datatype 
         integer :: intex, realex, restype, CMFD_op  ! MPI int & real extern / new type
-        type(CMFD_parameter), allocatable :: CMFD_MPI_slut(:)
+        type(FMFD_parameters), allocatable :: CMFD_MPI_slut(:)
         
         if (CMFD_lat <= 0) return 
         
@@ -914,8 +1006,8 @@ module CMFD
         call MPI_TYPE_STRUCT (7, CMFD_blocklength, CMFD_displacement, CMFD_datatype,restype, ierr)
         call MPI_TYPE_COMMIT (restype, ierr)
         call MPI_Op_create(CMFD_sum, .true. , CMFD_op, ierr)
-        call MPI_REDUCE(CMFD_par, CMFD_MPI_slut, n, restype, CMFD_op, score, MPI_COMM_WORLD, ierr)
-        CMFD_par = CMFD_MPI_slut
+        call MPI_REDUCE(fm, CMFD_MPI_slut, n, restype, CMFD_op, score, MPI_COMM_WORLD, ierr)
+        fm = CMFD_MPI_slut
          
         call MPI_TYPE_FREE(restype, ierr)
         deallocate(CMFD_MPI_slut)
@@ -925,77 +1017,80 @@ module CMFD
         
         do idx = 1, n 
             xyz = getXYZ(idx, a,b,c) 
-            if (xyz(1) /= 1) CMFD_par(idx)%J_pp(1) = CMFD_par(idx-1)%J_pp(6)
-            if (xyz(1) /= a) CMFD_par(idx)%J_pn(6) = CMFD_par(idx+1)%J_pn(1)
-            if (xyz(2) /= 1) CMFD_par(idx)%J_pp(2) = CMFD_par(idx-a)%J_pp(5)
-            if (xyz(2) /= b) CMFD_par(idx)%J_pn(5) = CMFD_par(idx+a)%J_pn(2)
-            if (xyz(3) /= 1) CMFD_par(idx)%J_pp(3) = CMFD_par(idx-a*b)%J_pp(4)
-            if (xyz(3) /= c) CMFD_par(idx)%J_pn(4) = CMFD_par(idx+a*b)%J_pn(3)
+            if (xyz(1) /= 1) fm(idx)%J_pp(1) = fm(idx-1)%J_pp(6)
+            if (xyz(1) /= a) fm(idx)%J_pn(6) = fm(idx+1)%J_pn(1)
+            if (xyz(2) /= 1) fm(idx)%J_pp(2) = fm(idx-a)%J_pp(5)
+            if (xyz(2) /= b) fm(idx)%J_pn(5) = fm(idx+a)%J_pn(2)
+            if (xyz(3) /= 1) fm(idx)%J_pp(3) = fm(idx-a*b)%J_pp(4)
+            if (xyz(3) /= c) fm(idx)%J_pn(4) = fm(idx+a*b)%J_pn(3)
             
             do i_surf = 1, 6
-                CMFD_par(idx) % J(i_surf) = &
-                    (CMFD_par(idx) % J_pp(i_surf) - CMFD_par(idx) % J_pn(i_surf))
+                fm(idx) % J(i_surf) = &
+                    (fm(idx) % J_pp(i_surf) - fm(idx) % J_pn(i_surf))
             enddo 
         enddo 
         
-        CMFD_par(:) % sig_t   = CMFD_par(:) % sig_t   / CMFD_par(:) % phi
-        CMFD_par(:) % sig_a   = CMFD_par(:) % sig_a   / CMFD_par(:) % phi
-        CMFD_par(:) % nusig_f = CMFD_par(:) % nusig_f / CMFD_par(:) % phi
+        fm(:) % sig_t   = fm(:) % sig_t   / fm(:) % phi
+        fm(:) % sig_a   = fm(:) % sig_a   / fm(:) % phi
+        fm(:) % nusig_f = fm(:) % nusig_f / fm(:) % phi
         
 
         !> save the next accumulation
         do i = n_acc, 2, -1
-            CMFD_par_acc(i)%par(:) = CMFD_par_acc(i-1)%par(:)
+            fmacc(i)%par(:) = fmacc(i-1)%par(:)
         enddo 
-        CMFD_par_acc(1)%par(:) = CMFD_par(:)
+        fmacc(1)%par(:) = fm(:)
         
         
         !> average with the accumulated parameters
-        CMFD_par_avg(:)%phi      = 0 
-        CMFD_par_avg(:)%sig_t     = 0 
-        CMFD_par_avg(:)%sig_a     = 0 
-        CMFD_par_avg(:)%nusig_f    = 0 
+        fmavg(:)%phi      = 0 
+        fmavg(:)%sig_t     = 0 
+        fmavg(:)%sig_a     = 0 
+        fmavg(:)%nusig_f    = 0 
         do i_curr = 1, 6 
-          CMFD_par_avg(:)%J(i_curr) = 0 
-          CMFD_par_avg(:)%J_pn(i_curr) = 0 
-          CMFD_par_avg(:)%J_pp(i_curr) = 0 
+          fmavg(:)%J(i_curr) = 0 
+          fmavg(:)%J_pn(i_curr) = 0 
+          fmavg(:)%J_pp(i_curr) = 0 
         enddo 
         
         do i = 1, a*b*c
             do i_acc = 1, n_acc
-                CMFD_par_avg(i)%phi     = CMFD_par_avg(i)%phi     + CMFD_par_acc(i_acc)%par(i)%phi
-                CMFD_par_avg(i)%sig_t     = CMFD_par_avg(i)%sig_t   + CMFD_par_acc(i_acc)%par(i)%sig_t
-                CMFD_par_avg(i)%sig_a     = CMFD_par_avg(i)%sig_a   + CMFD_par_acc(i_acc)%par(i)%sig_a
-                CMFD_par_avg(i)%nusig_f = CMFD_par_avg(i)%nusig_f + CMFD_par_acc(i_acc)%par(i)%nusig_f
+                fmavg(i)%phi     = fmavg(i)%phi     + fmacc(i_acc)%par(i)%phi
+                fmavg(i)%sig_t   = fmavg(i)%sig_t   + fmacc(i_acc)%par(i)%sig_t
+                fmavg(i)%sig_a   = fmavg(i)%sig_a   + fmacc(i_acc)%par(i)%sig_a
+                fmavg(i)%nusig_f = fmavg(i)%nusig_f + fmacc(i_acc)%par(i)%nusig_f
                 do i_curr = 1, 6 
-                CMFD_par_avg(i)%J(i_curr)      = CMFD_par_avg(i)%J(i_curr)    + CMFD_par_acc(i_acc)%par(i)%J(i_curr)
-                CMFD_par_avg(i)%J_pn(i_curr) = CMFD_par_avg(i)%J_pn(i_curr) + CMFD_par_acc(i_acc)%par(i)%J_pn(i_curr)
-                CMFD_par_avg(i)%J_pp(i_curr) = CMFD_par_avg(i)%J_pp(i_curr) + CMFD_par_acc(i_acc)%par(i)%J_pp(i_curr)
+                fmavg(i)%J(i_curr)    = &
+                    fmavg(i)%J(i_curr)    + fmacc(i_acc)%par(i)%J(i_curr)
+                fmavg(i)%J_pn(i_curr) = &
+                    fmavg(i)%J_pn(i_curr) + fmacc(i_acc)%par(i)%J_pn(i_curr)
+                fmavg(i)%J_pp(i_curr) = &
+                    fmavg(i)%J_pp(i_curr) + fmacc(i_acc)%par(i)%J_pp(i_curr)
                 enddo 
             enddo 
         enddo
         
-        CMFD_par_avg(:)%phi      = CMFD_par_avg(:)%phi       / dble(n_acc)
-        CMFD_par_avg(:)%sig_t     = CMFD_par_avg(:)%sig_t   / dble(n_acc)
-        CMFD_par_avg(:)%sig_a     = CMFD_par_avg(:)%sig_a   / dble(n_acc)
-        CMFD_par_avg(:)%nusig_f = CMFD_par_avg(:)%nusig_f / dble(n_acc)
+        fmavg(:)%phi     = fmavg(:)%phi     / dble(n_acc)
+        fmavg(:)%sig_t   = fmavg(:)%sig_t   / dble(n_acc)
+        fmavg(:)%sig_a   = fmavg(:)%sig_a   / dble(n_acc)
+        fmavg(:)%nusig_f = fmavg(:)%nusig_f / dble(n_acc)
         do i = 1, 6
-            CMFD_par_avg(:)%J(i)     = CMFD_par_avg(:)%J(i)    / dble(n_acc)
-            CMFD_par_avg(:)%J_pn(i) = CMFD_par_avg(:)%J_pn(i) / dble(n_acc)
-            CMFD_par_avg(:)%J_pp(i) = CMFD_par_avg(:)%J_pp(i) / dble(n_acc)
+            fmavg(:)%J(i)    = fmavg(:)%J(i)    / dble(n_acc)
+            fmavg(:)%J_pn(i) = fmavg(:)%J_pn(i) / dble(n_acc)
+            fmavg(:)%J_pp(i) = fmavg(:)%J_pp(i) / dble(n_acc)
         enddo
         
     end subroutine 
     
     subroutine CMFD_sum (inpar, inoutpar, len, partype) 
         integer :: len, jj, partype
-        type(CMFD_parameter), intent(in) :: inpar(len)
-        type(CMFD_parameter), intent(inout) :: inoutpar(len) 
+        type(FMFD_parameters), intent(in) :: inpar(len)
+        type(FMFD_parameters), intent(inout) :: inoutpar(len) 
         
-        inoutpar(:)%phi         = inoutpar(:)%phi       + inpar(:)%phi        
-        inoutpar(:)%sig_t      = inoutpar(:)%sig_t   + inpar(:)%sig_t     
-        inoutpar(:)%sig_a      = inoutpar(:)%sig_a   + inpar(:)%sig_a     
-        inoutpar(:)%nusig_f  = inoutpar(:)%nusig_f + inpar(:)%nusig_f
+        inoutpar(:)%phi     = inoutpar(:)%phi     + inpar(:)%phi        
+        inoutpar(:)%sig_t   = inoutpar(:)%sig_t   + inpar(:)%sig_t     
+        inoutpar(:)%sig_a   = inoutpar(:)%sig_a   + inpar(:)%sig_a     
+        inoutpar(:)%nusig_f = inoutpar(:)%nusig_f + inpar(:)%nusig_f
         do jj = 1, 6 
             inoutpar(:)%J(jj)    = inoutpar(:)%J(jj)    + inpar(:)%J(jj)
             inoutpar(:)%J_pn(jj) = inoutpar(:)%J_pn(jj) + inpar(:)%J_pn(jj)

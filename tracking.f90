@@ -6,14 +6,15 @@ module tracking
     use geometry_header,    only: cell, lattices
     use geometry
     use particle_header,    only: particle
-    use randoms,             only: rang
+    use randoms,            only: rang
     use physics,            only: collision_MG, collision_MG_DT
     use XS_header 
-    use tally,                 only: TallyCoord, TallyFlux, FindTallyBin, TallyPower
+    use tally,              only: TallyCoord, TallyFlux, FindTallyBin, TallyPower
     use ace_xs,             only: getMacroXS
     use material_header,    only: materials
-    use ace_reactions,         only: collision_CE
-    use CMFD,                only: CMFD_distance, CMFD_tally, CMFD_tally_col, CMFD_curr_tally
+    use ace_reactions,      only: collision_CE
+    use FMFD,               only: FMFD_distance, CMFD_tally, CMFD_tally_col, &
+                                CMFD_curr_tally, fmfdon
     
     implicit none
 
@@ -35,7 +36,7 @@ subroutine transport(p)
     integer :: n_event                ! number of collisions/crossings
     real(8) :: d_boundary             ! distance to nearest boundary
     real(8) :: d_collision            ! distance to collision
-    real(8) :: d_CMFD                  ! distance to CMFD grid
+    real(8) :: d_CMFD                 ! distance to CMFD grid
     real(8) :: distance               ! distance particle travels
     logical :: found_cell             ! found cell which particle is in?
     real(8) :: macro_xs(5)
@@ -67,7 +68,8 @@ subroutine transport(p)
     
     ! ===================================================
     !> CMFD distance 
-    call CMFD_distance (p, i_xyz, idx_xyz, d_CMFD, inside_CMFD, i_surf)
+    d_CMFD = INFINITY
+    if ( fmfdon ) call FMFD_distance (p,i_xyz,idx_xyz,d_CMFD,inside_CMFD,i_surf)
     
     !> minimum distance
     distance = min(d_boundary, d_collision, d_CMFD)
@@ -90,13 +92,12 @@ subroutine transport(p)
     
     
     !> CMFD Tally (track length) 
-    if (i_xyz(1) > 0) call CMFD_tally(p%wgt,distance,macro_xs,idx_xyz,inside_CMFD)
+    if ( fmfdon .and. inside_CMFD ) call CMFD_tally(p%wgt,distance,macro_xs,idx_xyz)
 
     !> Advance particle
     do j = 1, p % n_coord
         p % coord(j) % xyz = p % coord(j) % xyz + distance * p % coord(j) % uvw
     enddo
-    
     
     if (distance == d_collision) then ! collision 
         if (E_mode == 0) then 

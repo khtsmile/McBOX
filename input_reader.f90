@@ -6,7 +6,7 @@ module input_reader
     use XS_header 
     use material_header
     use tally,                only: TallyCoord, TallyFlux, TallyPower, CoordStruct
-    use CMFD,                 only: getXYZ, CMFD_lat, n_skip, n_acc, CMFD_type
+    use FMFD,                 only: getXYZ, CMFD_lat, n_skip, n_acc, CMFD_type
     
     use ace_header
     use ace_module
@@ -672,6 +672,9 @@ module input_reader
     
     
     subroutine read_ctrl        
+        use FMFD,    only: fm0, fm1, nfm
+        use ENTROPY, only: en0, en1, nen, entrp_grid
+        implicit none
         integer :: i, j, k, idx, n, level
         integer :: ierr
         character(100) :: line
@@ -715,12 +718,18 @@ module input_reader
             case ("DBRC","dbrc")
                 n_iso0K = 1
                 call READ_DBRC(trim(line(j+1:)))
+            case ("entropy")
+                entrp_grid = .true.
+                read(line(j+1:), *) en0(:), en1(:), nen(:)
             case ("CMFD") 
                 read(line(j+1:), *) CMFD_lat, n_skip, n_acc
                 CMFD_type = 1
             case ("pCMFD") 
                 read(line(j+1:), *) CMFD_lat, n_skip, n_acc
                 CMFD_type = 2 
+            case ("FMFD","fmfd")
+                read(line(j+1:), *) fm0(:), fm1(:), nfm(:)
+                call FMFD_INITIAL
             case ("power") 
                 read(line(j+1:), *) Nominal_Power
             case ("PRUP","prup")
@@ -734,6 +743,18 @@ module input_reader
         
     end subroutine
 
+    ! =========================================================================
+    ! FMFD_INITIAL
+    ! =========================================================================
+    subroutine FMFD_INITIAL
+        use FMFD,   only: fm0, fm1, fm2, dfm, nfm, fmfdon
+        implicit none
+
+        fmfdon = .true.
+        fm2(:) = fm1(:) - fm0(:)
+        dfm(:) = fm2(:) / nfm(:)
+
+    end subroutine
 
     ! =========================================================================
     ! PRUP_INTIAL

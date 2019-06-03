@@ -13,7 +13,7 @@ FSRCS := \
 		randoms.f90\
 		bank_header.f90\
 		particle_header.f90\
-		CMFD.f90\
+		FMFD.f90\
 		scattering_laws.f90\
 		ace_reactions.f90\
 		tally.f90\

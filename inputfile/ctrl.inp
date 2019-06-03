@@ -3,6 +3,7 @@
 energy 1
 nugrid 8192
 % dbrc 4E-6 2.1E-4 92238.70c_sss_0K
+entropy -107.1 -107.1 0 107.1 107.1 64.26 170 170 1
 
 % history inactive active
 pop 1E5 50 100

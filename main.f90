@@ -1,7 +1,7 @@
 program main
 use constants
 use variables
-use CMFD,       only : CMFD_lat, CMFD_type, n_acc
+use FMFD,       only : CMFD_lat, CMFD_type, n_acc
 use simulation 
 use omp_lib
 use mpi
@@ -16,7 +16,7 @@ real(8) :: k_sum
 logical :: isopened
 
 !> Preparation for parallelization ===============================================
-!call omp_set_num_threads(14)
+!call omp_set_num_threads(1)
 call MPI_Init_thread(MPI_THREAD_SINGLE, provide, ierr)
 core = MPI_COMM_WORLD
 call MPI_COMM_RANK(core,icore,ierr)
@@ -80,16 +80,16 @@ if(icore==score) then
     write(*,10), '  > Num of Histories per Cycle', n_history
     write(*,11), '  > Skip Cycles:',n_inact , &
                  '  /  Active Cycles:', n_totcyc-n_inact
-    write(*,*)
-    if (CMFD_lat <= 0) then 
-        write(*,12), '  > CMFD is OFF ' 
-    elseif (CMFD_lat > 0 .and. CMFD_type == 1 ) then 
-        write(*,13), '  > CMFD is ON :: Lattice', CMFD_lat
-        write(*,14), '  > CMFD Accumulations', n_acc
-    elseif (CMFD_lat > 0 .and. CMFD_type == 2 ) then 
-        write(*,15), '  > p-CMFD is ON :: Lattice', CMFD_lat
-        write(*,16), '  > CMFD Accumulations', n_acc
-    endif 
+!    write(*,*)
+!    if (CMFD_lat <= 0) then 
+!        write(*,12), '  > CMFD is OFF ' 
+!    elseif (CMFD_lat > 0 .and. CMFD_type == 1 ) then 
+!        write(*,13), '  > CMFD is ON :: Lattice', CMFD_lat
+!        write(*,14), '  > CMFD Accumulations', n_acc
+!    elseif (CMFD_lat > 0 .and. CMFD_type == 2 ) then 
+!        write(*,15), '  > p-CMFD is ON :: Lattice', CMFD_lat
+!        write(*,16), '  > CMFD Accumulations', n_acc
+!    endif 
     write(*,*)
     if (tally_switch > 0) then 
         write(*,*), ' > Tally is On :: See tally.inp'
@@ -128,8 +128,8 @@ if ( icore == score ) then
     end if
 end if
 
-10 format(i8,f9.3,1x,a,f10.6,1x,a,1x,a,f9.5)
-11 format(i8,f9.3,1x,a,f10.6,1x,a,1x,2(a,f9.5,3x),a,f9.3)
+10 format(i8,f9.3,1x,a,f10.5,1x,a,1x,a,f9.5)
+11 format(i8,f9.3,1x,a,f10.5,1x,a,1x,2(a,f9.5,3x),a,f9.3)
 
 end subroutine
 
