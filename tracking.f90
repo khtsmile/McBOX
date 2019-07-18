@@ -13,8 +13,8 @@ module tracking
     use ace_xs,             only: getMacroXS
     use material_header,    only: materials
     use ace_reactions,      only: collision_CE
-    use FMFD,               only: FMFD_distance, CMFD_tally, CMFD_tally_col, &
-                                CMFD_curr_tally, fmfdon
+    use FMFD,               only: FMFD_distance, FMFD_TRK, FMFD_COL, &
+                                FMFD_SURF, fmfdon
     
     implicit none
 
@@ -36,18 +36,17 @@ subroutine transport(p)
     integer :: n_event                ! number of collisions/crossings
     real(8) :: d_boundary             ! distance to nearest boundary
     real(8) :: d_collision            ! distance to collision
-    real(8) :: d_CMFD                 ! distance to CMFD grid
+    real(8) :: d_FMFD                 ! distance to FMFD grid
     real(8) :: distance               ! distance particle travels
     logical :: found_cell             ! found cell which particle is in?
     real(8) :: macro_xs(5)
     real(8) :: xyz(3)
     integer :: i_cell, i_bin, i_lat, i_surf
     integer :: i_xyz(3), idx_xyz
-    logical :: inside_CMFD
+    logical :: inside_FMFD
     integer :: bc
     
     found_cell = .false.
-    i_xyz(:) = -1; idx_xyz = -1
     if (p%n_coord == 1) call find_cell(p, found_cell, i_cell)
     
     !> Surface distance(boundary)
@@ -68,11 +67,11 @@ subroutine transport(p)
     
     ! ===================================================
     !> CMFD distance 
-    d_CMFD = INFINITY
-    if ( fmfdon ) call FMFD_distance (p,i_xyz,idx_xyz,d_CMFD,inside_CMFD,i_surf)
+    d_FMFD = INFINITY
+    if ( fmfdon ) call FMFD_DISTANCE (p,i_xyz,d_FMFD,inside_FMFD,i_surf)
     
     !> minimum distance
-    distance = min(d_boundary, d_collision, d_CMFD)
+    distance = min(d_boundary, d_collision, d_FMFD)
     
     !> Track-length estimator
     !$omp atomic 
@@ -92,33 +91,24 @@ subroutine transport(p)
     
     
     !> CMFD Tally (track length) 
-    if ( fmfdon .and. inside_CMFD ) call CMFD_tally(p%wgt,distance,macro_xs,idx_xyz)
+    if ( fmfdon .and. inside_FMFD ) call FMFD_TRK(p%wgt,distance,macro_xs,i_xyz)
 
     !> Advance particle
     do j = 1, p % n_coord
         p % coord(j) % xyz = p % coord(j) % xyz + distance * p % coord(j) % uvw
     enddo
     
-    if (distance == d_collision) then ! collision 
+    if ( distance == d_collision ) then ! collision 
         if (E_mode == 0) then 
-            !call CMFD_tally_col(p%wgt, macro_xs, idx_xyz, inside_CMFD)
             call collision_MG(p)
         else !(E_mode == 1) 
-            !call CMFD_tally_col(p%wgt, macro_xs, idx_xyz, inside_CMFD)
             call collision_CE(p)
         endif
+        !if ( fmfdon .and. inside_FMFD ) call CMFD_COL(p%wgt,macro_xs,i_xyz)
 
-    elseif  (distance == d_cmfd) then 
-        if ((distance > d_CMFD - 10*TINY_BIT).and.(distance < d_CMFD + 10*TINY_BIT)) then 
-            bc = surfaces(surface_crossed)%bc
-            call CMFD_curr_tally (inside_CMFD, i_surf, idx_xyz, p%wgt, p%coord(1)%uvw, bc) 
-            call cross_surface(p, surface_crossed)
-        else 
-            call CMFD_curr_tally (inside_CMFD, i_surf, idx_xyz, p%wgt, p%coord(1)%uvw, bc) 
-            p % n_coord = 1
-            p % coord(1) % xyz = p % coord(1) % xyz + TINY_BIT * p % coord(1) % uvw
-            call find_cell(p, found_cell) 
-        endif
+    elseif  ( distance == d_cmfd ) then 
+        call FMFD_SURF(inside_FMFD, i_surf, i_xyz, p%wgt, bc) 
+        call cross_surface(p, surface_crossed)
     else
         call cross_surface(p, surface_crossed)
     endif

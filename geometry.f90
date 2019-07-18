@@ -464,5 +464,19 @@ module geometry
     end subroutine     
     
     
+    function getXYZ(index, a, b, c) result(xyz)
+        integer, intent(in) :: index, a,b,c
+        integer, dimension(3) :: xyz
+
+        if ((index.le.0).or.(index.gt.(a*b*c))) then
+            print *, 'function getXYZ() :: INDEX OUT OF RANGE'
+            stop
+        endif
+        
+        xyz(3) = ceiling(real(index, 8)/real(a*b,8))
+        xyz(2) = ceiling(real(index - (xyz(3)-1)*a*b, 8)/a)
+        xyz(1) = index - (xyz(3)-1)*a*b - (xyz(2)-1)*a
+    
+    end function getXYZ
     
 end module

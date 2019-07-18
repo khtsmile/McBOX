@@ -18,8 +18,9 @@ module simulation
     use ace_header,         only : ace
     use tally,              only : TallyCoord, TallyFlux, TallyPower
     use FMFD,               only : FMFD_initialize_thread, FMFD_initialize, &
-                                   idx_lat, FMFD_solve, CMFD_lat, n_skip, n_acc, &
-                                   process_FMFD, normalize_FMFD, fmfdon
+                                   FMFD_solve, n_skip, n_acc, fsd, FMFD_ID, &
+                                   process_FMFD, normalize_FMFD, fmfdon, &
+                                   nfm
                                     
     
     implicit none 
@@ -36,7 +37,7 @@ subroutine simulate_history(cyc)
     integer :: ista, iend
     real(8) :: Jtemp
     real(8), allocatable :: shape(:)
-    integer :: i_xyz(3)
+    integer :: i_xyz(3), id(3)
     real(8) :: rcv_buf
     integer :: realex, intex, restype, ndata, idata
     integer, dimension(0:4) :: blocklength, displacement, oldtype 
@@ -96,14 +97,14 @@ subroutine simulate_history(cyc)
         call move_alloc(temp_bank, fission_bank)
         
         !> normalize thread FMFD parameters (can be done outside critical)
-        call normalize_FMFD()
+        if ( fmfdon ) call normalize_FMFD()
         
       !$omp end critical
     !$omp end parallel
     
     !call MPI_BARRIER(MPI_COMM_WORLD, ierr)
     !> Process tallied FMFD parameters ==========================================
-    call process_FMFD()
+    if ( fmfdon ) call PROCESS_FMFD()
     
     !> Gather keff from the slave nodes =========================================
     call MPI_REDUCE(k_col,rcv_buf,1,MPI_REAL8,MPI_SUM,score,MPI_COMM_WORLD,ierr)
@@ -166,23 +167,14 @@ subroutine simulate_history(cyc)
     
     !> Solve FMFD and apply FSD shape feedback ==================================
     if ( fmfdon .and. curr_cyc > n_skip) then 
-        a = lattices(idx_lat)%n_xyz(1)
-        b = lattices(idx_lat)%n_xyz(2)
-        c = lattices(idx_lat)%n_xyz(3)
-        allocate(shape(a*b*c)) 
-        
-        if (icore == score) then 
-            call FMFD_solve(lattices(idx_lat)%n_xyz(1),lattices(idx_lat)%n_xyz(2), &
-                            lattices(idx_lat)%n_xyz(3), shape) 
-        endif 
-        call MPI_BCAST(shape, a*b*c, MPI_DOUBLE_PRECISION, score, MPI_COMM_WORLD, ierr) 
+        if (icore == score) call FMFD_SOLVE(fsd)
+        call MPI_BCAST(fsd, nfm(1)*nfm(2)*nfm(3), &
+            MPI_DOUBLE_PRECISION, score, MPI_COMM_WORLD, ierr) 
         ! find fission_bank lattice index and apply shape
         do i = 1, isize 
-            i_xyz = lattice_coord (lattices(idx_lat), fission_bank(i)%xyz)
-            j = i_xyz(1) + a*(i_xyz(2)-1) + a*b*(i_xyz(3)-1) 
-            fission_bank(i)%wgt = fission_bank(i)%wgt * shape(j)
+            id = FMFD_ID(fission_bank(i)%xyz)
+            fission_bank(i)%wgt = fission_bank(i)%wgt * fsd(id(1),id(2),id(3))
         enddo
-        deallocate(shape)
       
     endif 
     

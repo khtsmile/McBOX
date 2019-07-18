@@ -4,6 +4,7 @@ subroutine premc
     use ace_xs, only : setugrid
     use bank_header, only: source_bank
     use simulation, only: bank_initialize 
+    use FMFD, only: FMFD_allocation, fmfdon
     use ENTROPY
     
     implicit none
@@ -29,6 +30,9 @@ subroutine premc
 
     ! ==========================================================================
     call ENTRP_INIT
+
+    ! ==========================================================================
+    if ( fmfdon ) call FMFD_allocation
     
     !===========================================================================
     !Source bank initialize

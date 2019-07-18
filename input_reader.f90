@@ -6,7 +6,8 @@ module input_reader
     use XS_header 
     use material_header
     use tally,                only: TallyCoord, TallyFlux, TallyPower, CoordStruct
-    use FMFD,                 only: getXYZ, CMFD_lat, n_skip, n_acc, CMFD_type
+    use FMFD,                 only: n_skip, n_acc, CMFD_type
+    use geometry,             only: getXYZ
     
     use ace_header
     use ace_module
@@ -684,7 +685,7 @@ module input_reader
         !Read ctrl.inp
         open(rd_ctrl, file="./inputfile/ctrl.inp",action="read", status="old")
     
-        ierr = 0; CMFD_lat = -1
+        ierr = 0; 
         do while (ierr.eq.0)
             read (rd_ctrl, FMT='(A)', iostat=ierr) line 
             if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle  
@@ -721,12 +722,12 @@ module input_reader
             case ("entropy")
                 entrp_grid = .true.
                 read(line(j+1:), *) en0(:), en1(:), nen(:)
-            case ("CMFD") 
-                read(line(j+1:), *) CMFD_lat, n_skip, n_acc
-                CMFD_type = 1
-            case ("pCMFD") 
-                read(line(j+1:), *) CMFD_lat, n_skip, n_acc
-                CMFD_type = 2 
+!            case ("CMFD") 
+!                read(line(j+1:), *) CMFD_lat, n_skip, n_acc
+!                CMFD_type = 1
+!            case ("pCMFD") 
+!                read(line(j+1:), *) CMFD_lat, n_skip, n_acc
+!                CMFD_type = 2 
             case ("FMFD","fmfd")
                 read(line(j+1:), *) fm0(:), fm1(:), nfm(:)
                 call FMFD_INITIAL
@@ -776,7 +777,6 @@ module input_reader
         dshannon = 0
         entrp1   = 0
         entrp2   = 0
-        if ( icore == score ) open(101,file='entrp.log')
     end subroutine
 
     ! =========================================================================
@@ -814,7 +814,7 @@ module input_reader
         ! initial criteria
         if ( ccrt == 1 ) crt1 = 9D-2/sqrt(dble(ngen))
         if ( scrt == 1 ) crt2 = 3D-2/sqrt(dble(ngen))
-        crt3 = crt1
+        crt3 = crt2
 
     end subroutine
 
