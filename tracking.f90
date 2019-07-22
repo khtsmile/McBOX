@@ -68,7 +68,7 @@ subroutine transport(p)
     ! ===================================================
     !> CMFD distance 
     d_FMFD = INFINITY
-    if ( fmfdon ) call FMFD_DISTANCE (p,i_xyz,d_FMFD,inside_FMFD,i_surf)
+    if ( fmfdon ) call FMFD_DISTANCE (p,i_xyz,d_FMFD,inside_FMFD,incomd_FMFD,i_surf)
     
     !> minimum distance
     distance = min(d_boundary, d_collision, d_FMFD)

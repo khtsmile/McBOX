@@ -167,7 +167,7 @@ subroutine simulate_history(cyc)
     
     !> Solve FMFD and apply FSD shape feedback ==================================
     if ( fmfdon .and. curr_cyc > n_skip) then 
-        if (icore == score) call FMFD_SOLVE(fsd)
+        if (icore == score) call FMFD_SOLVE(keff,fsd)
         call MPI_BCAST(fsd, nfm(1)*nfm(2)*nfm(3), &
             MPI_DOUBLE_PRECISION, score, MPI_COMM_WORLD, ierr) 
         ! find fission_bank lattice index and apply shape
