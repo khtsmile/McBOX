@@ -16,10 +16,11 @@ module simulation
     use ENTROPY
     use MPRUP,              only : GENSIZE
     use ace_header,         only : ace
-    use tally,              only : TallyCoord, TallyFlux, TallyPower
+    use tally,              only : TallyCoord, TallyFlux, TallyPower, tally1, &
+                                   tally2
     use FMFD,               only : FMFD_initialize_thread, FMFD_initialize, &
                                    FMFD_solve, n_skip, n_acc, fsd, FMFD_ID, &
-                                   process_FMFD, normalize_FMFD, fmfdon, &
+                                   process_FMFD, NORM_FMFD, fmfdon, &
                                    nfm
                                     
     
@@ -28,6 +29,8 @@ module simulation
     contains 
     
 subroutine simulate_history(cyc)
+    use FMFD, only: fm_thread
+    implicit none
     integer, intent(in):: cyc
     integer :: i, j, k, isize, i_surf
     integer :: a,b,c, n
@@ -62,11 +65,12 @@ subroutine simulate_history(cyc)
       !$omp do reduction(+:k_col, k_tl)
         !do i=1, isize 
         do i= ista, iend 
+            !print*, i
             call p%initialize()
             call p%set(source_bank(i))
             
             do while ((p%alive == .true.).and.(p%wgt > wgt_min))
-                call transport(p)
+                call transport(p,cyc)
                 !call transport_DT(p)
             enddo 
             
@@ -83,6 +87,17 @@ subroutine simulate_history(cyc)
               !$omp end critical
                 bank_idx = 0
             endif
+
+!            if ( mod(i,10000) == 0 ) then
+!            !if ( mod(i,1) == 0 .and. i >= 8922 ) then
+!            !if ( i > 920 ) then
+!            write(*,1), fm_thread(34,1:17,1)%J1(2)
+!            1 format(es15.7)
+!            print*, "*cycle*", i
+!            print*
+!            pause
+!            end if
+
         enddo
       !$omp end do
 
@@ -97,11 +112,11 @@ subroutine simulate_history(cyc)
         call move_alloc(temp_bank, fission_bank)
         
         !> normalize thread FMFD parameters (can be done outside critical)
-        if ( fmfdon ) call normalize_FMFD()
+        if ( fmfdon ) call NORM_FMFD()
         
       !$omp end critical
     !$omp end parallel
-    
+
     !call MPI_BARRIER(MPI_COMM_WORLD, ierr)
     !> Process tallied FMFD parameters ==========================================
     if ( fmfdon ) call PROCESS_FMFD()
@@ -119,6 +134,7 @@ subroutine simulate_history(cyc)
     k_tl  = k_tl  / real(ngen,8) 
     !keff  = (k_tl + k_col) / 2.0d0 ; 
     keff = k_col
+    print*, "MC", keff
     
     if (icore == score) write(prt_keff,*) keff, k_col, k_tl
     
@@ -165,8 +181,31 @@ subroutine simulate_history(cyc)
     isize = size(fission_bank)
     fission_bank(:)%wgt = real(ngen,8)/real(isize,8)
     
+    !> Normalize tally (flux & power) ===========================================
+    !if ( tally_switch > 0 .and. cyc > n_inact ) then 
+    if ( tally_switch > 0 ) then 
+        !> Calculate tallied flux 
+        isize = size(TallyFlux) 
+        do i = 1, isize
+            TallyFlux(i)  = TallyFlux(i)/(real(ngen,8)*TallyCoord(i)%vol)
+            TallyPower(i) = TallyPower(i)/(real(ngen,8)*TallyCoord(i)%vol)
+        enddo
+
+        call MPI_REDUCE(TallyFlux,tally1,isize,MPI_DOUBLE_PRECISION,MPI_SUM,score,MPI_COMM_WORLD,ierr)
+        call MPI_REDUCE(TallyPower,tally2,isize,MPI_DOUBLE_PRECISION,MPI_SUM,score,MPI_COMM_WORLD,ierr)
+
+!        if (icore == score) then 
+!            tally1(:) = tally1(:) * dble(isize) / sum(tally1)
+!            tally2(:) = tally2(:) * Nominal_Power / sum(tally2)
+            !> Print tally1 if active cycle
+!            write(prt_flux, 100) tally1(:)
+!            write(prt_powr, 100) tally2(:)
+!            100 format(<isize>ES15.7)
+!        endif 
+    endif
+    
     !> Solve FMFD and apply FSD shape feedback ==================================
-    if ( fmfdon .and. curr_cyc > n_skip) then 
+    if ( fmfdon .and. cyc > n_skip) then 
         if (icore == score) call FMFD_SOLVE(keff,fsd)
         call MPI_BCAST(fsd, nfm(1)*nfm(2)*nfm(3), &
             MPI_DOUBLE_PRECISION, score, MPI_COMM_WORLD, ierr) 
@@ -177,32 +216,6 @@ subroutine simulate_history(cyc)
         enddo
       
     endif 
-    
-    !> Normalize tally (flux & power) ===========================================
-    if (tally_switch>0) then 
-        !> Calculate tallied flux 
-        isize = size(TallyFlux) 
-        do i = 1, isize
-            TallyFlux(i)  = TallyFlux(i)/(real(ngen,8)*TallyCoord(i)%vol)
-            TallyPower(i) = TallyPower(i)/(real(ngen,8)*TallyCoord(i)%vol)
-        enddo
-        call MPI_REDUCE(TallyFlux,TallyFlux,isize,MPI_DOUBLE_PRECISION,MPI_SUM,score,MPI_COMM_WORLD,ierr)
-        call MPI_REDUCE(TallyPower,TallyPower,isize,MPI_DOUBLE_PRECISION,MPI_SUM,score,MPI_COMM_WORLD,ierr)
-        
-        if (icore == score) then 
-            TallyFlux(:) = TallyFlux(:) * dble(isize) / sum(TallyFlux)
-            TallyPower(:) = TallyPower(:) * Nominal_Power / sum(TallyPower)
-            !> Print TallyFlux if active cycle
-            if ( curr_act > 0 ) then 
-                write(prt_flux, 100) TallyFlux(:)
-                write(prt_powr, 100) TallyPower(:)
-            endif 
-        100    format(<isize>ES15.7)
-        endif 
-        TallyFlux(:) =0
-        TallyPower(:)=0
-    endif
-    
     
     !> initialize the global tally parameters ===================================
     k_col = 0.0d0; k_tl = 0.0d0; 

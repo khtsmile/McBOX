@@ -6,7 +6,7 @@ module input_reader
     use XS_header 
     use material_header
     use tally,                only: TallyCoord, TallyFlux, TallyPower, CoordStruct
-    use FMFD,                 only: n_skip, n_acc, CMFD_type
+    use FMFD,                 only: n_skip, n_acc, FMFD_type
     use geometry,             only: getXYZ
     
     use ace_header
@@ -38,7 +38,7 @@ module input_reader
         integer :: ierr
         real(8) :: dtemp, xyz(3)
         character(100) :: line
-        character(50) :: option, temp, test, mat_id
+        character(100) :: option, temp, test, mat_id
         character(1)  :: pnum
         character(20) :: title
         character(30) :: filename
@@ -207,13 +207,13 @@ module input_reader
                 
             case ('sgrid') 
                 allocate(sgrid(6))
-                call read_sgrid(line)
+                backspace(rd_geom)
+                read(rd_geom,*), temp, sgrid(1:6)
                                 
             case default 
                 print *, 'NO SUCH OPTION ::', option 
                 stop
             end select
-            
             
         enddo
         
@@ -463,30 +463,6 @@ module input_reader
         enddo
     
     end subroutine 
-
-    subroutine read_sgrid (line)
-        character(*) :: line
-        character(30):: temp, option, surf_id
-        integer :: i, j, k, idx
-    
-        j = 0; k = 0 
-        do while (j.lt.len(line)) 
-            j = j+1; k = k+1 
-            if (line(j:j).ne.' ') then 
-                call process_line (line, j, temp ) 
-                
-                if (k.eq.1) read(temp, *) option
-                if (k.eq.2) read(temp, *) sgrid(1) ! x0
-                if (k.eq.3) read(temp, *) sgrid(2) ! y0
-                if (k.eq.4) read(temp, *) sgrid(3) ! z0
-                if (k.eq.5) read(temp, *) sgrid(4) ! x1
-                if (k.eq.6) read(temp, *) sgrid(5) ! y1
-                if (k.eq.7) read(temp, *) sgrid(6) ! z1
-                
-            endif 
-        enddo
-        
-    end subroutine 
     
     subroutine surfcount_for_cell (line, idx, Cellobj)
         class(Cell) :: Cellobj
@@ -673,7 +649,6 @@ module input_reader
     
     
     subroutine read_ctrl        
-        use FMFD,    only: fm0, fm1, nfm
         use ENTROPY, only: en0, en1, nen, entrp_grid
         implicit none
         integer :: i, j, k, idx, n, level
@@ -729,8 +704,8 @@ module input_reader
 !                read(line(j+1:), *) CMFD_lat, n_skip, n_acc
 !                CMFD_type = 2 
             case ("FMFD","fmfd")
-                read(line(j+1:), *) fm0(:), fm1(:), nfm(:)
                 call FMFD_INITIAL
+                call FMFD_READ(rd_ctrl)
             case ("power") 
                 read(line(j+1:), *) Nominal_Power
             case ("PRUP","prup")
@@ -748,12 +723,50 @@ module input_reader
     ! FMFD_INITIAL
     ! =========================================================================
     subroutine FMFD_INITIAL
-        use FMFD,   only: fm0, fm1, fm2, dfm, nfm, fmfdon
+        use FMFD,   only: fmfdon, n_acc
         implicit none
 
+        FMFD_type = 1
         fmfdon = .true.
-        fm2(:) = fm1(:) - fm0(:)
-        dfm(:) = fm2(:) / nfm(:)
+        n_acc  = 2
+
+    end subroutine
+
+    ! =========================================================================
+    ! FMFD_READ
+    ! =========================================================================
+    subroutine FMFD_READ(rd)
+        use FMFD,    only: fm0, fm1, fm2, nfm, dfm
+        implicit none
+        integer, intent(in):: rd
+        integer :: j
+        integer :: ierr
+        character(100) :: line
+        character(50)  :: option
+
+        ierr = 0
+        do while (ierr.eq.0)
+            read (rd, FMT='(A)', iostat=ierr) line 
+            if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle  
+            !> option identifier 
+            j = 0
+            do while (j.le.len(line))
+                j = j+1 
+                if (line(j:j).eq.' ') exit
+                option = line(1:j)        
+            enddo 
+            select case (option)
+            case ("grid")   ! essential
+                read(line(j+1:), *) fm0(:), fm1(:), nfm(:)
+                fm2(:) = fm1(:) - fm0(:)
+                dfm(:) = fm2(:) / nfm(:)
+            case ("acc")    ! optional 
+                read(line(j+1:), *) n_acc
+            case default
+                backspace(rd)
+                return
+            end select
+        enddo
 
     end subroutine
 
@@ -788,7 +801,7 @@ module input_reader
         implicit none
         character(*), intent(in):: line
         integer:: ii
-        character(10):: para
+        character(30):: para
 
         ii = 1
         do
@@ -1047,6 +1060,7 @@ end function
     
 
 subroutine read_tally
+    use TALLY, only: tally1, tally2
     implicit none
     integer :: i, j, k, idx, n, level, i_univ, i_lat, i_pin, n_pin
     integer :: a,b,c, i_xyz(3), i_save
@@ -1082,6 +1096,9 @@ subroutine read_tally
             allocate(TallyCoord(1:n))
             allocate(TallyFlux(1:n))
             allocate(TallyPower(1:n))
+            allocate(tally1(1:n))
+            allocate(tally2(1:n))
+            tally1 = 0; tally2 = 0
             TallyCoord(:)%flag = 1
             do i = 1, n
                 if ( associated(TC) ) nullify(TC)
@@ -1131,10 +1148,13 @@ subroutine read_tally
             allocate(TallyCoord(1:n)); TallyCoord(n)%n_coord = 0 
             allocate(TallyFlux(1:n))
             allocate(TallyPower(1:n))
+            allocate(tally1(1:n))
+            allocate(tally2(1:n))
+            tally1 = 0; tally2 = 0
             TallyCoord(:)%flag = 0
             i = 1; 
             do while ( i <= n )
-                if ( associated(TC) ) nullify(TC)
+                !if ( associated(TC) ) nullify(TC)
                 TC => TallyCoord(i)
                 read (rd_tally, FMT='(A)', iostat=ierr) line
                 if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle

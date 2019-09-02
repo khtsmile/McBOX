@@ -6,6 +6,8 @@ subroutine premc
     use simulation, only: bank_initialize 
     use FMFD, only: FMFD_allocation, fmfdon
     use ENTROPY
+    use variables
+    use randoms
     
     implicit none
     
@@ -32,6 +34,7 @@ subroutine premc
     call ENTRP_INIT
 
     ! ==========================================================================
+    ! FMFD calculation
     if ( fmfdon ) call FMFD_allocation
     
     !===========================================================================

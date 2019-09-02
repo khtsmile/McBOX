@@ -17,6 +17,10 @@ module tracking
                                 FMFD_SURF, fmfdon
     
     implicit none
+    logical:: inside1
+    real(8):: xyz0(3)
+    real(8):: d0, d1
+
 
 contains
  
@@ -24,9 +28,10 @@ contains
 ! TRANSPORT - the main logic for moving a particle through geometry.
 !===============================================================================
 
-subroutine transport(p)
+subroutine transport(p,cyc)
 
     type(Particle), intent(inout) :: p
+    integer, intent(in):: cyc
     
     integer :: i 
     integer :: j                      ! coordinate level
@@ -41,13 +46,16 @@ subroutine transport(p)
     logical :: found_cell             ! found cell which particle is in?
     real(8) :: macro_xs(5)
     real(8) :: xyz(3)
-    integer :: i_cell, i_bin, i_lat, i_surf
+    integer :: i_cell, i_bin(4), i_lat, i_surf
     integer :: i_xyz(3), idx_xyz
     logical :: inside_FMFD
-    integer :: bc
+    integer :: income_FMFD
+    real(8) :: ddiff
+    logical :: fm_crossed
     
     found_cell = .false.
     if (p%n_coord == 1) call find_cell(p, found_cell, i_cell)
+
     
     !> Surface distance(boundary)
     call distance_to_boundary(p, d_boundary, surface_crossed)
@@ -68,30 +76,72 @@ subroutine transport(p)
     ! ===================================================
     !> CMFD distance 
     d_FMFD = INFINITY
-    if ( fmfdon ) call FMFD_DISTANCE (p,i_xyz,d_FMFD,inside_FMFD,incomd_FMFD,i_surf)
+    if ( fmfdon ) call FMFD_DISTANCE (p,i_xyz,d_FMFD,inside_FMFD,income_FMFD,i_surf)
     
     !> minimum distance
+    ddiff = abs(d_boundary-d_FMFD)/d_boundary
+    if ( ddiff < TINY_BIT ) then
+        d_FMFD = d_boundary
+        fm_crossed = .true.
+    else if ( d_boundary < 5E-5 .and. ddiff < 1E-8 ) then
+        d_FMFD = d_boundary
+        fm_crossed = .true.
+    else
+        fm_crossed = .false.
+    end if
     distance = min(d_boundary, d_collision, d_FMFD)
-    
+!    print*, "dst", d_boundary, d_collision, d_FMFD
+!    print*, "xyz0", p%coord(1)%xyz
+!    print*, "xyz1", p%coord(1)%xyz+distance*p%coord(1)%uvw
+!    print*, "ijk", i_xyz, inside_FMFD
+!    if ( .not. fm_crossed .and. inside_FMFD ) then
+!        print*, d_boundary, d_FMFD, abs(d_boundary-d_FMFD)/d_boundary
+!        pause
+!    end if
+!    pause
+!    print*, "uvw", sign(1.,p%coord(1)%uvw(1)), &
+!                   sign(1.,p%coord(1)%uvw(2)), &
+!                   sign(1.,p%coord(1)%uvw(3))
+
+!    if ( inside1 == .false. .and. inside_FMFD == .true. ) then
+!    !if ( d0 /= d1 .and. d1 < 1D100 ) then
+!        print*, inside1, inside_FMFD
+!        print*, "xyz", p%coord(1)%xyz
+!        print*, "uvw", sign(1.,p%coord(1)%uvw(1)), sign(1.,p%coord(1)%uvw(2)), sign(1.,p%coord(1)%uvw(3))
+!        print*, "ddd", d_boundary, d_FMFD
+!        print*, "d1", p%coord(1)%xyz+d_boundary*p%coord(1)%uvw
+!        print*, "d2", p%coord(1)%xyz+d_FMFD*p%coord(1)%uvw
+!        print*, "=?", d0 == d1
+!        !pause
+!    !end if
+!    end if
+!    print'(a,l,3f15.7,3x,a,2es20.12)', "*", inside1, xyz0, "/", d_boundary, d_FMFD
+!    d0 = d_boundary
+!    d1 = d_FMFD
+!    inside1 = inside_FMFD
+!    xyz0 = p%coord(1)%xyz
+
     !> Track-length estimator
     !$omp atomic 
     k_tl = k_tl + distance*p%wgt*macro_xs(4) 
     
     !> Flux Tally ===========================================================================
-    if (tally_switch > 0) then 
+    !if ( tally_switch > 0 .and. cyc > n_inact ) then 
+    if ( tally_switch > 0 ) then 
         i_bin = FindTallyBin(p)
-        if ( i_bin > 0 ) then 
+        if ( i_bin(1) > 0 ) then 
             !$omp atomic
-            TallyFlux(i_bin) = TallyFlux(i_bin) + distance*p%wgt
+            TallyFlux(i_bin(1)) = TallyFlux(i_bin(1)) + distance*p%wgt
     !> ==== Power Tally =====================================================================
             !$omp atomic
-            TallyPower(i_bin) = TallyPower(i_bin) + distance*p%wgt*macro_xs(5)
+            TallyPower(i_bin(1)) = TallyPower(i_bin(1)) + distance*p%wgt*macro_xs(5)
         endif
     endif 
     
     
     !> CMFD Tally (track length) 
-    if ( fmfdon .and. inside_FMFD ) call FMFD_TRK(p%wgt,distance,macro_xs,i_xyz)
+    if ( fmfdon .and. inside_FMFD ) call &
+    FMFD_TRK(p%wgt,distance,macro_xs,i_xyz,i_bin(2:4),p%coord(1)%xyz)
 
     !> Advance particle
     do j = 1, p % n_coord
@@ -104,11 +154,16 @@ subroutine transport(p)
         else !(E_mode == 1) 
             call collision_CE(p)
         endif
-        !if ( fmfdon .and. inside_FMFD ) call CMFD_COL(p%wgt,macro_xs,i_xyz)
+        !if ( fmfdon .and. inside_FMFD ) call FMFD_COL(p%wgt,macro_xs,i_xyz)
 
-    elseif  ( distance == d_cmfd ) then 
-        call FMFD_SURF(inside_FMFD, i_surf, i_xyz, p%wgt, bc) 
-        call cross_surface(p, surface_crossed)
+    elseif  ( distance == d_FMFD ) then 
+        call FMFD_SURF(inside_FMFD, income_FMFD,i_surf, i_xyz, p%wgt, &
+                       surfaces(surface_crossed)%bc)
+        if ( fm_crossed ) then
+            call cross_surface(p, surface_crossed)
+        else
+            p%coord(1)%xyz = p%coord(1)%xyz + TINY_BIT * p%coord(1)%uvw
+        end if
     else
         call cross_surface(p, surface_crossed)
     endif
@@ -240,7 +295,7 @@ subroutine transport_DT(p)
     integer :: lattice_translation(3) ! in-lattice translation vector
     real(8) :: d_boundary             ! distance to nearest boundary
     real(8) :: d_collision            ! distance to collision
-    real(8) :: d_CMFD                  ! distance to CMFD grid
+    real(8) :: d_FMFD                  ! distance to CMFD grid
     real(8) :: distance               ! distance particle travels
     logical :: found_cell             ! found cell which particle is in?
     

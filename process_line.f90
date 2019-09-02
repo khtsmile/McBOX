@@ -16,7 +16,7 @@ subroutine process_line (line, ids, output)
         endif 
     enddo 
     
-    output = line(ids:ide) 
+    output = line(ids:ide)
 
     ip = 0 
     do

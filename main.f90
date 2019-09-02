@@ -1,7 +1,7 @@
 program main
 use constants
 use variables
-use FMFD,       only : CMFD_lat, CMFD_type, n_acc
+use FMFD,       only : FMFD_type, n_acc
 use simulation 
 use omp_lib
 use mpi

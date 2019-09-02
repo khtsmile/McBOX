@@ -515,6 +515,8 @@ end subroutine
 !    source through the implicit capture process. 
 ! ================================================== !
 subroutine fissionSite_CE (p, iso, micro_xs)
+    use FMFD, only: fmfdon, fsd_MC, FMFD_ID, INSIDE
+    implicit none
     type(particle), intent(in) :: p
     real(8), intent(in) :: micro_xs(5) 
     integer, intent(in) :: iso
@@ -529,11 +531,21 @@ subroutine fissionSite_CE (p, iso, micro_xs)
     real(8) :: ipfac    ! interpolation factor
     real(8) :: F         ! collision probability
     real(8) :: erg_out, mu = 1
+    integer :: id(3)
     
     
     n = int(p%wgt*(micro_xs(5)/micro_xs(1))*(1.0/keff) + rang())
+
+    ! fission site for FMFD calculation
+    if ( fmfdon ) then
+        if ( INSIDE(p%coord(1)%xyz) ) then
+            id(:) = FMFD_ID(p%coord(1)%xyz)
+            fsd_MC(id(1),id(2),id(3)) = fsd_MC(id(1),id(2),id(3)) + n
+        end if
+    end if
+
+    ! fission source
     do i_source = 1, n
-        
         bank_idx = bank_idx + 1
         thread_bank(bank_idx)%xyz = p%coord(1)%xyz
         thread_bank(bank_idx)%uvw = rand_vec()
@@ -582,7 +594,8 @@ subroutine fissionSite_CE (p, iso, micro_xs)
             enddo 
             
             !> Interpolate F(E) (P(E) in ENDF Manual...)
-            ipfac = max(0.d0, min(1.d0,(p%E-eg%dist(ilaw)%E(pt1))/(eg%dist(ilaw)%E(pt1+1)-eg%dist(ilaw)%E(pt1))))
+            ipfac = max(0.d0, min(1.d0,(p%E-eg%dist(ilaw)%E(pt1)) &
+                /(eg%dist(ilaw)%E(pt1+1)-eg%dist(ilaw)%E(pt1))))
             F     = eg%dist(ilaw)%F(pt1) + ipfac*(eg%dist(ilaw)%F(pt1+1)-eg%dist(ilaw)%F(pt1))
             if (rn < F) then 
                 law = eg % dist(ilaw) % law
@@ -591,7 +604,8 @@ subroutine fissionSite_CE (p, iso, micro_xs)
         enddo law_search
         
         if (law < 0) then 
-            print *, '**************************   law not selected', F, eg%dist(ilaw)%F(pt1), ipfac
+            print *, '**************************   law not selected', &
+                F, eg%dist(ilaw)%F(pt1), ipfac
             stop
         endif 
         erg_out = p%E
@@ -601,7 +615,7 @@ subroutine fissionSite_CE (p, iso, micro_xs)
         thread_bank(bank_idx)%E = erg_out
         
     enddo 
-        
+
         
 end subroutine
 

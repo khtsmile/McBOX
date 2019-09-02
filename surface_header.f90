@@ -274,7 +274,7 @@ module surface_header
         
         xyz_(1:2) = xyz(1:2) - surf%parmtrs(1:2) 
         xyz_(3)   = xyz(3)  
-        
+
         r = surf%parmtrs(3) 
         d(1) = (-r-xyz_(2))/uvw(2)
         d(2) = (-r-xyz_(1))/uvw(1)
@@ -337,10 +337,9 @@ module surface_header
         type(surface) :: surf
         real(8), intent(in) :: xyz(3), uvw(3)
         real(8) :: dist
-        
-        
-        if (surf%surf_type == px)    dist = surf_px(surf,xyz,uvw)
-        if (surf%surf_type == py)    dist = surf_py(surf,xyz,uvw)
+
+        if (surf%surf_type == px)   dist = surf_px(surf,xyz,uvw)
+        if (surf%surf_type == py)   dist = surf_py(surf,xyz,uvw)
         if (surf%surf_type == pz)   dist = surf_pz(surf,xyz,uvw)
         if (surf%surf_type == cylz) dist = surf_cylz(surf,xyz,uvw)
         if (surf%surf_type == sqcz) dist = surf_sqcz(surf,xyz,uvw)

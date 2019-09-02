@@ -173,6 +173,7 @@ module geometry
                     p % n_coord = j
                                         
                     !p % coord(j) % universe = universes%find_idx(cells(i_cell) % fill)
+                    print*, "1"
                     p % coord(j) % universe = find_univ_idx(universes, c % fill)
                     !print *, 'universe', c % fill
                     
@@ -306,10 +307,11 @@ module geometry
             ! FIND MINIMUM DISTANCE TO LATTICE SURFACES        
             !if ((p%coord(j) % dist > TOOLONG).and.(p % coord(j) % lattice /= NONE)) then 
             if (p % coord(j) % lattice /= NONE) then
+                
                 i_xyz(1) = p % coord(j) % lattice_x
                 i_xyz(2) = p % coord(j) % lattice_y
                 i_xyz(3) = p % coord(j) % lattice_z
-                
+
                 call lat_distance(lattices(p % coord(j) % lattice), surfaces, p % coord(j) % xyz, &
                                     p % coord(j) % uvw, i_xyz, dist_temp, idx_surf)
                                     
@@ -418,6 +420,7 @@ module geometry
                     !p % coord(j + 1) % uvw = p % coord(j) % uvw
 
                     ! Move particle to next level and set universe
+                    print*, "2"
                     idx_univ = find_univ_idx(universes, c % fill)!universes%find_idx(c % fill)
 
                     ! Apply translation

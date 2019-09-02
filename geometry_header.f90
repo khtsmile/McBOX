@@ -326,6 +326,7 @@ module geometry_header
                 endif
             end associate
         enddo 
+
         
         if (d_surf < TOOLONG) return
         
@@ -372,8 +373,6 @@ module geometry_header
                 enddo 
             enddo 
         enddo 
-        
-        
         
         !do iz = 1, this%n_xyz(3)
         !    do iy = 1, this%n_xyz(2)
