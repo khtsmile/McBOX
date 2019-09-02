@@ -1,0 +1,15 @@
+
+McBOX.out:77550 terminated with signal 7 at PC=362ae34f30 SP=7ffdd686acb0.  Backtrace:
+/lib64/libc.so.6(getenv+0x90)[0x362ae34f30]
+./McBOX.out(for_check_env_name+0x28)[0x4aad48]
+./McBOX.out(for__signal_handler+0xa1)[0x4a1021]
+/lib64/libpthread.so.0[0x362b60f7e0]
+./McBOX.out(geometry_mp_find_cell_+0x126)[0x46c116]
+./McBOX.out(geometry_mp_find_cell_+0x67c)[0x46c66c]
+./McBOX.out(geometry_mp_find_cell_+0x67c)[0x46c66c]
+./McBOX.out(entropy_mp_shentropy_+0x318)[0x46fcc8]
+./McBOX.out(simulation_mp_simulate_history_+0x1da)[0x48ad2a]
+./McBOX.out(MAIN__+0x45e)[0x48dd3e]
+./McBOX.out(main+0x46)[0x40dff6]
+/lib64/libc.so.6(__libc_start_main+0x100)[0x362ae1ed20]
+./McBOX.out[0x40dee9]
