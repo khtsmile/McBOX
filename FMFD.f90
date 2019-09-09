@@ -5,46 +5,9 @@ module FMFD
     use variables
     use constants,          only : INFINITY, TiNY_BIT, prt_keff
     use particle_header,    only : particle
+    use FMFD_HEADER
     
     implicit none
-    ! x0 / x1 / y0 / y1 / z0 / z1
-
-    type :: FMFD_parameters
-        real(8) :: phi
-        real(8) :: sig_t 
-        real(8) :: sig_a 
-        real(8) :: nusig_f 
-        real(8) :: Jn(6) 
-        real(8) :: J0(6)
-        real(8) :: J1(6)
-    end type
-    logical :: fmfdon = .false.
-    integer :: n_skip, n_acc
-    integer :: FMFD_type        ! 1 FMFD / 2 p-FMFD / 3 1-node CMFD
-    real(8) :: a_fm(6), v_fm
-    
-    type :: FMFD_accumulation
-        type(FMFD_parameters), allocatable :: fm(:,:,:)
-    endtype 
-    
-    type(FMFD_parameters), allocatable :: fm(:,:,:)
-    type(FMFD_parameters), allocatable :: fm_avg(:,:,:)
-    type(FMFD_parameters), allocatable :: fm_thread(:,:,:)
-    !$OMP THREADPRIVATE(fm_thread)
-    type(FMFD_accumulation), allocatable :: acc(:)
-
-    ! FMFD grid
-    real(8):: fm0(3)    ! (x0,y0,z0)
-    real(8):: fm1(3)    ! (x1,y1,z1)
-    real(8):: fm2(3)    ! (x1-x0,y1-y0,z1-z0)
-    integer:: nfm(3)    ! (nx,ny,nz)
-    real(8):: dfm(3)    ! (dx,dy,dz)
-
-    ! fission source distribution
-    real(8), allocatable:: fsd_mc(:,:,:)
-    real(8), allocatable:: fsd(:,:,:)
-    logical:: inside0
-    real(8):: xyz2(3)
     
     contains 
 
@@ -71,6 +34,7 @@ subroutine FMFD_allocation()
         acc(i)%fm(:,:,:)%Jn(j)   = 0
         acc(i)%fm(:,:,:)%J0(j)   = 0
         acc(i)%fm(:,:,:)%J1(j)   = 0
+        acc(i)%fm(:,:,:)%sphi(j) = 0
         end do
     enddo
     
@@ -79,6 +43,53 @@ subroutine FMFD_allocation()
     a_fm(5) = dfm(1)*dfm(2)
     a_fm(6) = a_fm(5)
     v_fm    = dfm(1)*dfm(2)*dfm(3)
+
+
+    ! CMFD parameters
+    if ( cmfdon ) then
+        allocate(cm_t   (ncm(1),ncm(2),ncm(3)), &
+                 cmD    (ncm(1),ncm(2),ncm(3)), &
+                 cm_a   (ncm(1),ncm(2),ncm(3)), &
+                 cm_nf  (ncm(1),ncm(2),ncm(3)), &
+                 cm_s   (ncm(1),ncm(2),ncm(3)), &
+                 cm_phi0(ncm(1),ncm(2),ncm(3)), &
+                 cm_phi1(ncm(1),ncm(2),ncm(3)), &
+                 deltf0 (nfm(1),nfm(2),nfm(3),6), &
+                 deltf1 (nfm(1),nfm(2),nfm(3),6), &
+                 deltc0 (ncm(1),ncm(2),ncm(3),6), &
+                 deltc1 (ncm(1),ncm(2),ncm(3),6), &
+                 jsrc   (nfm(1),nfm(2),nfm(3),6), &
+                 fsrc   (nfm(1),nfm(2),nfm(3),6), &
+                 cmJ0   (ncm(1),ncm(2),ncm(3),6), &
+                 cmJ1   (ncm(1),ncm(2),ncm(3),6), &
+                 cmJn   (ncm(1),ncm(2),ncm(3),6), &
+                 cmF    (ncm(1),ncm(2),ncm(3),6), &
+                 cmDt   (ncm(1),ncm(2),ncm(3),6), &
+                 cmDh   (ncm(1),ncm(2),ncm(3),6), &
+                 Mcm    (ncm(1),ncm(2),ncm(3),7), &
+                 Mfm    (nfm(1),nfm(2),nfm(3),7))
+        cm_t    = 0
+        cmD     = 0
+        cm_a    = 0
+        cm_nf   = 0
+        cm_s    = 0
+        cm_phi0 = 0
+        cm_phi1 = 0
+        deltf0  = 0
+        deltf1  = 0
+        deltc0  = 0
+        deltc1  = 0
+        jsrc    = 0
+        fsrc    = 0
+        cmJ0    = 0
+        cmJ1    = 0
+        cmJn    = 0
+        cmF     = 0
+        cmDt    = 0
+        cmDh    = 0
+        Mcm     = 0
+        Mfm     = 0
+    end if
 
 end subroutine
 
@@ -95,9 +106,10 @@ subroutine FMFD_initialize()
     fm(:,:,:) % sig_a   = 0 
     fm(:,:,:) % nusig_f = 0 
     do i = 1, 6
-        fm(:,:,:) % Jn(i) = 0 
-        fm(:,:,:) % J0(i) = 0 
-        fm(:,:,:) % J1(i) = 0 
+        fm(:,:,:) % Jn(i)   = 0 
+        fm(:,:,:) % J0(i)   = 0 
+        fm(:,:,:) % J1(i)   = 0 
+        fm(:,:,:) % sphi(i) = 0 
     enddo 
 
     fsd_MC = 0
@@ -120,80 +132,12 @@ subroutine FMFD_initialize_thread()
     fm_thread(:,:,:) % Jn(i)   = 0 
     fm_thread(:,:,:) % J0(i)   = 0 
     fm_thread(:,:,:) % J1(i)   = 0 
+    fm_thread(:,:,:) % sphi(i) = 0
     enddo 
     
 end subroutine
-
-!    subroutine CMFD_distance (p,i_xyz,idx_xyz,d_CMFD,inside_CMFD,i_surf)
-!        type(particle), intent(in) :: p
-!        integer, intent(inout) :: i_xyz(3), idx_xyz
-!        real(8), intent(inout) :: d_CMFD
-!        logical, intent(inout) :: inside_CMFD 
-!        integer, intent(inout) :: i_surf
-!        real(8) :: xyz(3), uvw(3)
-!        real(8) :: d_temp(6)
-!        integer :: i,j, i_coord
-!        integer :: idx_temp, idx_surf
-!        real(8) :: J_temp
-!        integer :: a, b, c
-!        
-!        d_CMFD = INFINITY
-!        if (CMFD_lat < 0) return
-!        
-!        ! Find lattice index from the particle
-!        do i = 1, p%n_coord 
-!            if (p%coord(i)%lattice == idx_lat) then 
-!                i_xyz(1) = p%coord(i)%lattice_x
-!                i_xyz(2) = p%coord(i)%lattice_y
-!                i_xyz(3) = p%coord(i)%lattice_z
-!                
-!                xyz(:) = p%coord(i)%xyz(:)
-!                uvw(:) = p%coord(i)%uvw(:)
-!                i_coord = i
-!                exit
-!            endif
-!        enddo
-!        
-!        !> Check if the particle is outside the CMFD grid
-!        inside_CMFD = .true. 
-!        do i = 1, 3
-!            if (abs(xyz(i)) > pitch(i)/2.0d0) then 
-!                inside_CMFD = .false.
-!                exit 
-!            endif 
-!        enddo 
-!        d_CMFD = INFINITY
-!        if (inside_CMFD) then
-!            d_temp(1) = (-pitch(1)/2.0 - xyz(1))/uvw(1)
-!            d_temp(6) = ( pitch(1)/2.0 - xyz(1))/uvw(1)
-!            d_temp(2) = (-pitch(2)/2.0 - xyz(2))/uvw(2)
-!            d_temp(5) = ( pitch(2)/2.0 - xyz(2))/uvw(2)
-!            d_temp(3) = (-pitch(3)/2.0 - xyz(3))/uvw(3)
-!            d_temp(4) = ( pitch(3)/2.0 - xyz(3))/uvw(3)
-!            
-!             
-!            do i = 1, 6 
-!                if (d_temp(i) < 0) cycle
-!                if (d_CMFD > d_temp(i)) then 
-!                    d_CMFD = d_temp(i)
-!                    i_surf = i
-!                endif 
-!            enddo 
-!        
-!        else !> the particle is outside the CMFD grid
-!            ! 여기서 xyz는 윗단계 universe의 xyz
-!            call distance_cuboid(lattices(idx_lat)%n_xyz, &
-!                        p%coord(i_coord-1)%xyz, p%coord(i_coord-1)%uvw, i_xyz, d_CMFD,i_surf)
-!            
-!        endif
-!        a = lattices(idx_lat)%n_xyz(1)
-!        b = lattices(idx_lat)%n_xyz(2)
-!        c = lattices(idx_lat)%n_xyz(3)
-!        
-!        idx_xyz = a*b*(i_xyz(3)-1) + a*(i_xyz(2)-1) + i_xyz(1)
-!
-!    end subroutine
     
+
 ! =========================================================================
 ! FMFD_DISTANCE
 ! =========================================================================
@@ -217,18 +161,12 @@ subroutine FMFD_DISTANCE (p,i_xyz,d_FMFD,inside_FMFD,income_FMFD,i_surf)
     ! Find lattice index in FMFD grid
     xyz(:) = p%coord(1)%xyz(:)
     uvw(:) = p%coord(1)%uvw(:)
-    i_xyz = FMFD_ID(p%coord(1)%xyz(:))
+    i_xyz  = FMFD_ID(p%coord(1)%xyz(:))
 !    print*, "ijk", i_xyz
     
     ! the particle is inside the FMFD grid
     inside_FMFD = INSIDE(xyz)
     income_FMFD = 0
-
-!    if ( xyz(1) < -21.42D0+1D-7 .and. xyz(1) > -21.42D0-1D-7 ) then
-!        print*, xyz2(1), xyz(1)
-!        print*, inside0, inside_FMFD
-!        if ( inside0 == inside_FMFD ) pause
-!    end if
 
     if ( inside_FMFD ) then
         d_temp(1) = ((dfm(1)*(i_xyz(1)-1)+fm0(1))-xyz(1))/uvw(1)   ! x0
@@ -256,9 +194,7 @@ subroutine FMFD_DISTANCE (p,i_xyz,d_FMFD,inside_FMFD,income_FMFD,i_surf)
 
         do i = 1, 6
         if ( d_temp(i) > 0 .and. d_FMFD > d_temp(i) ) then
-            !print*, "i", i, d_temp(i)
             xyz1(:) = xyz(:) + d_temp(i)*uvw(:)
-            !print*, xyz1
             select case(i)
             case(1,2)
                 if ( xyz1(2) < fm0(2) .or. fm1(2) < xyz1(2) ) cycle
@@ -276,52 +212,6 @@ subroutine FMFD_DISTANCE (p,i_xyz,d_FMFD,inside_FMFD,income_FMFD,i_surf)
         end if
         end do
     end if
-    inside0 = inside_FMFD
-    xyz2 = xyz
-
-
-
-!    ! the particle is inside the FMFD grid
-!    inside_FMFD = INSIDE(i_xyz)
-!    ! check if the particle is coming to the FMFD grid
-!    income_FMFD = 0
-!    if ( .not. inside_FMFD ) call INCOMING(i_xyz(:),income_FMFD)
-!
-!    ! check if the FMFD distance should be calcualted
-!    if ( .not. inside_FMFD .and. income_FMFD == 0 ) return
-!
-!    ! find the closest distance to the grid surface
-!    d_temp(1) = ((dfm(1)*(i_xyz(1)-1)+fm0(1))-xyz(1))/uvw(1)   ! x0
-!    d_temp(2) = ((dfm(1)*(i_xyz(1)  )+fm0(1))-xyz(1))/uvw(1)   ! x1
-!    d_temp(3) = ((dfm(2)*(i_xyz(2)-1)+fm0(2))-xyz(2))/uvw(2)   ! y0
-!    d_temp(4) = ((dfm(2)*(i_xyz(2)  )+fm0(2))-xyz(2))/uvw(2)   ! y1
-!    d_temp(5) = ((dfm(3)*(i_xyz(3)-1)+fm0(3))-xyz(3))/uvw(3)   ! z0
-!    d_temp(6) = ((dfm(3)*(i_xyz(3)  )+fm0(3))-xyz(3))/uvw(3)   ! z1
-!    
-!    do i = 1, 6
-!    if ( d_temp(i) > 0 .and. d_FMFD > d_temp(i) ) then
-!        d_FMFD = d_temp(i)
-!        i_surf = i
-!    end if
-!    end do
-!
-!    ! income
-!    if ( income_FMFD /= 0 ) then
-!        if ( i_surf == income_FMFD ) then
-!            select case(i_surf)
-!            case(1); income_FMFD = 2
-!            case(2); income_FMFD = 1
-!            case(3); income_FMFD = 4
-!            case(4); income_FMFD = 3
-!            case(5); income_FMFD = 6
-!            case(6); income_FMFD = 5
-!            end select
-!            i_surf = income_FMFD
-!        else
-!            income_FMFD = 0
-!            d_FMFD = INFINITY
-!        end if
-!   end if
 
 end subroutine
 
@@ -412,82 +302,6 @@ subroutine INCOMING(xyz,income)
 
 end subroutine
 
-    
-!! =============================================================================    
-!! DISTANCE_CUBOID ?
-!! =============================================================================    
-!subroutine distance_cuboid(n_xyz, xyz, uvw, i_xyz, d_CMFD,i_surf)
-!    real(8), intent(in) :: xyz(3), uvw(3)
-!    integer, intent(in) :: n_xyz(3)
-!    integer, intent(inout) :: i_xyz(3)
-!    real(8), intent(inout) :: d_CMFD
-!    integer, intent(inout) :: i_surf
-!    real(8) :: d(6), xyz_(3), temp, r(3), xyz_next(3) 
-!    real(8) :: dist
-!    integer :: i,j
-!    
-!    i_surf = 0 
-!    xyz_(:) = xyz(:) - lattices(idx_lat)%xyz(:)
-!    
-!    
-!    do i = 1, 3 
-!        r(i) = n_xyz(i)*pitch(i) / 2.0d0
-!    enddo
-!            
-!    d(1)   = (-r(1)-xyz_(1))/uvw(1)
-!    temp = xyz_(2)+d(1)*uvw(2)
-!    if ((temp < -r(2)).or.(temp > r(2))) d(1) = INFINITY
-!    temp = xyz_(3)+d(1)*uvw(3)
-!    if ((temp < -r(3)).or.(temp > r(3))) d(1) = INFINITY
-!    
-!    d(6)   = ( r(1)-xyz_(1))/uvw(1)
-!    temp = xyz_(2)+d(6)*uvw(2)
-!    if ((temp < -r(2)).or.(temp > r(2))) d(6) = INFINITY
-!    temp = xyz_(3)+d(6)*uvw(3)
-!    if ((temp < -r(3)).or.(temp > r(3))) d(6) = INFINITY
-!    
-!    d(2)   = (-r(2)-xyz_(2))/uvw(2)
-!    temp = xyz_(1)+d(2)*uvw(1)
-!    if ((temp < -r(1)).or.(temp > r(1))) d(2) = INFINITY
-!    temp = xyz_(3)+d(2)*uvw(3)
-!    if ((temp < -r(3)).or.(temp > r(3))) d(2) = INFINITY
-!    
-!    d(5)   = ( r(2)-xyz_(2))/uvw(2)
-!    temp = xyz_(1)+d(5)*uvw(1)
-!    if ((temp < -r(1)).or.(temp > r(1))) d(5) = INFINITY
-!    temp = xyz_(3)+d(5)*uvw(3)
-!    if ((temp < -r(3)).or.(temp > r(3))) d(5) = INFINITY
-!    
-!    d(3)   = (-r(3)-xyz_(3))/uvw(3)
-!    temp = xyz_(1)+d(3)*uvw(1)
-!    if ((temp < -r(1)).or.(temp > r(1))) d(3) = INFINITY
-!    temp = xyz_(2)+d(3)*uvw(2)
-!    if ((temp < -r(2)).or.(temp > r(2))) d(3) = INFINITY
-!    
-!    d(4)   = ( r(3)-xyz_(3))/uvw(3)
-!    temp = xyz_(1)+d(4)*uvw(1)
-!    if ((temp < -r(1)).or.(temp > r(1))) d(4) = INFINITY
-!    temp = xyz_(2)+d(4)*uvw(2)
-!    if ((temp < -r(2)).or.(temp > r(2))) d(4) = INFINITY
-!    
-!    
-!    d_CMFD = INFINITY
-!    do i = 1, 6 
-!        if (d(i) < 0) cycle
-!        if (d_CMFD > d(i)) then 
-!            d_CMFD = d(i)
-!            i_surf = i
-!        endif 
-!    enddo 
-!    
-!    if (i_surf == 0) return 
-!    
-!    xyz_next(:) = xyz_(:) + (d_CMFD + 10*tiny_bit) * uvw(:)
-!    
-!    i_xyz = lattice_coord (lattices(idx_lat), xyz_next)
-!    
-!end subroutine
-
 ! =============================================================================
 ! FMFD_TRK calculates FMFD parameters such as flux, group contstans by 
 ! track-length estiamtor
@@ -513,6 +327,12 @@ subroutine FMFD_TRK(wgt,distance,macro_xs,id,idmc,mcxyz)
     fm_thread(id(1),id(2),id(3)) % sig_a + flux*macro_xs(2)
     fm_thread(id(1),id(2),id(3)) % nusig_f = &
     fm_thread(id(1),id(2),id(3)) % nusig_f + flux*macro_xs(4)
+
+!    if ( id(1) == 34 .and. id(2) == 34 ) then
+!        print*, id
+!        print*, fm_thread(id(1),id(2),id(3))%phi
+!        pause
+!    end if
     
 end subroutine
 
@@ -543,48 +363,15 @@ end subroutine
 ! =============================================================================
 ! FMFD_SURF calculates FMFD surface parameters like net and particle current
 ! =============================================================================
-subroutine FMFD_SURF (inside,income, is, id, wgt, bc)
+subroutine FMFD_SURF (inside,income, is, id, uvw, wgt, bc)
     logical, intent(in) :: inside
     integer, intent(in) :: income
     integer, intent(in) :: is, id(3)
+    real(8), intent(in) :: uvw(3)
     real(8), intent(in) :: wgt
     integer, intent(in) :: bc
+    integer:: dir
     
-
-    ! boundary surfaces
-!    if ( inside ) then
-!        ! x0
-!        if ( id(1) == 1 .and. is == 1 .and. fmbc(1) == 2 ) then
-!            fm_thread(id(1),id(2),id(3))%J1(1) = &
-!            fm_thread(id(1),id(2),id(3))%J1(1) + wgt
-!        end if
-!        ! x1
-!        if ( id(1) == nfm(1) .and. is == 2 .and. fmbc(2) == 2 ) then
-!            fm_thread(id(1),id(2),id(3))%J0(2) = &
-!            fm_thread(id(1),id(2),id(3))%J0(2) + wgt
-!        end if
-!        ! y0
-!        if ( id(2) == 1 .and. is == 3 .and. fmbc(3) == 2 ) then
-!            fm_thread(id(1),id(2),id(3))%J1(3) = &
-!            fm_thread(id(1),id(2),id(3))%J1(3) + wgt
-!        end if
-!        ! y1
-!        if ( id(2) == nfm(2) .and. is == 4 .and. fmbc(4) == 2 ) then
-!            fm_thread(id(1),id(2),id(3))%J0(4) = &
-!            fm_thread(id(1),id(2),id(3))%J0(4) + wgt
-!        end if
-!        ! z0
-!        if ( id(3) == 1 .and. is == 5 .and. fmbc(5) == 2 ) then
-!            fm_thread(id(1),id(2),id(3))%J1(5) = &
-!            fm_thread(id(1),id(2),id(3))%J1(5) + wgt
-!        end if
-!        ! y1
-!        if ( id(3) == nfm(3) .and. is == 6 .and. fmbc(6) == 2 ) then
-!            fm_thread(id(1),id(2),id(3))%J0(6) = &
-!            fm_thread(id(1),id(2),id(3))%J0(6) + wgt
-!        end if
-!    end if
-
     ! inner nodes
     if ( inside ) then 
         ! surface partial current
@@ -592,9 +379,15 @@ subroutine FMFD_SURF (inside,income, is, id, wgt, bc)
         case(1,3,5)
             fm_thread(id(1),id(2),id(3))%J0(is) = &
             fm_thread(id(1),id(2),id(3))%J0(is) + wgt
+            if ( cmfdon ) &
+            fm_thread(id(1),id(2),id(3))%sphi(is) = &
+            fm_thread(id(1),id(2),id(3))%sphi(is) + wgt/abs(uvw((is+1)/2))
         case(2,4,6)
             fm_thread(id(1),id(2),id(3))%J1(is) = &
             fm_thread(id(1),id(2),id(3))%J1(is) + wgt
+            if ( cmfdon ) &
+            fm_thread(id(1),id(2),id(3))%sphi(is) = &
+            fm_thread(id(1),id(2),id(3))%sphi(is) + wgt/abs(uvw(is/2))
         end select
 
         ! boundary condition
@@ -603,12 +396,17 @@ subroutine FMFD_SURF (inside,income, is, id, wgt, bc)
         case(1,3,5)
             fm_thread(id(1),id(2),id(3))%J1(is) = &
             fm_thread(id(1),id(2),id(3))%J1(is) + wgt
+            if ( cmfdon ) &
+            fm_thread(id(1),id(2),id(3))%sphi(is) = &
+            fm_thread(id(1),id(2),id(3))%sphi(is) + wgt/abs(uvw((is+1)/2))
         case(2,4,6)
             fm_thread(id(1),id(2),id(3))%J0(is) = &
             fm_thread(id(1),id(2),id(3))%J0(is) + wgt
+            if ( cmfdon ) &
+            fm_thread(id(1),id(2),id(3))%sphi(is) = &
+            fm_thread(id(1),id(2),id(3))%sphi(is) + wgt/abs(uvw((is+1)/2))
         end select
         end if
-
         return
     end if
 
@@ -617,21 +415,39 @@ subroutine FMFD_SURF (inside,income, is, id, wgt, bc)
     case(1)
         fm_thread(1,id(2),id(3))%J1(1) = &
         fm_thread(1,id(2),id(3))%J1(1) + wgt
+        if ( cmfdon ) &
+        fm_thread(1,id(2),id(3))%sphi(1) = &
+        fm_thread(1,id(2),id(3))%sphi(1) + wgt/abs(uvw(1))
     case(2)
         fm_thread(nfm(1),id(2),id(3))%J0(2) = &
         fm_thread(nfm(1),id(2),id(3))%J0(2) + wgt
+        if ( cmfdon ) &
+        fm_thread(nfm(1),id(2),id(3))%sphi(2) = &
+        fm_thread(nfm(1),id(2),id(3))%sphi(2) + wgt/abs(uvw(1))
     case(3)
         fm_thread(id(1),1,id(3))%J1(3) = &
         fm_thread(id(1),1,id(3))%J1(3) + wgt
+        if ( cmfdon ) &
+        fm_thread(id(1),1,id(3))%sphi(3) = &
+        fm_thread(id(1),1,id(3))%sphi(3) + wgt/abs(uvw(2))
     case(4)
         fm_thread(id(1),nfm(2),id(3))%J0(4) = &
         fm_thread(id(1),nfm(2),id(3))%J0(4) + wgt
+        if ( cmfdon ) &
+        fm_thread(id(1),nfm(2),id(3))%sphi(4) = &
+        fm_thread(id(1),nfm(2),id(3))%sphi(4) + wgt/abs(uvw(2))
     case(5)
         fm_thread(id(1),id(2),1)%J1(5) = &
         fm_thread(id(1),id(2),1)%J1(5) + wgt
+        if ( cmfdon ) &
+        fm_thread(id(1),id(2),1)%sphi(5) = &
+        fm_thread(id(1),id(2),1)%sphi(5) + wgt/abs(uvw(3))
     case(6)
         fm_thread(id(1),id(2),nfm(3))%J0(6) = &
         fm_thread(id(1),id(2),nfm(3))%J0(6) + wgt
+        if ( cmfdon ) &
+        fm_thread(id(1),id(2),nfm(3))%sphi(6) = &
+        fm_thread(id(1),id(2),nfm(3))%sphi(6) + wgt/abs(uvw(3))
     end select
             
 end subroutine
@@ -640,41 +456,17 @@ end subroutine
 ! NORM_FMFD normalizes cycle-wise FMFD parameters
 ! =============================================================================
 subroutine NORM_FMFD()
-    integer:: i, j, k
-    real(8):: aa, bb    ! parameters
+    implicit none
 
-!    ! volume quantity normalization
-!    aa = dble(ngen)*v_fm
-!    fm_thread(:,:,:) % phi     = fm_thread(:,:,:) % phi     / aa
-!    fm_thread(:,:,:) % sig_t   = fm_thread(:,:,:) % sig_t   / aa
-!    fm_thread(:,:,:) % sig_a   = fm_thread(:,:,:) % sig_a   / aa
-!    fm_thread(:,:,:) % nusig_f = fm_thread(:,:,:) % nusig_f / aa
-!
-!    ! surface quantity normalization
-!    bb = dble(ngen)*a_fm(1)
-!    do i = 1, 2
-!    fm_thread(:,:,:) % J0(i) = fm_thread(:,:,:) % J0(i) / bb
-!    fm_thread(:,:,:) % J1(i) = fm_thread(:,:,:) % J1(i) / bb
-!    end do
-!    bb = dble(ngen)*a_fm(2)
-!    do i = 3, 4
-!    fm_thread(:,:,:) % J0(i) = fm_thread(:,:,:) % J0(i) / bb
-!    fm_thread(:,:,:) % J1(i) = fm_thread(:,:,:) % J1(i) / bb
-!    end do
-!    bb = dble(ngen)*a_fm(3)
-!    do i = 5, 6
-!    fm_thread(:,:,:) % J0(i) = fm_thread(:,:,:) % J0(i) / bb
-!    fm_thread(:,:,:) % J1(i) = fm_thread(:,:,:) % J1(i) / bb
-!    end do
-    
     !> gather thread FMFD parameters
     fm(:,:,:) % phi     = fm(:,:,:) % phi     + fm_thread(:,:,:)%phi
     fm(:,:,:) % sig_t   = fm(:,:,:) % sig_t   + fm_thread(:,:,:)%sig_t 
     fm(:,:,:) % sig_a   = fm(:,:,:) % sig_a   + fm_thread(:,:,:)%sig_a 
     fm(:,:,:) % nusig_f = fm(:,:,:) % nusig_f + fm_thread(:,:,:)%nusig_f 
-    do i = 1, 6
-    fm(:,:,:) % J0(i) = fm(:,:,:) % J0(i) + fm_thread(:,:,:)%J0(i)
-    fm(:,:,:) % J1(i) = fm(:,:,:) % J1(i) + fm_thread(:,:,:)%J1(i)
+    do ii = 1, 6
+    fm(:,:,:) % J0(ii)   = fm(:,:,:) % J0(ii)   + fm_thread(:,:,:)%J0(ii)
+    fm(:,:,:) % J1(ii)   = fm(:,:,:) % J1(ii)   + fm_thread(:,:,:)%J1(ii)
+    fm(:,:,:) % sphi(ii) = fm(:,:,:) % sphi(ii) + fm_thread(:,:,:)%sphi(ii)
     end do
 
 end subroutine
@@ -685,13 +477,13 @@ end subroutine
 ! =============================================================================
 subroutine PROCESS_FMFD() 
     !> MPI derived type reduce parameters 
-    integer, dimension(7) :: FMFD_blocklength, FMFD_displacement, FMFD_datatype 
+    integer, dimension(8) :: FMFD_blocklength, FMFD_displacement, FMFD_datatype 
     integer :: intex, realex, restype, FMFD_op  ! MPI int & real extern / new type
     type(FMFD_parameters), allocatable :: FMFD_MPI_slut(:,:,:)
     integer :: i, j, k, l
     real(8) :: aa, bb
-    
-    data FMFD_blocklength /1, 1, 1, 1, 6, 6, 6 /
+
+    data FMFD_blocklength /1, 1, 1, 1, 6, 6, 6, 6 /
 
     allocate(FMFD_MPI_slut(nfm(1),nfm(2),nfm(3)))
     
@@ -704,13 +496,21 @@ subroutine PROCESS_FMFD()
     FMFD_displacement(5) = 4*realex
     FMFD_displacement(6) = (4+6)*realex
     FMFD_displacement(7) = (4+2*6)*realex
+    FMFD_displacement(8) = (4+3*6)*realex
     
     FMFD_datatype(:) = MPI_REAL8
     
-    call MPI_TYPE_STRUCT (7, FMFD_blocklength, FMFD_displacement, FMFD_datatype,restype, ierr)
+    call MPI_TYPE_STRUCT (8, FMFD_blocklength, FMFD_displacement, FMFD_datatype,restype, ierr)
+    call MPI_TYPE_COMMIT (restype, ierr)
     call MPI_TYPE_COMMIT (restype, ierr)
     call MPI_Op_create(FMFD_SUM, .true. , FMFD_op, ierr)
-    call MPI_REDUCE(fm, FMFD_MPI_slut, nfm(1)*nfm(2)*nfm(3), restype, FMFD_op, score, MPI_COMM_WORLD, ierr)
+    do i = 1, nfm(1)
+    do j = 1, nfm(2)
+    do k = 1, nfm(3)
+    call MPI_REDUCE(fm(i,j,k), FMFD_MPI_slut(i,j,k), 1, restype, FMFD_op, score, MPI_COMM_WORLD, ierr)
+    end do
+    end do
+    end do
     fm = FMFD_MPI_slut
      
     call MPI_TYPE_FREE(restype, ierr)
@@ -733,6 +533,26 @@ subroutine PROCESS_FMFD()
     end do
     end do
 
+    ! surface flux swapping
+    do i = 1, nfm(1)
+    do j = 1, nfm(2)
+    do k = 1, nfm(3)
+        if ( i /= 1 ) then
+        fm(i,j,k)%sphi(1) = fm(i,j,k)%sphi(1) + fm(i-1,j,k)%sphi(2)
+        fm(i-1,j,k)%sphi(2) = fm(i,j,k)%sphi(1)
+        end if
+        if ( j /= 1 ) then
+        fm(i,j,k)%sphi(3) = fm(i,j,k)%sphi(3) + fm(i,j-1,k)%sphi(4)
+        fm(i,j-1,k)%sphi(4) = fm(i,j,k)%sphi(3)
+        end if
+        if ( k /= 1 ) then
+        fm(i,j,k)%sphi(5) = fm(i,j,k)%sphi(5) + fm(i,j,k-1)%sphi(6)
+        fm(i,j,k-1)%sphi(6) = fm(i,j,k)%sphi(5)
+        end if
+    end do
+    end do
+    end do
+
     ! group constant
     fm(:,:,:) % sig_t   = fm(:,:,:) % sig_t   / fm(:,:,:) % phi
     fm(:,:,:) % sig_a   = fm(:,:,:) % sig_a   / fm(:,:,:) % phi
@@ -742,8 +562,9 @@ subroutine PROCESS_FMFD()
     ! surface quantity normalization
     do i = 1, 6
     bb = dble(ngen)*a_fm(i)
-    fm(:,:,:) % J0(i) = fm(:,:,:) % J0(i) / bb
-    fm(:,:,:) % J1(i) = fm(:,:,:) % J1(i) / bb
+    fm(:,:,:) % J0(i)   = fm(:,:,:) % J0(i) / bb
+    fm(:,:,:) % J1(i)   = fm(:,:,:) % J1(i) / bb
+    fm(:,:,:) % sphi(i) = fm(:,:,:) % sphi(i) / bb
     end do
 
     ! net current
@@ -766,6 +587,7 @@ subroutine PROCESS_FMFD()
       fm_avg(:,:,:)%Jn(i) = 0 
       fm_avg(:,:,:)%J0(i) = 0 
       fm_avg(:,:,:)%J1(i) = 0 
+      fm_avg(:,:,:)%sphi(i) = 0
     enddo 
 
     ! accumulation
@@ -778,9 +600,10 @@ subroutine PROCESS_FMFD()
        fm_avg(i,j,k)%sig_a   = fm_avg(i,j,k)%sig_a   + acc(l)%fm(i,j,k)%sig_a
        fm_avg(i,j,k)%nusig_f = fm_avg(i,j,k)%nusig_f + acc(l)%fm(i,j,k)%nusig_f
 
-       fm_avg(i,j,k)%Jn(:) = fm_avg(i,j,k)%Jn(:) + acc(l)%fm(i,j,k)%Jn(:)
-       fm_avg(i,j,k)%J0(:) = fm_avg(i,j,k)%J0(:) + acc(l)%fm(i,j,k)%J0(:)
-       fm_avg(i,j,k)%J1(:) = fm_avg(i,j,k)%J1(:) + acc(l)%fm(i,j,k)%J1(:)
+       fm_avg(i,j,k)%Jn(:)   = fm_avg(i,j,k)%Jn(:)   + acc(l)%fm(i,j,k)%Jn(:)
+       fm_avg(i,j,k)%J0(:)   = fm_avg(i,j,k)%J0(:)   + acc(l)%fm(i,j,k)%J0(:)
+       fm_avg(i,j,k)%J1(:)   = fm_avg(i,j,k)%J1(:)   + acc(l)%fm(i,j,k)%J1(:)
+       fm_avg(i,j,k)%sphi(:) = fm_avg(i,j,k)%sphi(:) + acc(l)%fm(i,j,k)%sphi(:)
     end do
     end do
     end do
@@ -792,9 +615,10 @@ subroutine PROCESS_FMFD()
     fm_avg(:,:,:)%sig_a   = fm_avg(:,:,:)%sig_a   / dble(n_acc)
     fm_avg(:,:,:)%nusig_f = fm_avg(:,:,:)%nusig_f / dble(n_acc)
     do i = 1, 6
-    fm_avg(:,:,:)%Jn(i) = fm_avg(:,:,:)%Jn(i) / dble(n_acc)
-    fm_avg(:,:,:)%J0(i) = fm_avg(:,:,:)%J0(i) / dble(n_acc)
-    fm_avg(:,:,:)%J1(i) = fm_avg(:,:,:)%J1(i) / dble(n_acc)
+    fm_avg(:,:,:)%Jn(i)   = fm_avg(:,:,:)%Jn(i)   / dble(n_acc)
+    fm_avg(:,:,:)%J0(i)   = fm_avg(:,:,:)%J0(i)   / dble(n_acc)
+    fm_avg(:,:,:)%J1(i)   = fm_avg(:,:,:)%J1(i)   / dble(n_acc)
+    fm_avg(:,:,:)%sphi(i) = fm_avg(:,:,:)%sphi(i) / dble(n_acc)
     enddo
 
 end subroutine 
@@ -804,10 +628,13 @@ end subroutine
 ! FMFD_SOLVE solves FMFD eigenvalue problem
 ! =============================================================================
 subroutine FMFD_SOLVE(keff,fsd)
+    use CMFD, only: ONE_NODE_CMFD
+    implicit none
     real(8), intent(in):: keff              ! multiplication factor
     real(8), intent(inout) :: fsd(:,:,:)    ! fission source distribution
     real(8) :: M(nfm(1),nfm(2),nfm(3),7)    ! FMFD matrix
     real(8), dimension(nfm(1),nfm(2),nfm(3)):: &
+        sig_t, &      ! total
         sig_a, &      ! absorption
         nusig_f, &    ! nu X fission
         D, &          ! diffusion coefficient
@@ -819,14 +646,15 @@ subroutine FMFD_SOLVE(keff,fsd)
         D_hat, &      ! correction factor
         Jn, &         ! net current
         J0, &         ! partial current -
-        J1            ! partial current +
-    real(8) :: k_fmfd
+        J1, &         ! partial current +
+        sphi          ! surface flux
     integer :: i, j, k
 
     ! copy parameters
     do i = 1, nfm(1)
     do j = 1, nfm(2)
     do k = 1, nfm(3)
+        sig_t(i,j,k)   = fm_avg(i,j,k)%sig_t
         sig_a(i,j,k)   = fm_avg(i,j,k)%sig_a
         nusig_f(i,j,k) = fm_avg(i,j,k)%nusig_f 
         D(i,j,k)       = 1D0 / (3D0 * fm_avg(i,j,k)%sig_t) 
@@ -834,25 +662,42 @@ subroutine FMFD_SOLVE(keff,fsd)
         J0(i,j,k,:)    = fm_avg(i,j,k)%J0(:) 
         J1(i,j,k,:)    = fm_avg(i,j,k)%J1(:) 
         phi1(i,j,k)    = fm_avg(i,j,k)%phi
+        sphi(i,j,k,:)  = fm_avg(i,j,k)%sphi(:)
     enddo 
     enddo
     enddo
 
-    !> calculate D_tilda & D_hat 
-    call D_TILDA_CALCULATION(D,D_tilda)
-    call D_HAT_CALCULATION(D_tilda,Jn,phi1,D_hat)
 
-    ! matrix composition
-    if ( FMFD_type == 1 ) then 
-        !> CMFD 
-        M = getM(D_tilda, D_hat, sig_a)
-    else!if (CMFD_type == 2) then 
-        !> p-CMFD
-        !M = getMp (phi, D, J_pp, J_pn, sig_a, a,b,c,pitch(1),pitch(2),pitch(3))
-    endif 
-     
-    k_fmfd = keff
-    call POWER (k_fmfd, M, phi0, phi1, nusig_f)
+    if ( cmfdon ) then
+        do i = 1, 6
+            sphi(:,:,:,1) = 2D0*J1(:,:,:,1)+2D0*J0(:,:,:,1)
+            sphi(:,:,:,2) = 2D0*J1(:,:,:,2)+2D0*J0(:,:,:,2)
+            sphi(:,:,:,3) = 2D0*J1(:,:,:,3)+2D0*J0(:,:,:,3)
+            sphi(:,:,:,4) = 2D0*J1(:,:,:,4)+2D0*J0(:,:,:,4)
+            sphi(:,:,:,5) = 2D0*J1(:,:,:,5)+2D0*J0(:,:,:,5)
+            sphi(:,:,:,6) = 2D0*J1(:,:,:,6)+2D0*J0(:,:,:,6)
+        end do
+
+        call ONE_NODE_CMFD(keff,sig_t,sig_a,nusig_f,D,phi1,J0,J1,Jn,sphi)
+
+    else
+        !> calculate D_tilda & D_hat 
+        call D_TILDA_CALCULATION(D,D_tilda)
+        call D_HAT_CALCULATION(D_tilda,Jn,phi1,D_hat)
+
+    
+        ! matrix composition
+        if ( FMFD_type == 1 ) then 
+            !> CMFD 
+            M = getM(D_tilda, D_hat, sig_a)
+        else!if (CMFD_type == 2) then 
+            !> p-CMFD
+            !M = getMp (phi,D,J_pp,J_pn,sig_a,a,b,c,pitch(1),pitch(2),pitch(3))
+        endif 
+         
+        k_fmfd = keff
+        call POWER (k_fmfd, M, phi0, phi1, nusig_f)
+    end if
 
     !print *, 'CMFD keff  ',keff_CMFD
     !write(prt_keff,*) keff_CMFD, k_col, k_tl
@@ -876,7 +721,7 @@ subroutine FMFD_SOLVE(keff,fsd)
     
     !> CMFD feedback (modulation)
     fsd_MC(:,:,:) = fsd_MC(:,:,:) / sum(fsd_MC)
-    fsd_FM(:,:,:) = fm_avg(:,:,:)%nusig_f*phi1(:,:,:)
+    fsd_FM(:,:,:) = nusig_f(:,:,:)*phi1(:,:,:)
     fsd_FM(:,:,:) = fsd_FM(:,:,:) / sum(fsd_FM)
     where ( fsd_MC(:,:,:) /= 0 ) &
     fsd(:,:,:)    = fsd_FM(:,:,:) / fsd_MC(:,:,:)
@@ -892,7 +737,7 @@ subroutine FMFD_SOLVE(keff,fsd)
 !    end do
 !    write(8,*)
 !    1 format(34es15.7)
-!    stop
+    stop
     
 end subroutine
 
@@ -923,7 +768,7 @@ subroutine D_TILDA_CALCULATION(D,Dt)
         if ( k /= 1 ) &      ! y0
         Dt(i,j,k,5) = 2D0*D(i,j,k)*D(i,j,k-1)/(D(i,j,k)+D(i,j,k-1))/dfm(3)
         if ( k /= nfm(3) ) & ! y1
-        Dt(i,j,k,6) = 2D0*D(i,k,k+1)*D(i,j,k)/(D(i,j,k+1)+D(i,j,k))/dfm(3)
+        Dt(i,j,k,6) = 2D0*D(i,j,k+1)*D(i,j,k)/(D(i,j,k+1)+D(i,j,k))/dfm(3)
     end do
     end do
     end do
@@ -974,33 +819,6 @@ subroutine D_HAT_CALCULATION(Dt,Jn,phi,Dh)
     k = 1;      Dh(:,:,k,5) = Jn(:,:,k,5)/phi(:,:,k)
     k = nfm(3); Dh(:,:,k,6) = Jn(:,:,k,6)/phi(:,:,k)
 
-!    do j = 1, nfm(2)
-!        write(8,1), (Dh(i,j,1,1), i = 1, nfm(1))
-!    end do
-!    write(8,*)
-!    do j = 1, nfm(2)
-!        write(8,1), (Dh(i,j,1,2), i = 1, nfm(1))
-!    end do
-!    write(8,*)
-!    do j = 1, nfm(2)
-!        write(8,1), (Dh(i,j,1,3), i = 1, nfm(1))
-!    end do
-!    write(8,*)
-!    do j = 1, nfm(2)
-!        write(8,1), (Dh(i,j,1,4), i = 1, nfm(1))
-!    end do
-!    write(8,*)
-!    do j = 1, nfm(2)
-!        write(8,1), (Dh(i,j,1,5), i = 1, nfm(1))
-!    end do
-!    write(8,*)
-!    do j = 1, nfm(2)
-!        write(8,1), (Dh(i,j,1,6), i = 1, nfm(1))
-!    end do
-!    write(8,*)
-!    1 format(1000es15.7)
-!    stop
-
 end subroutine
 
 
@@ -1024,7 +842,7 @@ function getM (Dt, Dh, sig_a) result(M)
     do j = 1, nfm(2)
     do i = 1, nfm(1)
         if ( i /= 1 )      M(i,j,k,3) = -(Dt(i,j,k,1)+Dh(i,j,k,1))/dfm(1) ! x0
-        if ( i /= nfm(1) ) M(i,j,k,5) = -(Dt(i,j,k,2)-Dh(i,j,k,2))/dfm(2) ! x1
+        if ( i /= nfm(1) ) M(i,j,k,5) = -(Dt(i,j,k,2)-Dh(i,j,k,2))/dfm(1) ! x1
         if ( j /= 1 )      M(i,j,k,2) = -(Dt(i,j,k,3)+Dh(i,j,k,3))/dfm(2) ! y0
         if ( j /= nfm(2) ) M(i,j,k,6) = -(Dt(i,j,k,4)-Dh(i,j,k,4))/dfm(2) ! y1
         if ( k /= 1 )      M(i,j,k,1) = -(Dt(i,j,k,5)+Dh(i,j,k,5))/dfm(3) ! z0
@@ -1044,6 +862,8 @@ end function getM
 
 
 subroutine POWER (k_eff, M, phi0, phi1, nusig_f)
+    use SOLVERS, only: BICGStab_hepta
+    implicit none
     real(8), intent(inout):: k_eff
     real(8), intent(in) :: M(:,:,:,:), nusig_f(:,:,:)
     real(8), intent(inout):: phi0(:,:,:), phi1(:,:,:)
@@ -1055,10 +875,9 @@ subroutine POWER (k_eff, M, phi0, phi1, nusig_f)
     
     err = ONE
     do while ( ( err > 1.0d-10 ) .and. (iter < iter_max) )
-        !print*, "e", err, "| k", k_eff
         iter = iter + 1
         phi0 = phi1
-        F = nusig_f(:,:,:)*phi0(:,:,:)/k_eff
+        F = nusig_f(:,:,:)*phi1(:,:,:)/k_eff
         !call SOR(M(:,:,:,:),F(:,:,:),phi1(:,:,:))
         phi1 = BiCGStab_hepta(M(:,:,:,:),F(:,:,:))
         k_eff = k_eff*sum(nusig_f*phi1*nusig_f*phi1) &
@@ -1067,158 +886,6 @@ subroutine POWER (k_eff, M, phi0, phi1, nusig_f)
     enddo
     
 end subroutine 
-
-! =============================================================================
-! CG is a matrix solver by the SOR
-! =============================================================================
-subroutine SOR(m0,ss,ff)
-    implicit none
-    real(8), intent(in   ):: m0(:,:,:,:)
-    real(8), intent(in   ):: ss(:,:,:)
-    real(8), intent(inout):: ff(:,:,:)
-    integer:: ii, jj, kk, ee, mm
-    real(8):: temp
-    integer:: id(3)
-    real(8):: relax = 1.4D0
-    integer:: n_inner = 5
-
-    do mm=1, n_inner
-    do kk=1, nfm(3)
-    do jj=1, nfm(2)
-    do ii=1, nfm(1)
-       temp = ss(ii,jj,kk)
-       if ( ii /= 1 )      temp = temp - m0(ii,jj,kk,3)*ff(ii-1,jj,kk)
-       if ( ii /= nfm(1) ) temp = temp - m0(ii,jj,kk,5)*ff(ii+1,jj,kk)
-       if ( jj /= 1 )      temp = temp - m0(ii,jj,kk,2)*ff(ii,jj-1,kk)
-       if ( jj /= nfm(2) ) temp = temp - m0(ii,jj,kk,6)*ff(ii,jj+1,kk)
-       if ( kk /= 1 )      temp = temp - m0(ii,jj,kk,1)*ff(ii,jj,kk-1)
-       if ( kk /= nfm(3) ) temp = temp - m0(ii,jj,kk,7)*ff(ii,jj,kk+1)
-       ff(ii,jj,kk) = (1D0-relax)*ff(ii,jj,kk)+relax*temp/m0(ii,jj,kk,4)
-!       if ( isnan(ff(ii,jj,kk)) ) then
-!           id(1)=ii;id(2)=jj;id(3)=kk
-!           print*, ii, jj, kk
-!           print*, ff(ii,jj,kk)
-!           print*, ss(ii,jj,kk)
-!           print*, temp
-!           print*, "1", m1(ii,jj,kk), dtild(ii,jj,kk,5), fm_dhat(ii,jj,kk,5)
-!           print*, "2", m2(ii,jj,kk), dtild(ii,jj,kk,3), fm_dhat(ii,jj,kk,3)
-!           print*, "3", m3(ii,jj,kk), dtild(ii,jj,kk,1), fm_dhat(ii,jj,kk,1)
-!           print*, "4", m4(ii,jj,kk)
-!           print*, "5", m5(ii,jj,kk), dtild(ii,jj,kk,2), fm_dhat(ii,jj,kk,2)
-!           print*, "6", m6(ii,jj,kk), dtild(ii,jj,kk,4), fm_dhat(ii,jj,kk,4)
-!           print*, "7", m7(ii,jj,kk), dtild(ii,jj,kk,6), fm_dhat(ii,jj,kk,6)
-!           print*, ff(ii-1,jj,kk)
-!           print*, ff(ii+1,jj,kk)
-!           print*, ff(ii,jj-1,kk)
-!           print*, ff(ii,jj+1,kk)
-!           print*, ff(ii,jj,kk-1)
-!           print*, ff(ii,jj,kk+1)
-!           pause
-!       end if
-    end do
-    end do
-    end do
-    end do
-
-end subroutine
-
-! ============================================== !
-!         Hepta diagonal matrix solvers            !
-! ============================================== !
-function BiCGStab_hepta(M,Q) result(x)
-    real(8), intent(in) :: M (:,:,:,:)
-    real(8), intent(in) :: Q (:,:,:)
-    real(8), dimension(nfm(1),nfm(2),nfm(3)):: x, r, rs, v, p, s, t
-    real(8), parameter :: e = 1d-10
-    real(8) :: rho      , rho_prev
-    real(8) :: alpha    , omega   , beta
-    real(8) :: norm_r   , norm_b
-    real(8) :: summesion, temp
-    integer :: it = 0
-    integer :: i, j, k
-
-    x     = 0.0
-    r     = Q
-    rs    = r
-    rho   = 1.0
-    alpha = 1.0
-    omega = 1.0
-    v     = 0.0
-    p     = 0.0
-
-    norm_r = sqrt(sum(r*r))
-    norm_b = sqrt(sum(Q*Q))
-    
-    do while ( norm_r .GT. e*norm_b )
-        rho_prev = rho
-        rho      = sum(rs*r)
-        beta     = (rho/rho_prev) * (alpha/omega)
-    
-        p        = r + beta * (p - omega*v)
-    
-!        do i = 1, index0  !> v = matmul(M,p)
-!            if (M(i,1).ne.0) v(i) = v(i) + M(i,1)*p(i-1)
-!            if (M(i,6).ne.0) v(i) = v(i) + M(i,6)*p(i+1)
-!            if (M(i,2).ne.0) v(i) = v(i) + M(i,2)*p(i-a)
-!            if (M(i,5).ne.0) v(i) = v(i) + M(i,5)*p(i+a)
-!            if (M(i,3).ne.0) v(i) = v(i) + M(i,3)*p(i-a*b)
-!            if (M(i,4).ne.0) v(i) = v(i) + M(i,4)*p(i+a*b)
-!                             v(i) = v(i) + M(i,7)*p(i)
-!        enddo 
-
-        v(:,:,:) = 0
-        do i = 1, nfm(1)
-        do j = 1, nfm(2)
-        do k = 1, nfm(3)
-            if ( i /= 1 )      v(i,j,k) = v(i,j,k) + M(i,j,k,3)*p(i-1,j,k) ! x0
-            if ( i /= nfm(1) ) v(i,j,k) = v(i,j,k) + M(i,j,k,5)*p(i+1,j,k) ! x1
-            if ( j /= 1 )      v(i,j,k) = v(i,j,k) + M(i,j,k,2)*p(i,j-1,k) ! y0
-            if ( j /= nfm(2) ) v(i,j,k) = v(i,j,k) + M(i,j,k,6)*p(i,j+1,k) ! y1
-            if ( k /= 1 )      v(i,j,k) = v(i,j,k) + M(i,j,k,1)*p(i,j,k-1) ! z0
-            if ( k /= nfm(3) ) v(i,j,k) = v(i,j,k) + M(i,j,k,7)*p(i,j,k+1) ! z1
-                               v(i,j,k) = v(i,j,k) + M(i,j,k,4)*p(i,j,k)
-        end do
-        end do
-        end do
-        
-!        t(:) = 0
-!        do i = 1, index0  !> t = matmul(M,s)
-!            if (M(i,1).ne.0) t(i) = t(i) + M(i,1)*s(i-1)
-!            if (M(i,6).ne.0) t(i) = t(i) + M(i,6)*s(i+1)
-!            if (M(i,2).ne.0) t(i) = t(i) + M(i,2)*s(i-a)
-!            if (M(i,5).ne.0) t(i) = t(i) + M(i,5)*s(i+a)
-!            if (M(i,3).ne.0) t(i) = t(i) + M(i,3)*s(i-a*b)
-!            if (M(i,4).ne.0) t(i) = t(i) + M(i,4)*s(i+a*b)
-!                             t(i) = t(i) + M(i,7)*s(i)
-!        enddo 
-        
-        alpha = rho/sum(rs*v)
-        s     = r - alpha*v
-        t(:,:,:) = 0
-        do i = 1, nfm(1)
-        do j = 1, nfm(2)
-        do k = 1, nfm(3)
-            if ( i /= 1 )      t(i,j,k) = t(i,j,k) + M(i,j,k,3)*s(i-1,j,k)
-            if ( i /= nfm(1) ) t(i,j,k) = t(i,j,k) + M(i,j,k,5)*s(i+1,j,k)
-            if ( j /= 1 )      t(i,j,k) = t(i,j,k) + M(i,j,k,2)*s(i,j-1,k)
-            if ( j /= nfm(2) ) t(i,j,k) = t(i,j,k) + M(i,j,k,6)*s(i,j+1,k)
-            if ( k /= 1 )      t(i,j,k) = t(i,j,k) + M(i,j,k,1)*s(i,j,k-1)
-            if ( k /= nfm(3) ) t(i,j,k) = t(i,j,k) + M(i,j,k,7)*s(i,j,k+1)
-                               t(i,j,k) = t(i,j,k) + M(i,j,k,4)*s(i,j,k)
-        end do
-        end do
-        end do
-        
-        omega  = sum(t*s)/sum(t*t)
-        x      = x + alpha*p + omega*s
-        r      = s - omega*t
-        norm_r = sqrt(sum(r*r))
-        norm_b = sqrt(sum(Q*Q))
-    
-        it = it + 1
-    end do   
-    
-end function BiCGStab_hepta     
 
 
 ! function which produces p-CMFD M matrix
@@ -1387,9 +1054,10 @@ subroutine FMFD_SUM (inpar, inoutpar, partype)
     inoutpar(:,:,:)%sig_a   = inoutpar(:,:,:)%sig_a   + inpar(:,:,:)%sig_a
     inoutpar(:,:,:)%nusig_f = inoutpar(:,:,:)%nusig_f + inpar(:,:,:)%nusig_f
     do ii = 1, 6 
-    inoutpar(:,:,:)%Jn(ii) = inoutpar(:,:,:)%Jn(ii) + inpar(:,:,:)%Jn(ii)
-    inoutpar(:,:,:)%J0(ii) = inoutpar(:,:,:)%J0(ii) + inpar(:,:,:)%J0(ii)
-    inoutpar(:,:,:)%J1(ii) = inoutpar(:,:,:)%J1(ii) + inpar(:,:,:)%J1(ii)
+    inoutpar(:,:,:)%Jn(ii)   = inoutpar(:,:,:)%Jn(ii)   + inpar(:,:,:)%Jn(ii)
+    inoutpar(:,:,:)%J0(ii)   = inoutpar(:,:,:)%J0(ii)   + inpar(:,:,:)%J0(ii)
+    inoutpar(:,:,:)%J1(ii)   = inoutpar(:,:,:)%J1(ii)   + inpar(:,:,:)%J1(ii)
+    inoutpar(:,:,:)%sphi(ii) = inoutpar(:,:,:)%sphi(ii) + inpar(:,:,:)%sphi(ii)
     enddo 
 
 end subroutine  

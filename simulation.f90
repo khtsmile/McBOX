@@ -45,7 +45,7 @@ subroutine simulate_history(cyc)
     integer :: realex, intex, restype, ndata, idata
     integer, dimension(0:4) :: blocklength, displacement, oldtype 
     integer, allocatable :: ircnt(:), idisp(:) 
-     
+
     if (allocated(fission_bank)) call move_alloc(fission_bank, source_bank)
     if ( icore == score ) then
         call SHENTROPY(source_bank)

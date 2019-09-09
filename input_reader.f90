@@ -736,7 +736,7 @@ module input_reader
     ! FMFD_READ
     ! =========================================================================
     subroutine FMFD_READ(rd)
-        use FMFD,    only: fm0, fm1, fm2, nfm, dfm
+        use FMFD_HEADER, only: fm0, fm1, fm2, nfm, dfm, ncm, cmfdon, fcr, fcz
         implicit none
         integer, intent(in):: rd
         integer :: j
@@ -762,6 +762,11 @@ module input_reader
                 dfm(:) = fm2(:) / nfm(:)
             case ("acc")    ! optional 
                 read(line(j+1:), *) n_acc
+            case ("CMFD","cmfd")
+                cmfdon = .true.
+                read(line(j+1:), *) fcr, fcz
+                ncm(1:2) = nfm(1:2) / fcr
+                ncm(3) = nfm(3) / fcz
             case default
                 backspace(rd)
                 return

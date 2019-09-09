@@ -157,8 +157,8 @@ subroutine transport(p,cyc)
         !if ( fmfdon .and. inside_FMFD ) call FMFD_COL(p%wgt,macro_xs,i_xyz)
 
     elseif  ( distance == d_FMFD ) then 
-        call FMFD_SURF(inside_FMFD, income_FMFD,i_surf, i_xyz, p%wgt, &
-                       surfaces(surface_crossed)%bc)
+        call FMFD_SURF(inside_FMFD, income_FMFD,i_surf, i_xyz, &
+                        p%coord(1)%uvw, p%wgt, surfaces(surface_crossed)%bc)
         if ( fm_crossed ) then
             call cross_surface(p, surface_crossed)
         else
