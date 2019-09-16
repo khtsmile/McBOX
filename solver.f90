@@ -11,7 +11,7 @@ function BiCGStab_hepta(M,Q) result(x)
     real(8), intent(in) :: M (:,:,:,:)
     real(8), intent(in) :: Q (:,:,:)
     real(8), dimension(nfm(1),nfm(2),nfm(3)):: x, r, rs, v, p, s, t
-    real(8), parameter :: e = 1d-10
+    real(8), parameter :: e = 1D-8
     real(8) :: rho      , rho_prev
     real(8) :: alpha    , omega   , beta
     real(8) :: norm_r   , norm_b
@@ -88,7 +88,7 @@ function BiCG_G(M,Q) result(x)
     real(8), intent(in) :: M (:,:,:,:)
     real(8), intent(in) :: Q (:,:,:)
     real(8), dimension(ncm(1),ncm(2),ncm(3)):: x, r, rs, v, p, s, t
-    real(8), parameter :: e = 1d-10
+    real(8), parameter :: e = 1D-8
     real(8) :: rho      , rho_prev
     real(8) :: alpha    , omega   , beta
     real(8) :: norm_r   , norm_b
@@ -165,7 +165,7 @@ function BiCG_L(M,Q) result(x)
     real(8), intent(in) :: Q (1:nfm(1),1:nfm(2),1:nfm(3))
     real(8) :: x (1:nfm(1),1:nfm(2),1:nfm(3))
     real(8), dimension(1:fcr,1:fcr,1:fcz):: xx, r, rs, v, p, s, t
-    real(8), parameter :: e = 1d-8
+    real(8), parameter :: e = 1D-8
     real(8) :: rho      , rho_prev
     real(8) :: alpha    , omega   , beta
     real(8) :: norm_r   , norm_b
@@ -177,7 +177,7 @@ function BiCG_L(M,Q) result(x)
     do kk = 1, ncm(3); id0(3) = (kk-1)*fcz; id1(3) = id0(3) + fcz
 
     xx    = 0.0
-    r     = Q(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))
+    r(1:fcr,1:fcr,1:fcz) = Q(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))
     rs    = r
     rho   = 1.0
     alpha = 1.0
@@ -253,125 +253,8 @@ function BiCG_L(M,Q) result(x)
     
 end function BiCG_L
 
-!! =============================================================================
-!! BICG_L
-!! =============================================================================
-!function BiCG_L2(M,Q) result(x)
-!    real(8), intent(in) :: M (1:nfm(1),1:nfm(2),1:nfm(3),1:7)
-!    real(8), intent(in) :: Q (1:nfm(1),1:nfm(2),1:nfm(3))
-!    real(8) :: x (1:nfm(1),1:nfm(2),1:nfm(3))
-!    real(8), dimension(1:nfm(1),1:nfm(2),1:nfm(3)):: xx, r, rs, v, p, s, t
-!    real(8), parameter :: e = 1d-8
-!    real(8) :: rho      , rho_prev
-!    real(8) :: alpha    , omega   , beta
-!    real(8) :: norm_r   , norm_b
-!    integer :: ii, jj, kk, mm, nn, oo
-!    integer :: id(3), id0(3), id1(3)
-!
-!    xx    = 0.0
-!    r     = Q
-!    rs    = r
-!    rho   = 1.0
-!    alpha = 1.0
-!    omega = 1.0
-!    v     = 0.0
-!    p     = 0.0
-!
-!
-!    do ii = 1, ncm(1); id0(1) = (ii-1)*fcr; id1(1) = id0(1) + fcr
-!    do jj = 1, ncm(2); id0(2) = (jj-1)*fcr; id1(2) = id0(2) + fcr
-!    do kk = 1, ncm(3); id0(3) = (kk-1)*fcz; id1(3) = id0(3) + fcz
-!
-!    norm_r = sqrt(sum(r(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!                     *r(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))))
-!    norm_b = sqrt(sum(r(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!                     *r(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))))*e
-!
-!    do while ( norm_r .GT. norm_b )
-!        rho_prev = rho
-!        rho      = sum(rs(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!                       *r(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)))
-!        beta     = (rho/rho_prev) * (alpha/omega)
-!        p(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!            = r(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) + beta &
-!            * (p(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!            - omega*v(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)))
-!
-!        v(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) = 0
-!        do mm = 1, fcr; id(1) = id0(1) + mm
-!        do nn = 1, fcr; id(2) = id0(2) + nn
-!        do oo = 1, fcz; id(3) = id0(3) + oo
-!            if ( mm /= 1 )   v(mm,nn,oo) = v(mm,nn,oo) + p(mm-1,nn,oo) & ! x0
-!                                * M(id(1),id(2),id(3),3)
-!            if ( mm /= fcr ) v(mm,nn,oo) = v(mm,nn,oo) + p(mm+1,nn,oo) & ! x1
-!                                * M(id(1),id(2),id(3),5)
-!            if ( nn /= 1 )   v(mm,nn,oo) = v(mm,nn,oo) + p(mm,nn-1,oo) & ! y0
-!                                * M(id(1),id(2),id(3),2)
-!            if ( nn /= fcr ) v(mm,nn,oo) = v(mm,nn,oo) + p(mm,nn+1,oo) & ! y1
-!                                * M(id(1),id(2),id(3),6)
-!            if ( oo /= 1 )   v(mm,nn,oo) = v(mm,nn,oo) + p(mm,nn,oo-1) & ! z0
-!                                * M(id(1),id(2),id(3),1)
-!            if ( oo /= fcz ) v(mm,nn,oo) = v(mm,nn,oo) + p(mm,nn,oo+1) & ! z1
-!                                * M(id(1),id(2),id(3),7)
-!                             v(mm,nn,oo) = v(mm,nn,oo) + p(mm,nn,oo) &
-!                                * M(id(1),id(2),id(3),4)
-!        end do
-!        end do
-!        end do
-!        
-!        alpha = rho/sum(rs(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!            *v(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)))
-!        s(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))     &
-!            = r(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!            - alpha*v(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))
-!        t(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) = 0
-!        do mm = 1, fcr; id(1) = id0(1) + mm
-!        do nn = 1, fcr; id(2) = id0(2) + nn
-!        do oo = 1, fcz; id(3) = id0(3) + oo
-!            if ( mm /= 1 )   t(mm,nn,oo) = t(mm,nn,oo) + v(mm-1,nn,oo) & ! x0
-!                                * M(id(1),id(2),id(3),3)
-!            if ( mm /= fcr ) t(mm,nn,oo) = t(mm,nn,oo) + v(mm+1,nn,oo) & ! x1
-!                                * M(id(1),id(2),id(3),5)
-!            if ( nn /= 1 )   t(mm,nn,oo) = t(mm,nn,oo) + v(mm,nn-1,oo) & ! y0
-!                                * M(id(1),id(2),id(3),2)
-!            if ( nn /= fcr ) t(mm,nn,oo) = t(mm,nn,oo) + v(mm,nn+1,oo) & ! y1
-!                                * M(id(1),id(2),id(3),6)
-!            if ( oo /= 1 )   t(mm,nn,oo) = t(mm,nn,oo) + v(mm,nn,oo-1) & ! z0
-!                                * M(id(1),id(2),id(3),1)
-!            if ( oo /= fcz ) t(mm,nn,oo) = t(mm,nn,oo) + v(mm,nn,oo+1) & ! z1
-!                                * M(id(1),id(2),id(3),7)
-!                             t(mm,nn,oo) = t(mm,nn,oo) + v(mm,nn,oo) &
-!                                * M(id(1),id(2),id(3),4)
-!        end do
-!        end do
-!        end do
-!        
-!        omega  = sum(t(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!            *s(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))) &
-!            /sum(t(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!            *t(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)))
-!        xx(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))     &
-!            = xx(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!            + alpha*p(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!            + omega*s(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))
-!        r(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))      &
-!            = s(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!            - omega*t(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))
-!        norm_r = sqrt(sum(r(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) &
-!            *r(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))))
-!
-!    end do   
-!    x(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3)) = &
-!        xx(id0(1)+1:id1(1),id0(2)+1:id1(2),id0(3)+1:id1(3))
-!    end do
-!    end do
-!    end do
-!    
-!end function BiCG_L2
-
-
 ! =============================================================================
-! CG is a matrix solver by the SOR
+! SOR
 ! =============================================================================
 subroutine SOR(m0,ss,ff)
     implicit none
@@ -396,27 +279,6 @@ subroutine SOR(m0,ss,ff)
        if ( kk /= 1 )      temp = temp - m0(ii,jj,kk,1)*ff(ii,jj,kk-1)
        if ( kk /= nfm(3) ) temp = temp - m0(ii,jj,kk,7)*ff(ii,jj,kk+1)
        ff(ii,jj,kk) = (1D0-relax)*ff(ii,jj,kk)+relax*temp/m0(ii,jj,kk,4)
-!       if ( isnan(ff(ii,jj,kk)) ) then
-!           id(1)=ii;id(2)=jj;id(3)=kk
-!           print*, ii, jj, kk
-!           print*, ff(ii,jj,kk)
-!           print*, ss(ii,jj,kk)
-!           print*, temp
-!           print*, "1", m1(ii,jj,kk), dtild(ii,jj,kk,5), fm_dhat(ii,jj,kk,5)
-!           print*, "2", m2(ii,jj,kk), dtild(ii,jj,kk,3), fm_dhat(ii,jj,kk,3)
-!           print*, "3", m3(ii,jj,kk), dtild(ii,jj,kk,1), fm_dhat(ii,jj,kk,1)
-!           print*, "4", m4(ii,jj,kk)
-!           print*, "5", m5(ii,jj,kk), dtild(ii,jj,kk,2), fm_dhat(ii,jj,kk,2)
-!           print*, "6", m6(ii,jj,kk), dtild(ii,jj,kk,4), fm_dhat(ii,jj,kk,4)
-!           print*, "7", m7(ii,jj,kk), dtild(ii,jj,kk,6), fm_dhat(ii,jj,kk,6)
-!           print*, ff(ii-1,jj,kk)
-!           print*, ff(ii+1,jj,kk)
-!           print*, ff(ii,jj-1,kk)
-!           print*, ff(ii,jj+1,kk)
-!           print*, ff(ii,jj,kk-1)
-!           print*, ff(ii,jj,kk+1)
-!           pause
-!       end if
     end do
     end do
     end do
@@ -428,7 +290,7 @@ end subroutine
 ! =============================================================================
 ! CG is a matrix solver by the SOR
 ! =============================================================================
-subroutine CG1(m0,ss,ff)
+subroutine SORG(m0,ss,ff)
     implicit none
     real(8), intent(in   ):: m0(1:ncm(1),1:ncm(2),1:ncm(3),1:7)
     real(8), intent(in   ):: ss(1:ncm(1),1:ncm(2),1:ncm(3))
@@ -483,7 +345,8 @@ subroutine SORL(m0,ss,ff)
         if ( nn /= fcr ) temp = temp - m0(id(1),id(2),id(3),6)*ff(id(1),id(2)+1,id(3))
         if ( oo /= 1 )   temp = temp - m0(id(1),id(2),id(3),1)*ff(id(1),id(2),id(3)-1)
         if ( oo /= fcz ) temp = temp - m0(id(1),id(2),id(3),7)*ff(id(1),id(2),id(3)+1)
-        ff(id(1),id(2),id(3)) = (1D0-relax)*ff(id(1),id(2),id(3))+relax*temp/m0(id(1),id(2),id(3),4)
+        ff(id(1),id(2),id(3)) = &
+            (1D0-relax)*ff(id(1),id(2),id(3))+relax*temp/m0(id(1),id(2),id(3),4)
       end do
       end do
       end do

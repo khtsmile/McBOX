@@ -14,6 +14,7 @@ integer :: provide
 real(8) :: time1, time2, time3, time4
 real(8) :: k_sum 
 logical :: isopened
+real(8) :: tt1, tt2, tt3
 
 !> Preparation for parallelization ===============================================
 !call omp_set_num_threads(1)
@@ -24,6 +25,7 @@ call MPI_COMM_SIZE(core,ncore,ierr)
 
 !> PreMC : Read input / Initialize / Set Random Seed etc. ========================
 call premc
+call TIME_MEASURE
 
 !> Stead-state Simlulation Start =================================================
 call START_MSG
@@ -36,6 +38,7 @@ Do
     time1 = omp_get_wtime()
     call simulate_history(curr_cyc)
     time2 = omp_get_wtime()
+    t_tot(curr_cyc) = time2-time1
     call RUN_MSG
     if ( curr_cyc == n_totcyc ) exit
 Enddo
@@ -65,6 +68,15 @@ function STD(val)
     if ( isnan(std) ) std = 0
 
 end function
+
+subroutine TIME_MEASURE
+    use SIMULATION_HEADER, only: t_MC, t_det, t_tot
+    implicit none
+    allocate(t_MC(n_totcyc))
+    allocate(t_det(n_totcyc))
+    allocate(t_tot(n_totcyc))
+
+end subroutine
 
 ! =============================================================================
 ! START_MSG
@@ -150,6 +162,29 @@ end if
 
 10 format(A,F10.3,A4,F8.2,A4)
 11 format(A,F10.6,A4,F8.3)
+
+
+if ( icore == score ) then
+
+    write(*,*)
+    ! multiplication factor
+    do ii = 1, n_totcyc
+        write(*,1), k_fmfd(ii)
+    end do
+    write(*,*)
+
+    ! computing time
+    t_MC = t_tot - t_det
+    do ii = 1, n_totcyc
+        write(*,2), t_MC(ii), t_det(ii), t_tot(ii)
+    end do
+
+    1 format(F10.6)
+    2 format(3ES15.7)
+
+end if
+
+
 
 end subroutine
 

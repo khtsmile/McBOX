@@ -7,14 +7,14 @@ entropy -64.26 -64.26 -50 64.26 64.26 50 6 6 10
 
 
 % history inactive active
-pop 7E6 20 50
+pop 3E6 80 50
 %PRUP 1.8E5 0 5.4E5
 
 
 FMFD 
 grid -64.26 -64.26 -50 64.26 64.26 50 102 102 10
 acc 5
-cmfd 17 2
+%cmfd 17 2
 
 
 tally 0

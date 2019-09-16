@@ -2,7 +2,7 @@
 #include <omp.h>
 #include <time.h>
 
-int seed = 33878992;
+int seed = 77777777;
 #pragma omp threadprivate(seed)
 
 double rang() {

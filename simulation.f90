@@ -21,7 +21,7 @@ module simulation
     use FMFD,               only : FMFD_initialize_thread, FMFD_initialize, &
                                    FMFD_solve, n_skip, n_acc, fsd, FMFD_ID, &
                                    process_FMFD, NORM_FMFD, fmfdon, &
-                                   nfm
+                                   nfm, k_fmfd
                                     
     
     implicit none 
@@ -45,6 +45,7 @@ subroutine simulate_history(cyc)
     integer :: realex, intex, restype, ndata, idata
     integer, dimension(0:4) :: blocklength, displacement, oldtype 
     integer, allocatable :: ircnt(:), idisp(:) 
+    real(8) :: time1, time2
 
     if (allocated(fission_bank)) call move_alloc(fission_bank, source_bank)
     if ( icore == score ) then
@@ -134,7 +135,7 @@ subroutine simulate_history(cyc)
     k_tl  = k_tl  / real(ngen,8) 
     !keff  = (k_tl + k_col) / 2.0d0 ; 
     keff = k_col
-    print*, "MC", keff
+    !print*, "MC", keff
     
     if (icore == score) write(prt_keff,*) keff, k_col, k_tl
     
@@ -206,7 +207,13 @@ subroutine simulate_history(cyc)
     
     !> Solve FMFD and apply FSD shape feedback ==================================
     if ( fmfdon .and. cyc > n_skip) then 
-        if (icore == score) call FMFD_SOLVE(keff,fsd)
+        if (icore == score) then
+            call CPU_TIME(time1)
+            k_fmfd(cyc) = keff
+            call FMFD_SOLVE(k_fmfd(cyc),fsd)
+            call CPU_TIME(time2)
+            t_det(cyc) = time2-time1
+        end if
         call MPI_BCAST(fsd, nfm(1)*nfm(2)*nfm(3), &
             MPI_DOUBLE_PRECISION, score, MPI_COMM_WORLD, ierr) 
         ! find fission_bank lattice index and apply shape

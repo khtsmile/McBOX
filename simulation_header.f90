@@ -3,6 +3,9 @@ module simulation_header
     !use geometry_header, only: cell
     
     implicit none 
+
+    ! computing time analysis
+    real(8), allocatable:: t_MC(:), t_det(:), t_tot(:)
     
     type particle_stack
         type(bank), pointer :: p
@@ -17,8 +20,6 @@ module simulation_header
         class(particle_stack) :: this 
         nullify(this%p)
     end subroutine 
-
-    
 
 
 end module
