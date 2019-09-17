@@ -16,7 +16,7 @@ module FMFD
 ! FMFD_initialize_1
 ! =============================================================================
 subroutine FMFD_allocation()
-    integer:: i, j
+    integer:: ii, jj
 
     ! parameters allocation
     allocate(k_fmfd(n_totcyc))
@@ -25,17 +25,16 @@ subroutine FMFD_allocation()
     allocate(fsd_MC(nfm(1),nfm(2),nfm(3)))
     allocate(fsd(nfm(1),nfm(2),nfm(3)))
     allocate(acc(n_acc)) 
-    do i = 1, n_acc 
-        allocate(acc(i)%fm(nfm(1),nfm(2),nfm(3)))
-        acc(i)%fm(:,:,:)%phi     = 0
-        acc(i)%fm(:,:,:)%sig_t   = 0
-        acc(i)%fm(:,:,:)%sig_a   = 0
-        acc(i)%fm(:,:,:)%nusig_f = 0
-        do j = 1, 6
-        acc(i)%fm(:,:,:)%Jn(j)   = 0
-        acc(i)%fm(:,:,:)%J0(j)   = 0
-        acc(i)%fm(:,:,:)%J1(j)   = 0
-        !acc(i)%fm(:,:,:)%sphi(j) = 0
+    do ii = 1, n_acc 
+        allocate(acc(ii)%fm(nfm(1),nfm(2),nfm(3)))
+        acc(ii)%fm(:,:,:)%phi     = 0
+        acc(ii)%fm(:,:,:)%sig_t   = 0
+        acc(ii)%fm(:,:,:)%sig_a   = 0
+        acc(ii)%fm(:,:,:)%nusig_f = 0
+        do jj = 1, 6
+        acc(ii)%fm(:,:,:)%Jn(jj)   = 0
+        acc(ii)%fm(:,:,:)%J0(jj)   = 0
+        acc(ii)%fm(:,:,:)%J1(jj)   = 0
         end do
     enddo
     
@@ -99,18 +98,17 @@ end subroutine
 ! FMFD_INITIALIZE_2 initializes parameters used in the FMFD calculaiton
 ! =============================================================================
 subroutine FMFD_initialize()
-    integer :: i 
+    integer :: ii
 
     ! initialization
     fm(:,:,:) % phi     = 0 
     fm(:,:,:) % sig_t   = 0 
     fm(:,:,:) % sig_a   = 0 
     fm(:,:,:) % nusig_f = 0 
-    do i = 1, 6
-        fm(:,:,:) % Jn(i)   = 0 
-        fm(:,:,:) % J0(i)   = 0 
-        fm(:,:,:) % J1(i)   = 0 
-        !fm(:,:,:) % sphi(i) = 0 
+    do ii = 1, 6
+        fm(:,:,:) % Jn(ii)   = 0 
+        fm(:,:,:) % J0(ii)   = 0 
+        fm(:,:,:) % J1(ii)   = 0 
     enddo 
 
     fsd_MC = 0
@@ -133,7 +131,6 @@ subroutine FMFD_initialize_thread()
     fm_thread(:,:,:) % Jn(i)   = 0 
     fm_thread(:,:,:) % J0(i)   = 0 
     fm_thread(:,:,:) % J1(i)   = 0 
-    !fm_thread(:,:,:) % sphi(i) = 0
     enddo 
     
 end subroutine
@@ -380,15 +377,9 @@ subroutine FMFD_SURF (inside,income, is, id, uvw, wgt, bc)
         case(1,3,5)
             fm_thread(id(1),id(2),id(3))%J0(is) = &
             fm_thread(id(1),id(2),id(3))%J0(is) + wgt
-!            if ( cmfdon ) &
-!            fm_thread(id(1),id(2),id(3))%sphi(is) = &
-!            fm_thread(id(1),id(2),id(3))%sphi(is) + wgt/abs(uvw((is+1)/2))
         case(2,4,6)
             fm_thread(id(1),id(2),id(3))%J1(is) = &
             fm_thread(id(1),id(2),id(3))%J1(is) + wgt
-!            if ( cmfdon ) &
-!            fm_thread(id(1),id(2),id(3))%sphi(is) = &
-!            fm_thread(id(1),id(2),id(3))%sphi(is) + wgt/abs(uvw(is/2))
         end select
 
         ! boundary condition
@@ -397,15 +388,9 @@ subroutine FMFD_SURF (inside,income, is, id, uvw, wgt, bc)
         case(1,3,5)
             fm_thread(id(1),id(2),id(3))%J1(is) = &
             fm_thread(id(1),id(2),id(3))%J1(is) + wgt
-!            if ( cmfdon ) &
-!            fm_thread(id(1),id(2),id(3))%sphi(is) = &
-!            fm_thread(id(1),id(2),id(3))%sphi(is) + wgt/abs(uvw((is+1)/2))
         case(2,4,6)
             fm_thread(id(1),id(2),id(3))%J0(is) = &
             fm_thread(id(1),id(2),id(3))%J0(is) + wgt
-!            if ( cmfdon ) &
-!            fm_thread(id(1),id(2),id(3))%sphi(is) = &
-!            fm_thread(id(1),id(2),id(3))%sphi(is) + wgt/abs(uvw((is+1)/2))
         end select
         end if
         return
@@ -416,39 +401,21 @@ subroutine FMFD_SURF (inside,income, is, id, uvw, wgt, bc)
     case(1)
         fm_thread(1,id(2),id(3))%J1(1) = &
         fm_thread(1,id(2),id(3))%J1(1) + wgt
-!        if ( cmfdon ) &
-!        fm_thread(1,id(2),id(3))%sphi(1) = &
-!        fm_thread(1,id(2),id(3))%sphi(1) + wgt/abs(uvw(1))
     case(2)
         fm_thread(nfm(1),id(2),id(3))%J0(2) = &
         fm_thread(nfm(1),id(2),id(3))%J0(2) + wgt
-!        if ( cmfdon ) &
-!        fm_thread(nfm(1),id(2),id(3))%sphi(2) = &
-!        fm_thread(nfm(1),id(2),id(3))%sphi(2) + wgt/abs(uvw(1))
     case(3)
         fm_thread(id(1),1,id(3))%J1(3) = &
         fm_thread(id(1),1,id(3))%J1(3) + wgt
-!        if ( cmfdon ) &
-!        fm_thread(id(1),1,id(3))%sphi(3) = &
-!        fm_thread(id(1),1,id(3))%sphi(3) + wgt/abs(uvw(2))
     case(4)
         fm_thread(id(1),nfm(2),id(3))%J0(4) = &
         fm_thread(id(1),nfm(2),id(3))%J0(4) + wgt
-!        if ( cmfdon ) &
-!        fm_thread(id(1),nfm(2),id(3))%sphi(4) = &
-!        fm_thread(id(1),nfm(2),id(3))%sphi(4) + wgt/abs(uvw(2))
     case(5)
         fm_thread(id(1),id(2),1)%J1(5) = &
         fm_thread(id(1),id(2),1)%J1(5) + wgt
-!        if ( cmfdon ) &
-!        fm_thread(id(1),id(2),1)%sphi(5) = &
-!        fm_thread(id(1),id(2),1)%sphi(5) + wgt/abs(uvw(3))
     case(6)
         fm_thread(id(1),id(2),nfm(3))%J0(6) = &
         fm_thread(id(1),id(2),nfm(3))%J0(6) + wgt
-!        if ( cmfdon ) &
-!        fm_thread(id(1),id(2),nfm(3))%sphi(6) = &
-!        fm_thread(id(1),id(2),nfm(3))%sphi(6) + wgt/abs(uvw(3))
     end select
             
 end subroutine
@@ -470,7 +437,6 @@ subroutine NORM_FMFD()
     do mm = 1, 6
     fm(ii,jj,kk)%J0(mm)   = fm(ii,jj,kk)%J0(mm)   + fm_thread(ii,jj,kk)%J0(mm)
     fm(ii,jj,kk)%J1(mm)   = fm(ii,jj,kk)%J1(mm)   + fm_thread(ii,jj,kk)%J1(mm)
-    fm(ii,jj,kk)%sphi(mm) = fm(ii,jj,kk)%sphi(mm) + fm_thread(ii,jj,kk)%sphi(mm)
     end do
     end do
     end do
@@ -540,26 +506,6 @@ subroutine PROCESS_FMFD()
     end do
     end do
 
-!    ! surface flux swapping
-!    do i = 1, nfm(1)
-!    do j = 1, nfm(2)
-!    do k = 1, nfm(3)
-!        if ( i /= 1 ) then
-!        fm(i,j,k)%sphi(1) = fm(i,j,k)%sphi(1) + fm(i-1,j,k)%sphi(2)
-!        fm(i-1,j,k)%sphi(2) = fm(i,j,k)%sphi(1)
-!        end if
-!        if ( j /= 1 ) then
-!        fm(i,j,k)%sphi(3) = fm(i,j,k)%sphi(3) + fm(i,j-1,k)%sphi(4)
-!        fm(i,j-1,k)%sphi(4) = fm(i,j,k)%sphi(3)
-!        end if
-!        if ( k /= 1 ) then
-!        fm(i,j,k)%sphi(5) = fm(i,j,k)%sphi(5) + fm(i,j,k-1)%sphi(6)
-!        fm(i,j,k-1)%sphi(6) = fm(i,j,k)%sphi(5)
-!        end if
-!    end do
-!    end do
-!    end do
-
     ! group constant
     fm(:,:,:) % sig_t   = fm(:,:,:) % sig_t   / fm(:,:,:) % phi
     fm(:,:,:) % sig_a   = fm(:,:,:) % sig_a   / fm(:,:,:) % phi
@@ -571,7 +517,6 @@ subroutine PROCESS_FMFD()
     bb = dble(ngen)*a_fm(i)
     fm(:,:,:) % J0(i)   = fm(:,:,:) % J0(i) / bb
     fm(:,:,:) % J1(i)   = fm(:,:,:) % J1(i) / bb
-!    fm(:,:,:) % sphi(i) = fm(:,:,:) % sphi(i) / bb
     end do
 
     ! net current
@@ -594,7 +539,6 @@ subroutine PROCESS_FMFD()
       fm_avg(:,:,:)%Jn(i) = 0 
       fm_avg(:,:,:)%J0(i) = 0 
       fm_avg(:,:,:)%J1(i) = 0 
-!      fm_avg(:,:,:)%sphi(i) = 0
     enddo 
 
     ! accumulation
@@ -610,7 +554,6 @@ subroutine PROCESS_FMFD()
        fm_avg(i,j,k)%Jn(:)   = fm_avg(i,j,k)%Jn(:)   + acc(l)%fm(i,j,k)%Jn(:)
        fm_avg(i,j,k)%J0(:)   = fm_avg(i,j,k)%J0(:)   + acc(l)%fm(i,j,k)%J0(:)
        fm_avg(i,j,k)%J1(:)   = fm_avg(i,j,k)%J1(:)   + acc(l)%fm(i,j,k)%J1(:)
-!       fm_avg(i,j,k)%sphi(:) = fm_avg(i,j,k)%sphi(:) + acc(l)%fm(i,j,k)%sphi(:)
     end do
     end do
     end do
@@ -625,7 +568,6 @@ subroutine PROCESS_FMFD()
     fm_avg(:,:,:)%Jn(i)   = fm_avg(:,:,:)%Jn(i)   / dble(n_acc)
     fm_avg(:,:,:)%J0(i)   = fm_avg(:,:,:)%J0(i)   / dble(n_acc)
     fm_avg(:,:,:)%J1(i)   = fm_avg(:,:,:)%J1(i)   / dble(n_acc)
-!    fm_avg(:,:,:)%sphi(i) = fm_avg(:,:,:)%sphi(i) / dble(n_acc)
     enddo
 
 end subroutine 
@@ -669,7 +611,6 @@ subroutine FMFD_SOLVE(keff,fsd)
         J0(i,j,k,:)    = fm_avg(i,j,k)%J0(:) 
         J1(i,j,k,:)    = fm_avg(i,j,k)%J1(:) 
         phi1(i,j,k)    = fm_avg(i,j,k)%phi
-!        sphi(i,j,k,:)  = fm_avg(i,j,k)%sphi(:)
     enddo 
     enddo
     enddo
@@ -1068,7 +1009,6 @@ subroutine FMFD_SUM (inpar, inoutpar, partype)
     inoutpar(:,:,:)%Jn(ii)   = inoutpar(:,:,:)%Jn(ii)   + inpar(:,:,:)%Jn(ii)
     inoutpar(:,:,:)%J0(ii)   = inoutpar(:,:,:)%J0(ii)   + inpar(:,:,:)%J0(ii)
     inoutpar(:,:,:)%J1(ii)   = inoutpar(:,:,:)%J1(ii)   + inpar(:,:,:)%J1(ii)
-    inoutpar(:,:,:)%sphi(ii) = inoutpar(:,:,:)%sphi(ii) + inpar(:,:,:)%sphi(ii)
     enddo 
 
 end subroutine  

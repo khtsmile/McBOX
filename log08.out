@@ -1,0 +1,87 @@
+    CTRL  READ COMPLETE..
+    Continuous Energy Mode...
+    Start reading ace-format nuclear data
+           1 1001.711nc
+           2 8016.711nc
+    WARNING :: NYD block exists
+           3 92235.711nc
+           4 92238.711nc
+    Read S(a,b) scattering law tables
+           1 hh2o.71t_0293
+    ACE Lib. READ COMPLETE...
+    CE MAT READ COMPLETE...
+    GEOM  READ COMPLETE..
+    Setting ugrid...
+    Initializing Source...
+    Source Initializing Complete...
+ 
+ 
+  > Num of Threads per Node          32
+  > Num of MPI Nodes                  1
+  > Num of Histories per Cycle  5000000
+  > Skip Cycles:   20  /  Active Cycles:   50
+ 
+  > Tally is OFF
+ 
+    Transport Simulation Starts...
+       1 1276.191 sec   8.49181  |  keff  1.46855
+       2  670.669 sec   8.36463  |  keff  1.49645
+       3  631.022 sec   8.23650  |  keff  1.50916
+       4  614.810 sec   8.20755  |  keff  1.51263
+       5  615.070 sec   8.21272  |  keff  1.51219
+       6  611.195 sec   8.22200  |  keff  1.51074
+       7  610.933 sec   8.22362  |  keff  1.50806
+       8  616.696 sec   8.23229  |  keff  1.50752
+       9  614.756 sec   8.23246  |  keff  1.50793
+      10  611.318 sec   8.23400  |  keff  1.50785
+      11  614.309 sec   8.23867  |  keff  1.50825
+      12  613.675 sec   8.23876  |  keff  1.50889
+      13  608.649 sec   8.23516  |  keff  1.50876
+      14  614.704 sec   8.23648  |  keff  1.50853
+      15  613.797 sec   8.23472  |  keff  1.50862
+      16  614.277 sec   8.23336  |  keff  1.50904
+      17  619.873 sec   8.23689  |  keff  1.50800
+      18  615.897 sec   8.23779  |  keff  1.50839
+      19  618.188 sec   8.23641  |  keff  1.50894
+      20  615.387 sec   8.23827  |  keff  1.50877
+      21  615.464 sec   8.23974  |  keff  1.50816   avg  1.50816   SD    0.000
+      22  614.452 sec   8.23770  |  keff  1.50841   avg  1.50828   SD    8.550
+      23  610.220 sec   8.23707  |  keff  1.50853   avg  1.50837   SD    8.840
+      24  616.998 sec   8.23555  |  keff  1.50847   avg  1.50839   SD    6.989
+      25  617.903 sec   8.23386  |  keff  1.50801   avg  1.50832   SD    8.773
+      26  614.884 sec   8.23303  |  keff  1.50809   avg  1.50828   SD    8.064
+      27  616.141 sec   8.23495  |  keff  1.50818   avg  1.50827   SD    7.039
+      28  610.897 sec   8.23466  |  keff  1.50831   avg  1.50827   SD    6.182
+      29  610.742 sec   8.23570  |  keff  1.50826   avg  1.50827   SD    5.498
+      30  613.648 sec   8.23532  |  keff  1.50876   avg  1.50832   SD    6.814
+      31  615.461 sec   8.23660  |  keff  1.50858   avg  1.50834   SD    6.602
+      32  616.434 sec   8.23427  |  keff  1.50815   avg  1.50833   SD    6.250
+      33  615.014 sec   8.23686  |  keff  1.50884   avg  1.50837   SD    6.907
+      34  613.559 sec   8.23702  |  keff  1.50854   avg  1.50838   SD    6.520
+      35  616.234 sec   8.23627  |  keff  1.50842   avg  1.50838   SD    6.091
+      36  616.842 sec   8.23636  |  keff  1.50858   avg  1.50839   SD    5.837
+      37  614.734 sec   8.23924  |  keff  1.50910   avg  1.50843   SD    6.802
+      38  610.723 sec   8.23635  |  keff  1.50831   avg  1.50843   SD    6.459
+      39  612.091 sec   8.23549  |  keff  1.50911   avg  1.50846   SD    7.039
+      40  620.849 sec   8.23759  |  keff  1.50836   avg  1.50846   SD    6.705
+      41  615.316 sec   8.23338  |  keff  1.50837   avg  1.50845   SD    6.398
+      42  617.735 sec   8.23069  |  keff  1.50910   avg  1.50848   SD    6.753
+      43  612.149 sec   8.23238  |  keff  1.50904   avg  1.50851   SD    6.879
+      44  609.240 sec   8.23225  |  keff  1.50763   avg  1.50847   SD    7.505
+      45  614.815 sec   8.23321  |  keff  1.50817   avg  1.50846   SD    7.300
+      46  606.900 sec   8.23448  |  keff  1.50816   avg  1.50845   SD    7.111
+      47  615.799 sec   8.23489  |  keff  1.50918   avg  1.50847   SD    7.349
+      48  615.774 sec   8.23585  |  keff  1.50887   avg  1.50849   SD    7.221
+      49  616.453 sec   8.23567  |  keff  1.50808   avg  1.50847   SD    7.111
+      50  608.554 sec   8.23160  |  keff  1.50902   avg  1.50849   SD    7.102
+      51  608.487 sec   8.23414  |  keff  1.50877   avg  1.50850   SD    6.931
+      52  609.631 sec   8.23493  |  keff  1.50842   avg  1.50850   SD    6.719
+      53  614.195 sec   8.23411  |  keff  1.50864   avg  1.50850   SD    6.529
+      54  619.180 sec   8.23646  |  keff  1.50857   avg  1.50851   SD    6.340
+      55  612.059 sec   8.23944  |  keff  1.50858   avg  1.50851   SD    6.162
+      56  611.417 sec   8.23686  |  keff  1.50895   avg  1.50852   SD    6.112
+      57  611.950 sec   8.23532  |  keff  1.50814   avg  1.50851   SD    6.033
+      58  613.350 sec   8.23536  |  keff  1.50806   avg  1.50850   SD    5.989
+      59  610.315 sec   8.23335  |  keff  1.50791   avg  1.50848   SD    6.022
+      60  611.973 sec   8.23556  |  keff  1.50840   avg  1.50848   SD    5.875
+      61  608.745 sec   8.23783  |  keff  1.50847   avg  1.50848   SD    5.732

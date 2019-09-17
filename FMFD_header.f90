@@ -22,7 +22,6 @@ module FMFD_HEADER
         real(8) :: Jn(6) 
         real(8) :: J0(6)
         real(8) :: J1(6)
-        real(8) :: sphi(6)
     end type
     logical :: fmfdon = .false.
     integer :: n_skip, n_acc
