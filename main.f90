@@ -5,7 +5,7 @@ use FMFD,       only : FMFD_type, n_acc
 use simulation 
 use omp_lib
 use mpi
-use ENTROPY,    only: entrp
+use ENTROPY,    only: entrp0
 
 implicit none
 
@@ -15,6 +15,7 @@ real(8) :: time1, time2, time3, time4
 real(8) :: k_sum 
 logical :: isopened
 real(8) :: tt1, tt2, tt3
+integer :: jj, kk
 
 !> Preparation for parallelization ===============================================
 !call omp_set_num_threads(1)
@@ -127,21 +128,30 @@ end subroutine
 ! RUN_MSG
 ! =============================================================================
 subroutine RUN_MSG
+use ENTROPY, only: up_sign
+implicit none
     
 if ( icore == score ) then
     if ( curr_cyc <= n_inact ) then
-        write(*,10), curr_cyc, time2-time1, "sec", entrp, " | ", "keff", keff
+    if ( up_sign ) then
+    write(*,10), curr_cyc, time2-time1, "sec", entrp0, " | ", "keff", keff, &
+                 "//", ngen
+    up_sign = .false.
+    else
+    write(*,11), curr_cyc, time2-time1, "sec", entrp0, " | ", "keff", keff
+    end if
     else
         kprt(curr_act) = keff
-        write(*,11), curr_cyc, time2-time1, "sec", entrp, " | ", &
+        write(*,12), curr_cyc, time2-time1, "sec", entrp0, " | ", &
             "keff", keff, &
             "avg", sum(kprt(1:curr_act))/dble(curr_act), &
             "SD", std(kprt(1:curr_act))
     end if
 end if
 
-10 format(i8,f9.3,1x,a,f10.5,1x,a,1x,a,f9.5)
-11 format(i8,f9.3,1x,a,f10.5,1x,a,1x,2(a,f9.5,3x),a,f9.3)
+10 format(i8,f9.3,1x,a,f10.5,1x,a,1x,a,f9.5,2x,a,i8)
+11 format(i8,f9.3,1x,a,f10.5,1x,a,1x,a,f9.5)
+12 format(i8,f9.3,1x,a,f10.5,1x,a,1x,2(a,f9.5,3x),a,f9.3)
 
 end subroutine
 
@@ -158,20 +168,22 @@ if ( icore == score ) then
         time4 - time3, 'sec', (time4-time3)/60, 'min'
     write(*,11), "    - Final keff   : ", &
         sum(kprt(1:n_act))/dble(n_act), "+/-", STD(kprt(1:n_act))
+
+    10 format(A,F10.3,A4,F8.2,A4)
+    11 format(A,F10.6,A4,F8.3)
 end if
 
-10 format(A,F10.3,A4,F8.2,A4)
-11 format(A,F10.6,A4,F8.3)
 
 
 if ( icore == score ) then
-
     write(*,*)
     ! multiplication factor
+    if ( fmfdon ) then
     do ii = 1, n_totcyc
         write(*,1), k_fmfd(ii)
     end do
     write(*,*)
+    end if
 
     ! computing time
     t_MC = t_tot - t_det

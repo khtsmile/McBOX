@@ -331,10 +331,12 @@ subroutine SORL(m0,ss,ff)
     real(8):: relax = 1.4D0
     integer:: n_inner = 5
 
-    do ll=1, n_inner
+    !$omp parallel default(shared) private(ii,jj,kk,ll,id0,id,temp)
+    !$omp do
     do kk=1, ncm(3); id0(3) = (kk-1)*fcz
     do jj=1, ncm(2); id0(2) = (jj-1)*fcr
     do ii=1, ncm(1); id0(1) = (ii-1)*fcr
+    do ll=1, n_inner
       do mm = 1, fcr; id(1) = id0(1)+mm
       do nn = 1, fcr; id(2) = id0(2)+nn
       do oo = 1, fcz; id(3) = id0(3)+oo
@@ -354,6 +356,8 @@ subroutine SORL(m0,ss,ff)
     end do
     end do
     end do
+    !$omp end do
+    !$omp end parallel
 
 end subroutine
 

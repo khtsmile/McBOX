@@ -58,6 +58,8 @@ subroutine ONE_NODE_CMFD(keff,fm_t,fm_a,fm_nf,fmD,fm_phi1,fmJ0,fmJ1,fmJn,fmF)
     call L_SOURCE(fm_phi0,fm_phi1,keff,fm_nf,fm_s,fmJ0,fmJ1)
 !    fm_phi1(:,:,:) = BICG_L(Mfm(:,:,:,:),fm_s(:,:,:))
     call SORL(Mfm,fm_s,fm_phi1)
+    print'(5es15.7)', fm_phi1(1:5,1:5,1)
+    stop
     call L_OUTJ(fm_phi0,fm_phi1,fmF,fmJ0,fmJ1,fmJn)
     call L_REFJ(fmF,fmJ0,fmJ1,fmJn)
     call G_XS(fm_t,fm_a,fm_nf,fm_phi1)

@@ -14,7 +14,7 @@ module simulation
     use XS_header
     use material_header
     use ENTROPY
-    use MPRUP,              only : GENSIZE
+    use MPRUP,              only : GENSIZE, MPRUP_DIST, CYCLECHANGE
     use ace_header,         only : ace
     use tally,              only : TallyCoord, TallyFlux, TallyPower, tally1, &
                                    tally2
@@ -50,10 +50,12 @@ subroutine simulate_history(cyc)
     if (allocated(fission_bank)) call move_alloc(fission_bank, source_bank)
     if ( icore == score ) then
         call SHENTROPY(source_bank)
-        if ( mprupon .or. genup ) call GENSIZE(cyc)
+        if ( mprupon ) call GENSIZE(cyc)
     end if
-    allocate(fission_bank(0))
     isize = size(source_bank)
+    if ( mprupon .or. ( .not. mprupon .and. genup ) ) call MPRUP_DIST(isize)
+    if ( .not. mprupon .and. genup ) call CYCLECHANGE(cyc)
+    allocate(fission_bank(0))
     
     !> Distribute source_bank to slave nodes 
     call para_range(1, isize, ncore, icore, ista, iend)        
@@ -122,7 +124,7 @@ subroutine simulate_history(cyc)
     k_tl  = k_tl  / real(ngen,8) 
     !keff  = (k_tl + k_col) / 2.0d0 ; 
     keff = k_col
-    if ( icore == score ) print*, "MC", keff
+    !if ( icore == score ) print*, "MC", keff
     
     if (icore == score) write(prt_keff,*) keff, k_col, k_tl
     

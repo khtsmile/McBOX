@@ -649,7 +649,7 @@ module input_reader
     
     
     subroutine read_ctrl        
-        use ENTROPY, only: en0, en1, nen, entrp_grid
+        use ENTROPY, only: en0, en1, nen
         implicit none
         integer :: i, j, k, idx, n, level
         integer :: ierr
@@ -695,7 +695,6 @@ module input_reader
                 n_iso0K = 1
                 call READ_DBRC(trim(line(j+1:)))
             case ("entropy")
-                entrp_grid = .true.
                 read(line(j+1:), *) en0(:), en1(:), nen(:)
 !            case ("CMFD") 
 !                read(line(j+1:), *) CMFD_lat, n_skip, n_acc

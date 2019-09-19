@@ -4,6 +4,14 @@ module MPRUP
     use VARIABLES, only: ngen, n_totcyc, n_inact, n_act
     implicit none
 
+    ! * Convergence criteria
+    !   1 convergence : crt1
+    !    (1) relative error
+    !    (2) length of cycles
+    !   2 convergence : crt2
+    !    (1) relative error
+    !    (2) final generation size
+
     contains
 
 ! =============================================================================
@@ -24,8 +32,8 @@ subroutine GENSIZE(cyc)
     ! 1 convergence test
     !print*, "dsh", crt1, dshannon
     select case(ccrt)
-    case(1); if ( dshannon > crt1 )     return
-    case(2); if ( mod(cyc,int(crt1)) /= 0 ) return
+    case(1); if ( dshannon > crt1 ) return
+    case(2); if ( cyc == 1 .or. mod(cyc-1,int(crt1)) /= 0 ) return
     end select
 
     ! 2 stationary point
@@ -36,8 +44,6 @@ subroutine GENSIZE(cyc)
         !print*, "den", crt2, dentrp, "*"
         if ( dentrp < crt2 ) then
             genup = .false.
-            !mprupon = .false.
-            !call CYCLECHANGE(cyc)
             return
         end if
         entrp1 = entrp2
@@ -55,9 +61,11 @@ subroutine GENSIZE(cyc)
 
     ! 3 stopping test
     else
-        if ( dshannon > crt3 ) then
+        if ( dshannon < crt3 ) then
+            up_sign = .true.
             mprupon = .false.
-            call CYCLECHANGE(cyc)
+            genup = .true.
+            !call CYCLECHANGE(cyc)
             return
         end if
 
@@ -72,22 +80,23 @@ end subroutine
 ! =============================================================================
 subroutine GENSIZEUP
     use BANK_HEADER,    only: source_bank
+    use FMFD_HEADER,    only: fmfdon
     implicit none
 
     ngen = ngen + rampup
     source_bank(:)%wgt  = ngen/size(source_bank)
-    print*, "up", ngen
+    up_sign = .true.
 
     ! update criteria
-!    if ( fmfdon ) then
-!        if ( ccrt == 1 ) then
-!            crt1 = 2D-1/sqrt(dble(ngen))
-!        end if
-!        if ( scrt == 1 ) then
-!            crt2 = 9D-2/sqrt(dble(ngen))
-!        end if
-!        crt3 = 9D-2/sqrt(dble(ngen))
-!    else
+    if ( fmfdon ) then
+        if ( ccrt == 1 ) then
+            crt1 = 2D-1/sqrt(dble(ngen))
+        end if
+        if ( scrt == 1 ) then
+            crt2 = 9D-2/sqrt(dble(ngen))
+        end if
+        crt3 = 9D-2/sqrt(dble(ngen))
+    else
         if ( ccrt == 1 ) then
             crt1 = 9D-2/sqrt(dble(ngen))
         end if
@@ -95,7 +104,7 @@ subroutine GENSIZEUP
             crt2 = 3D-2/sqrt(dble(ngen))
         end if
         crt3 = 3D-2/sqrt(dble(ngen))
-!    end if
+    end if
 
 end subroutine
 
@@ -107,8 +116,30 @@ subroutine CYCLECHANGE(cyc)
 
     n_inact  = cyc + 1
     n_totcyc = n_inact + n_act
-    print*, "end", n_inact, ngen, n_totcyc
+    genup = .false.
+    !if ( icore == score ) print*, "end", n_inact, ngen, n_totcyc
 
+end subroutine
+
+! =============================================================================
+! MPRUP_DIST distributes the necessary parameters to the nodes
+! =============================================================================
+subroutine MPRUP_DIST(sz)
+    use BANK_HEADER, only: source_bank
+    use MPI,         only: MPI_REAL8, MPI_COMM_WORLD
+    implicit none
+    integer, intent(in):: sz
+    integer:: TP
+    integer:: WOR
+
+    TP = MPI_REAL8
+    WOR = MPI_COMM_WORLD
+
+    call MPI_BCAST(source_bank(:)%wgt,sz,TP,score,WOR,ierr)
+    call MPI_BCAST(ngen,1,TP,score,WOR,ierr)
+    call MPI_BCAST(genup,1,TP,score,WOR,ierr)
+    call MPI_BCAST(mprupon,1,TP,score,WOR,ierr)
+   
 end subroutine
 
 end module
