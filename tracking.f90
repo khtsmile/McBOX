@@ -140,8 +140,7 @@ subroutine transport(p,cyc)
     
     
     !> CMFD Tally (track length) 
-    if ( fmfdon .and. inside_FMFD ) call &
-    FMFD_TRK(p%wgt,distance,macro_xs,i_xyz,i_bin(2:4),p%coord(1)%xyz)
+    if ( fmfdon .and. inside_FMFD ) call FMFD_TRK(p%wgt,distance,macro_xs,i_xyz)
 
     !> Advance particle
     do j = 1, p % n_coord

@@ -64,9 +64,7 @@ subroutine simulate_history(cyc)
       thread_bank(:)%wgt = 0; bank_idx = 0
       if ( fmfdon ) call FMFD_initialize_thread()
       !$omp do reduction(+:k_col, k_tl)
-        !do i=1, isize 
         do i= ista, iend 
-            !print*, i
             call p%initialize()
             call p%set(source_bank(i))
             
@@ -88,17 +86,6 @@ subroutine simulate_history(cyc)
               !$omp end critical
                 bank_idx = 0
             endif
-
-!            if ( mod(i,10000) == 0 ) then
-!            !if ( mod(i,1) == 0 .and. i >= 8922 ) then
-!            !if ( i > 920 ) then
-!            write(*,1), fm_thread(34,1:17,1)%J1(2)
-!            1 format(es15.7)
-!            print*, "*cycle*", i
-!            print*
-!            pause
-!            end if
-
         enddo
       !$omp end do
 
@@ -135,7 +122,7 @@ subroutine simulate_history(cyc)
     k_tl  = k_tl  / real(ngen,8) 
     !keff  = (k_tl + k_col) / 2.0d0 ; 
     keff = k_col
-    !print*, "MC", keff
+    if ( icore == score ) print*, "MC", keff
     
     if (icore == score) write(prt_keff,*) keff, k_col, k_tl
     
@@ -204,7 +191,7 @@ subroutine simulate_history(cyc)
 !            100 format(<isize>ES15.7)
 !        endif 
     endif
-    
+
     !> Solve FMFD and apply FSD shape feedback ==================================
     if ( fmfdon .and. cyc > n_skip) then 
         if (icore == score) then
@@ -221,7 +208,6 @@ subroutine simulate_history(cyc)
             id = FMFD_ID(fission_bank(i)%xyz)
             fission_bank(i)%wgt = fission_bank(i)%wgt * fsd(id(1),id(2),id(3))
         enddo
-      
     endif 
     
     !> initialize the global tally parameters ===================================

@@ -16,6 +16,7 @@ module ENTROPY
         real(8), allocatable:: entrp(:,:,:)
     end type
     type(entropy_bins), allocatable:: bens(:)
+    !real(8), allocatable:: entrp(:,:,:)
 
     ! =========================================================================
     ! Modified paricle ramp-up method (MPRUP)
@@ -57,6 +58,9 @@ subroutine ENTRP_INIT
         allocate(bens(1))
         allocate(bens(1)%entrp(nen(1),nen(2),nen(3)))
         bens(1)%entrp(:,:,:) = 0D0
+
+!        allocate(entrp(nen(1),nen(2),nen(3)))
+!        entrp = 0D0
 
     ! -------------------------------------------------------------------------
     ! assembly size entropy mesh grid
@@ -157,7 +161,7 @@ function FIND_ENTRP_LAT(p) result(exyz)
     if ( entrp_grid ) then
         xyz(:) = p%coord(1)%xyz(:)
         exyz(0) = 1
-        exyz(1:3) = int((xyz(:)-en0(:))/den(:))+1
+        exyz(1:3) = floor((xyz(1:3)-en0(1:3))/den(1:3))+1
 
     else
         ! search lattice index

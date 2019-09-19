@@ -767,6 +767,11 @@ module input_reader
                 read(line(j+1:), *) fcr, fcz
                 ncm(1:2) = nfm(1:2) / fcr
                 ncm(3) = nfm(3) / fcz
+
+                if ( mod(nfm(1),fcr) /= 0 .or. mod(nfm(3),fcz) /= 0 ) then
+                    print*, "CMFD mesh grid /= FMFD mesh grid"
+                    stop
+                end if
             case default
                 backspace(rd)
                 return

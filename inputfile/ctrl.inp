@@ -3,18 +3,18 @@
 energy 1
 nugrid 8192
 % dbrc 4E-6 2.1E-4 92238.70c_sss_0K
-entropy -64.26 -64.26 -50 64.26 64.26 50 6 6 10
+entropy -12.6 -12.6 -10 12.6 12.6 10 2 2 2
 
 
 % history inactive active
-pop 5E6 120 50
-%PRUP 1.8E5 0 5.4E5
+pop 0.5E6 20 50
+%PRUP 0.5E6 0 2E6
 
 
 %FMFD 
-%grid -64.26 -64.26 -50 64.26 64.26 50 102 102 10
+%grid -12.6 -12.6 -10 12.6 12.6 10 20 20 2
 %acc 5
-%cmfd 17 2
+%cmfd 10 2
 
 
 tally 0
