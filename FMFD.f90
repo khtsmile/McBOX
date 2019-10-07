@@ -504,10 +504,17 @@ subroutine PROCESS_FMFD()
     end do
 
     ! group constant
+    where ( fm(:,:,:)%phi /= 0 ) 
     fm(:,:,:) % sig_t   = fm(:,:,:) % sig_t   / fm(:,:,:) % phi
     fm(:,:,:) % sig_a   = fm(:,:,:) % sig_a   / fm(:,:,:) % phi
     fm(:,:,:) % nusig_f = fm(:,:,:) % nusig_f / fm(:,:,:) % phi
     fm(:,:,:) % phi     = fm(:,:,:) % phi     / (dble(ngen)*v_fm)
+    end where
+!    where ( fm(:,:,:)%phi == 0 ) 
+!    fm(:,:,:) % sig_t   = fm_avg(:,:,:) % sig_t
+!    fm(:,:,:) % sig_a   = fm_avg(:,:,:) % sig_a
+!    fm(:,:,:) % nusig_f = fm_avg(:,:,:) % nusig_f
+!    end where
 
     ! surface quantity normalization
     do ii = 1, 6
@@ -618,7 +625,6 @@ subroutine FMFD_SOLVE(keff,fsd)
     enddo
     enddo
 
-
     if ( cmfdon ) then
         do ii = 1, 6
             sphi(:,:,:,ii) = 2D0*J1(:,:,:,ii)+2D0*J0(:,:,:,ii)
@@ -655,7 +661,7 @@ subroutine FMFD_SOLVE(keff,fsd)
         fsd(:,:,:)    = fsd_FM(:,:,:) / fsd_MC(:,:,:)
     end if
 
-!    print*, "keff", keff
+    print*, "keff", keff
 !    stop
     
 end subroutine

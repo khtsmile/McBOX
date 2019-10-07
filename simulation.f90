@@ -51,6 +51,7 @@ subroutine simulate_history(cyc)
     if ( icore == score ) then
         call SHENTROPY(source_bank)
         if ( mprupon ) call GENSIZE(cyc)
+        !print*, "bank", size(thread_bank)
     end if
     isize = size(source_bank)
     if ( mprupon .or. ( .not. mprupon .and. genup ) ) call MPRUP_DIST(isize)
@@ -76,7 +77,8 @@ subroutine simulate_history(cyc)
             enddo 
             
             !if buffer is almost full -> add to the fission bank
-            if (bank_idx > int(size(thread_bank)*0.01*(80-OMP_GET_THREAD_NUM()))) then 
+            !if (bank_idx > int(size(thread_bank)*0.01*(80-OMP_GET_THREAD_NUM()))) then 
+            if ( bank_idx > 800 ) then 
               !$omp critical
                 isize = size(fission_bank)
                 if(allocated(temp_bank)) deallocate(temp_bank)

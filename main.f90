@@ -1,7 +1,8 @@
 program main
 use constants
 use variables
-use FMFD,       only : FMFD_type, n_acc
+use FMFD,       only : FMFD_type, n_acc, fmfdon, cmfdon
+use ENTROPY,    only : mprupon
 use simulation 
 use omp_lib
 use mpi
@@ -18,7 +19,7 @@ real(8) :: tt1, tt2, tt3
 integer :: jj, kk
 
 !> Preparation for parallelization ===============================================
-!call omp_set_num_threads(1)
+!call omp_set_num_threads(14)
 call MPI_Init_thread(MPI_THREAD_SINGLE, provide, ierr)
 core = MPI_COMM_WORLD
 call MPI_COMM_RANK(core,icore,ierr)
@@ -109,6 +110,23 @@ if(icore==score) then
     else 
         write(*,*), ' > Tally is OFF' 
     endif 
+
+    if ( mprupon ) then
+        write(*,*), ' > m-PRUP is on', rampup, ccrt, scrt
+    else
+        write(*,*), ' > m-PRUP is OFF'
+    end if
+
+    if ( fmfdon ) then
+        if ( cmfdon ) then
+        write(*,*), ' > FMFD with CMFD is On'
+        else
+        write(*,*), ' > FMFD is On'
+        end if
+    else
+        write(*,*), ' > FMFD is OFF'
+    end if
+
     write(*,*)
     write(*,*), '   Transport Simulation Starts...' 
 
@@ -149,9 +167,9 @@ if ( icore == score ) then
     end if
 end if
 
-10 format(i8,f9.3,1x,a,f10.5,1x,a,1x,a,f9.5,2x,a,i8)
-11 format(i8,f9.3,1x,a,f10.5,1x,a,1x,a,f9.5)
-12 format(i8,f9.3,1x,a,f10.5,1x,a,1x,2(a,f9.5,3x),a,f9.3)
+10 format(i8,f9.2,1x,a,f10.5,1x,a,1x,a,f9.5,2x,a,i10)
+11 format(i8,f9.2,1x,a,f10.5,1x,a,1x,a,f9.5)
+12 format(i8,f9.2,1x,a,f10.5,1x,a,1x,2(a,f9.5,3x),a,f9.3)
 
 end subroutine
 

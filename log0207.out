@@ -18,16 +18,11 @@
  
   > Num of Threads per Node          28
   > Num of MPI Nodes                  6
-  > Num of Histories per Cycle  1500000
-  > Skip Cycles:   20  /  Active Cycles:   50
+  > Num of Histories per Cycle  1000000
+  > Skip Cycles: 1000  /  Active Cycles:   50
  
   > Tally is OFF
+  > m-PRUP is on     1000000           1           2
+  > FMFD with CMFD is On
  
     Transport Simulation Starts...
- MC  0.000000000000000E+000
- MC  0.000000000000000E+000
- MC  0.000000000000000E+000
- MC  0.000000000000000E+000
- MC   1.06149774928764     
- MC  0.000000000000000E+000
- keff  0.439413549850522     

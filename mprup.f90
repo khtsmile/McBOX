@@ -1,7 +1,7 @@
 module MPRUP
-    use VARIABLES, only: icore, score
+    use VARIABLES, only: icore, score, ngen, n_totcyc, n_inact, n_act
     use ENTROPY
-    use VARIABLES, only: ngen, n_totcyc, n_inact, n_act
+    use FMFD_HEADER, only: fmfdon, k_fmfd
     implicit none
 
     ! * Convergence criteria
@@ -21,12 +21,15 @@ subroutine GENSIZE(cyc)
     implicit none
     integer, intent(in) :: cyc
 
-!    ! FMFD divergence
-!    if ( fmfdup ) then
-!        call GENSIZEUP(wgt)
-!        fmfdup = .false.
-!        return
-!    end if
+    ! FMFD divergence
+    if ( cyc > 1 .and. fmfdon ) then
+    if ( isnan(k_fmfd(cyc-1)) .or. &
+        ( k_fmfd(cyc-1) < 0D0 .or. k_fmfd(cyc-1) > 2D0 ) ) then
+        print*, "1"
+        call GENSIZEUP
+        return
+    end if
+    end if
 
     if ( genup ) then
     ! 1 convergence test
@@ -83,8 +86,11 @@ subroutine GENSIZEUP
     use FMFD_HEADER,    only: fmfdon
     implicit none
 
+!    source_bank(:)%wgt  = ngen/size(source_bank)
+    print*, size(source_bank), sum(source_bank(:)%wgt)
+    source_bank(:)%wgt = (ngen+rampup)/dble(ngen)
     ngen = ngen + rampup
-    source_bank(:)%wgt  = ngen/size(source_bank)
+    print*, ngen, sum(source_bank(:)%wgt)
     up_sign = .true.
 
     ! update criteria

@@ -27,9 +27,6 @@ module bank_header
     integer                         :: bank_idx
     !$OMP THREADPRIVATE(bank_idx)
     
-    
     contains 
-    
-    
     
 end module

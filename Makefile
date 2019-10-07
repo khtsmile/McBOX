@@ -3,7 +3,7 @@ SHELL = /bin/bash
 COMPILERC   = icc
 COMPILERF   = mpif90 
 FLAG  		= -openmp
-#BUG		= -check all -traceback
+BUG		= -check all -traceback
 
 ### TAU UTIL ### 
 #  #export PATH=$PATH:/home/guest/HyeonTae/Traiing/tau-2.28.1/bin

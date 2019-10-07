@@ -90,36 +90,6 @@ subroutine transport(p,cyc)
         fm_crossed = .false.
     end if
     distance = min(d_boundary, d_collision, d_FMFD)
-!    print*, "dst", d_boundary, d_collision, d_FMFD
-!    print*, "xyz0", p%coord(1)%xyz
-!    print*, "xyz1", p%coord(1)%xyz+distance*p%coord(1)%uvw
-!    print*, "ijk", i_xyz, inside_FMFD
-!    if ( .not. fm_crossed .and. inside_FMFD ) then
-!        print*, d_boundary, d_FMFD, abs(d_boundary-d_FMFD)/d_boundary
-!        pause
-!    end if
-!    pause
-!    print*, "uvw", sign(1.,p%coord(1)%uvw(1)), &
-!                   sign(1.,p%coord(1)%uvw(2)), &
-!                   sign(1.,p%coord(1)%uvw(3))
-
-!    if ( inside1 == .false. .and. inside_FMFD == .true. ) then
-!    !if ( d0 /= d1 .and. d1 < 1D100 ) then
-!        print*, inside1, inside_FMFD
-!        print*, "xyz", p%coord(1)%xyz
-!        print*, "uvw", sign(1.,p%coord(1)%uvw(1)), sign(1.,p%coord(1)%uvw(2)), sign(1.,p%coord(1)%uvw(3))
-!        print*, "ddd", d_boundary, d_FMFD
-!        print*, "d1", p%coord(1)%xyz+d_boundary*p%coord(1)%uvw
-!        print*, "d2", p%coord(1)%xyz+d_FMFD*p%coord(1)%uvw
-!        print*, "=?", d0 == d1
-!        !pause
-!    !end if
-!    end if
-!    print'(a,l,3f15.7,3x,a,2es20.12)', "*", inside1, xyz0, "/", d_boundary, d_FMFD
-!    d0 = d_boundary
-!    d1 = d_FMFD
-!    inside1 = inside_FMFD
-!    xyz0 = p%coord(1)%xyz
 
     !> Track-length estimator
     !$omp atomic 

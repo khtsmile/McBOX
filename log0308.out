@@ -1,0 +1,58 @@
+    CTRL  READ COMPLETE..
+    Continuous Energy Mode...
+    Start reading ace-format nuclear data
+           1 1001.711nc
+           2 8016.711nc
+    WARNING :: NYD block exists
+           3 92235.711nc
+           4 92238.711nc
+    Read S(a,b) scattering law tables
+           1 hh2o.71t_0293
+    ACE Lib. READ COMPLETE...
+    CE MAT READ COMPLETE...
+    GEOM  READ COMPLETE..
+    Setting ugrid...
+    Initializing Source...
+    Source Initializing Complete...
+ 
+ 
+  > Num of Threads per Node          28
+  > Num of MPI Nodes                  6
+  > Num of Histories per Cycle  2000000
+  > Skip Cycles: 1000  /  Active Cycles:   50
+ 
+  > Tally is OFF
+  > m-PRUP is on     1000000           1           2
+  > FMFD with CMFD is On
+ 
+    Transport Simulation Starts...
+ keff   1.41246706151397     
+       1    36.23 sec   9.96542  |  keff  1.51297  //   2000000
+ keff   1.51257518073091     
+       2    43.14 sec   9.76077  |  keff  1.53235
+ keff   1.53568848991257     
+       3    39.01 sec   9.55593  |  keff  1.50852
+ keff   1.54502307905706     
+       4    51.50 sec   9.48467  |  keff  1.47935
+ keff   1.55012669773904     
+       5    52.94 sec   9.46521  |  keff  1.46447
+ keff                     NaN
+       6    32.98 sec   9.45847  |  keff  1.45836
+ 1
+     1990843   1999999.99999761     
+ keff                     NaN
+       7    26.28 sec   9.47209  |  keff  1.54708  //   3000000
+ 1
+     3182170   2999999.99999276     
+ keff                     NaN
+       8    40.04 sec   9.48501  |  keff  1.64841  //   4000000
+ 1
+     4261328   3999999.99999185     
+ keff                     NaN
+       9    50.37 sec   9.49568  |  keff  1.65442  //   5000000
+ 1
+     5017430   5000000.00002087     
+ keff                     NaN
+      10    65.47 sec   9.50401  |  keff  1.55808  //   6000000
+ 1
+     5649889   5999999.99997556     

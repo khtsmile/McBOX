@@ -49,7 +49,7 @@ subroutine ONE_NODE_CMFD(keff,fm_t,fm_a,fm_nf,fmD,fm_phi1,fmJ0,fmJ1,fmJn,fmF)
     end do
     error = abs(keff-k_pre)/keff
     !print*, keff, error
-    if ( error < 1D-8 .or. isnan(keff) ) exit
+    if ( error < 1D-8 .or. isnan(keff) .or. keff < 0 .or. keff > 2 ) exit
     ! ------------------------------- LOCAL
     call G_INJ(cmDt,cmDh,cm_phi1)
 
@@ -58,15 +58,27 @@ subroutine ONE_NODE_CMFD(keff,fm_t,fm_a,fm_nf,fmD,fm_phi1,fmJ0,fmJ1,fmJn,fmF)
     call L_SOURCE(fm_phi0,fm_phi1,keff,fm_nf,fm_s,fmJ0,fmJ1)
 !    fm_phi1(:,:,:) = BICG_L(Mfm(:,:,:,:),fm_s(:,:,:))
     call SORL(Mfm,fm_s,fm_phi1)
-    print'(5es15.7)', fm_phi1(1:5,1:5,1)
-    stop
     call L_OUTJ(fm_phi0,fm_phi1,fmF,fmJ0,fmJ1,fmJn)
     call L_REFJ(fmF,fmJ0,fmJ1,fmJn)
     call G_XS(fm_t,fm_a,fm_nf,fm_phi1)
     end do
     end do
 
-
+!    if ( isnan(keff) .or. keff < 0 .or. keff > 2 ) then
+!    print*, "nan"
+!    write(8,1), cm_t(:,:,:)
+!    write(8,*)
+!    write(8,1), cmD(:,:,:)
+!    write(8,*)
+!    write(8,1), cmDt(:,:,:,4)
+!    write(8,*)
+!    write(8,1), cmDh(:,:,:,4)
+!    write(8,*)
+!    write(8,1), mcm(:,:,:,5)
+!    write(8,*)
+!    1 format(10es15.6)
+!    stop
+!    end if
 
 end subroutine
 
@@ -947,20 +959,6 @@ subroutine L_OUTJ(phi0,phi1,fmF,fmJ0,fmJ1,fmJn)
     end do
     end do
     end do
-
-
-!    write(8,1), fmJn(:,:,:,1)
-!    write(8,*)
-!    write(8,1), fmJn(:,:,:,2)
-!    write(8,*)
-!    write(8,1), fmJn(:,:,:,3)
-!    write(8,*)
-!    write(8,1), fmJn(:,:,:,4)
-!    write(8,*)
-!    1 format(20es15.7)
-!    stop
-
-
 
 end subroutine
 

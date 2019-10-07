@@ -1,0 +1,5 @@
+
+McBOX.out:49359 terminated with signal 7 at PC=4d8945 SP=2ae9c06ee1b0.  Backtrace:
+./McBOX.out(fmfd_mp_fmfd_initialize_thread_+0x10b5)[0x4d8945]
+./McBOX.out(simulation_mp_simulate_history_+0x4423)[0x50f2e3]
+/opt/intel/composer_xe_2013_sp1.3.174/compiler/lib/intel64/libiomp5.so(__kmp_invoke_microtask+0x93)[0x2ae978e61ed3]

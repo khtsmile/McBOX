@@ -57,7 +57,7 @@ done
 #done
 
 # run in nodes
-export N_OMP=1
+export N_OMP=28
 mpirun -machinefile spacen${NN}_IH -np $NP ./McBOX.out -x N_OMP > log${NN}.out &
 
 if [ $NP == 1 ]; then
