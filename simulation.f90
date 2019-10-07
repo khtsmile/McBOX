@@ -2,7 +2,7 @@ module simulation
     use omp_lib
     use mpi
     use constants
-    use tracking,           only : transport, transport_DT
+    use tracking,           only : transport, transport_DT, transport_VRC
     use variables
     use particle_header
     use randoms
@@ -13,6 +13,7 @@ module simulation
     use surface_header,     only : surface
     use XS_header
     use material_header
+    use DEPLETION_MODULE,   only : inline_xenon
     use ENTROPY
     use MPRUP,              only : GENSIZE, MPRUP_DIST, CYCLECHANGE
     use ace_header,         only : ace
@@ -29,7 +30,6 @@ module simulation
     contains 
     
 subroutine simulate_history(cyc)
-    use FMFD, only: fm_thread
     implicit none
     integer, intent(in):: cyc
     integer :: i, j, k, isize, i_surf
@@ -40,7 +40,7 @@ subroutine simulate_history(cyc)
     integer :: ista, iend
     real(8) :: Jtemp
     real(8), allocatable :: shape(:)
-    integer :: i_xyz(3), id(3)
+    integer :: id(3)
     real(8) :: rcv_buf
     integer :: realex, intex, restype, ndata, idata
     integer, dimension(0:4) :: blocklength, displacement, oldtype 
@@ -60,8 +60,9 @@ subroutine simulate_history(cyc)
     
     !> Distribute source_bank to slave nodes 
     call para_range(1, isize, ncore, icore, ista, iend)        
-    k_col = 0; k_tl = 0;
+    k_col = 0; k_tl = 0; k_vrc = 0; fiss_vrc = 0; loss_vrc = 0;
     if ( fmfdon ) call FMFD_initialize()
+    cyc_power = 0;
 
     !$omp parallel private(p) shared(source_bank, fission_bank, temp_bank)
       thread_bank(:)%wgt = 0; bank_idx = 0
@@ -74,6 +75,7 @@ subroutine simulate_history(cyc)
             do while ((p%alive == .true.).and.(p%wgt > wgt_min))
                 call transport(p,cyc)
                 !call transport_DT(p)
+                !call transport_VRC(p)
             enddo 
             
             !if buffer is almost full -> add to the fission bank
@@ -213,6 +215,9 @@ subroutine simulate_history(cyc)
             fission_bank(i)%wgt = fission_bank(i)%wgt * fsd(id(1),id(2),id(3))
         enddo
     endif 
+
+    !> Inline Equilibrium Xe-135 
+    !call inline_xenon()
     
     !> initialize the global tally parameters ===================================
     k_col = 0.0d0; k_tl = 0.0d0; 

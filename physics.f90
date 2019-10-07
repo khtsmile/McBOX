@@ -51,6 +51,7 @@ module physics
         
         p % wgt = p % wgt * sum(XS_MG(p%material)%sig_scat(p%g,:))/sig_tot
         p % g   = idx_group
+        p % last_uvw(:) = p % coord(1)% uvw(:)
         p % coord(1)% uvw(:) = rand_vec()
         
         if (p%wgt < wgt_min) THEN !call Russian_Roulette(p)
@@ -73,7 +74,6 @@ module physics
         integer :: i, i_group, idx_group, n_group, n, bsize, i_source
         p % n_collision = p % n_collision + 1
         p % n_coord = 1
-        
         
         sig_tot = sum(XS_MG(p%material)%sig_scat(p%g,:)) + XS_MG(p%material)%sig_abs(p%g)
         
@@ -120,11 +120,8 @@ module physics
             !p % wgt  = p % wgt * sum(XS_MG(p%material)%sig_scat(p%g,:))/sig_tot
             p % g    = idx_group
             p % coord(1) % uvw(:) = rand_vec()
-        endif 
+        endif
 
-        
-                
-        
-    end subroutine     
+    end subroutine
 
 end module 

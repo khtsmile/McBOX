@@ -21,7 +21,10 @@ FSRCS := \
 		ace_reactions.f90\
 		tally.f90\
 		geometry.f90\
+		VRC.f90\
 		physics.f90\
+		depletion_module.f90\
+		read_functions.f90\
 		simulation_header.f90\
 		entropy.f90\
 		input_reader.f90\

@@ -3,14 +3,15 @@ module constants
     
     !==============================================================================
     !Constants for I/O unit
-    integer, parameter :: rd_geom         = 1, &  !I/O unit for reading problem
-                          rd_ctrl         = 2, &  !I/O unit for reading control param.
-                          rd_xs             = 3, &
-                          rd_tally       = 4, &
-                          rd_mat         = 5, & 
-                          rd_inven         = 7
-    integer, parameter :: wt_coord        = 8  !I/O unit for coordinate test 
-    integer, parameter :: prt_spec          = 9  !I/O unit for spectral analysis variable print 
+    integer, parameter :: rd_geom  = 1, &  !I/O unit for reading problem
+                          rd_ctrl  = 2, &  !I/O unit for reading control param.
+                          rd_xs    = 3, &
+                          rd_tally = 4, &
+                          rd_mat   = 5, & 
+                          rd_dep   = 6, &
+                          rd_inven = 7
+    integer, parameter :: wt_coord = 8  !I/O unit for coordinate test 
+    integer, parameter :: prt_spec = 9  !I/O unit for spectral analysis variable print 
     
     !integer, parameter :: rd_mg           = 3  !I/O unit for reading control param.
     !integer, parameter :: rd_event        = 4  !I/O unit for event for tmc
@@ -19,6 +20,7 @@ module constants
     integer, parameter :: prt_ntpy        = 11  !I/O unit for ntpy 
     integer, parameter :: prt_flux        = 12  !I/O unit for flux
     integer, parameter :: prt_powr        = 13  !I/O unit for power
+    integer, parameter :: prt_bumat       = 14  !I/O unit for burned materials
     
     
     !integer, parameter :: prt_assflux      = 10 !I/O unit for flux
@@ -124,7 +126,7 @@ module constants
        N_AVOGADRO       = 0.6022140857_8,    & ! Avogadro's number in 10^24/mol
        K_BOLTZMANN      = 8.6173303e-5_8,    & ! Boltzmann constant in eV/K
        INFINITY         = huge(0.0_8),       & ! positive infinity
-       TOOLONG            = 1.0e6_8,             & ! too long distance limit
+       TOOLONG          = 1.0e6_8,           & ! too long distance limit
        ZERO             = 0.0_8,             &
        HALF             = 0.5_8,             &
        ONE              = 1.0_8,             &
@@ -172,7 +174,6 @@ module constants
   ! CROSS SECTION RELATED CONSTANTS
   real(8) :: barn = 1.0d-24
   
-   
   ! Interpolation flag
   integer, parameter ::   &
        HISTOGRAM     = 1, & ! y is constant in x
@@ -236,6 +237,7 @@ module constants
 
   ! Depletion reactions
   integer, parameter :: DEPLETION_RX(6) = [N_GAMMA, N_P, N_A, N_2N, N_3N, N_4N]
+  real(8), parameter :: eVtoJoule = 1.602176487d-19 !Joule/eV
 
   ! ACE table types
   integer, parameter :: &

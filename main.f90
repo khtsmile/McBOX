@@ -2,11 +2,11 @@ program main
 use constants
 use variables
 use FMFD,       only : FMFD_type, n_acc, fmfdon, cmfdon
-use ENTROPY,    only : mprupon
+use ENTROPY,    only : mprupon, entrp0
 use simulation 
+use DEPLETION_MODULE
 use omp_lib
 use mpi
-use ENTROPY,    only: entrp0
 
 implicit none
 
@@ -31,21 +31,44 @@ call TIME_MEASURE
 
 !> Stead-state Simlulation Start =================================================
 call START_MSG
-time3 = omp_get_wtime()
-curr_cyc = 0
-Do
-    curr_cyc = curr_cyc + 1
-    curr_act = curr_cyc - n_inact
-    !> history wise transport simulation
-    time1 = omp_get_wtime()
-    call simulate_history(curr_cyc)
-    time2 = omp_get_wtime()
-    t_tot(curr_cyc) = time2-time1
-    call RUN_MSG
-    if ( curr_cyc == n_totcyc ) exit
-Enddo
-time4 = omp_get_wtime()
-call END_MSG
+
+BURNUP : do
+
+    if ( do_burn ) then
+        call BURNUP_MSG
+        call INIT_BURNUP
+    end if
+
+    ! steady-state calculation
+    time3 = omp_get_wtime()
+    Do curr_cyc = 1, n_totcyc
+        curr_act = curr_cyc - n_inact
+        !> history wise transport simulation
+        time1 = omp_get_wtime()
+        call simulate_history(curr_cyc)
+        time2 = omp_get_wtime()
+        t_tot(curr_cyc) = time2-time1
+        call RUN_MSG
+    Enddo
+    time4 = omp_get_wtime()
+    call END_MSG
+
+    !> Gather Burnup Tallies
+    call MPI_reduce_burnup()
+
+    !> Make & Solve depletion matrix
+    call depletion
+
+    !> Check burnup loop exit condition
+    if ( do_burn ) then
+        if ( istep_burnup > nstep_burnup ) exit BURNUP
+    else
+        exit BURNUP
+    end if
+
+    call MPI_BARRIER(core,ierr)
+
+end do BURNUP
 
 deallocate(source_bank)
 inquire(unit=prt_flux, opened=isopened)
@@ -85,25 +108,15 @@ end subroutine
 ! =============================================================================
 subroutine START_MSG
 
-if(icore==score) then  
+if ( icore==score ) then  
 
     write(*,*)
     write(*,*)
     write(*,10), '  > Num of Threads per Node   ', omp_get_max_threads()
     write(*,10), '  > Num of MPI Nodes          ', ncore
-    write(*,10), '  > Num of Histories per Cycle', n_history
+    write(*,10), '  > Num of Histories per Cycle', ngen
     write(*,11), '  > Skip Cycles:',n_inact , &
                  '  /  Active Cycles:', n_totcyc-n_inact
-!    write(*,*)
-!    if (CMFD_lat <= 0) then 
-!        write(*,12), '  > CMFD is OFF ' 
-!    elseif (CMFD_lat > 0 .and. CMFD_type == 1 ) then 
-!        write(*,13), '  > CMFD is ON :: Lattice', CMFD_lat
-!        write(*,14), '  > CMFD Accumulations', n_acc
-!    elseif (CMFD_lat > 0 .and. CMFD_type == 2 ) then 
-!        write(*,15), '  > p-CMFD is ON :: Lattice', CMFD_lat
-!        write(*,16), '  > CMFD Accumulations', n_acc
-!    endif 
     write(*,*)
     if (tally_switch > 0) then 
         write(*,*), ' > Tally is On :: See tally.inp'
@@ -141,6 +154,22 @@ endif
 16 format(A22,I3)
 
 end subroutine
+
+! =============================================================================
+! BURNUP_MSG
+! =============================================================================
+subroutine BURNUP_MSG
+    write(*,10), '   =========================================='
+    write(*,11), '      Burnup step', istep_burnup
+    write(*,12), burn_step(istep_burnup)/86400.d0, ' CUMULATIVE DAYS'
+    write(*,10), '   =========================================='
+
+    10 format(A45)
+    11 format(A17,I4)
+    12 format(F14.2,A16)
+
+end subroutine
+
 
 ! =============================================================================
 ! RUN_MSG
@@ -181,24 +210,21 @@ subroutine END_MSG
 
 if ( icore == score ) then
     write(*,*)
-    write(*,*), '   All Simulation Ends...' 
-    write(*,10), '    - Elapsed time : ', &
+    write(*,*), '   Simulation of Burnup Step Terminated...'
+    write(*,10), "    - Elapsed time    : ", &
         time4 - time3, 'sec', (time4-time3)/60, 'min'
-    write(*,11), "    - Final keff   : ", &
+    write(*,11), "    - Step Final keff : ", &
         sum(kprt(1:n_act))/dble(n_act), "+/-", STD(kprt(1:n_act))
+    write(*,*)
 
     10 format(A,F10.3,A4,F8.2,A4)
     11 format(A,F10.6,A4,F8.3)
-end if
 
 
-
-if ( icore == score ) then
-    write(*,*)
     ! multiplication factor
     if ( fmfdon ) then
     do ii = 1, n_totcyc
-        write(*,1), k_fmfd(ii)
+        write(*,12), k_fmfd(ii)
     end do
     write(*,*)
     end if
@@ -206,11 +232,11 @@ if ( icore == score ) then
     ! computing time
     t_MC = t_tot - t_det
     do ii = 1, n_totcyc
-        write(*,2), t_MC(ii), t_det(ii), t_tot(ii)
+        write(*,13), t_MC(ii), t_det(ii), t_tot(ii)
     end do
 
-    1 format(F10.6)
-    2 format(3ES15.7)
+    12 format(F10.6)
+    13 format(3ES15.7)
 
 end if
 

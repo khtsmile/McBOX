@@ -173,7 +173,6 @@ module geometry
                     p % n_coord = j
                                         
                     !p % coord(j) % universe = universes%find_idx(cells(i_cell) % fill)
-                    print*, "1"
                     p % coord(j) % universe = find_univ_idx(universes, c % fill)
                     !print *, 'universe', c % fill
                     
@@ -307,11 +306,9 @@ module geometry
             ! FIND MINIMUM DISTANCE TO LATTICE SURFACES        
             !if ((p%coord(j) % dist > TOOLONG).and.(p % coord(j) % lattice /= NONE)) then 
             if (p % coord(j) % lattice /= NONE) then
-                
                 i_xyz(1) = p % coord(j) % lattice_x
                 i_xyz(2) = p % coord(j) % lattice_y
                 i_xyz(3) = p % coord(j) % lattice_z
-
                 call lat_distance(lattices(p % coord(j) % lattice), surfaces, p % coord(j) % xyz, &
                                     p % coord(j) % uvw, i_xyz, dist_temp, idx_surf)
                                     
@@ -354,7 +351,114 @@ module geometry
     end subroutine
     
     
+!===============================================================================
+! CROSS_SURFACE handles all surface crossings, whether the particle leaks out of
+! the geometry, is reflected, or crosses into a new lattice or cell
+!===============================================================================
+
+    subroutine cross_surface(p, surface_crossed)
+        type(Particle), intent(inout) :: p
+        
+        integer :: surface_crossed
+        real(8) :: xyz(3)     ! Saved global coordinate
+        integer :: i_surface  ! index in surfaces
+        logical :: rotational ! if rotational periodic BC applied
+        logical :: found      ! particle found in universe?
+        class(Surface), pointer :: surf
+        class(Surface), pointer :: surf2 ! periodic partner surface
+        integer ::i, i_cell, i_cell_prev
+        
+        if (p%n_cross > 10000) p%alive = .false. 
+        !p % n_coord = 1
+        !call find_cell(p, found)
+        if (surfaces(surface_crossed)%bc == 1) then     !> Vacuum BC
+            !p % wgt = 0 
+            p % alive = .false.
+        elseif (surfaces(surface_crossed)%bc == 2) then !> Reflective BC 
+            p % n_coord = 1
+            p % coord(1) % xyz(:) = p % coord(1) % xyz(:) - 0.1*TINY_BIT * p % coord(1) % uvw(:)
+            !call find_cell(p, found, i_cell)
+            
+            call reflective_bc(p%coord(1)%uvw, p%coord(1)%xyz, surface_crossed)
+            !p%last_material = p%material
+            !p % coord(1) % xyz = p % coord(1) % xyz + TINY_BIT * p % coord(1) % uvw
+            !print *, 'reflected'
+            
+        else
+            p % n_coord = 1
+            p % coord(1) % xyz = p % coord(1) % xyz + TINY_BIT * p % coord(1) % uvw
+            !print *, 'pass',surfaces(surface_crossed)%surf_id 
+        endif
+        !print *, 'next', p % coord(1) % xyz
+        call find_cell(p, found)
+        
+        !print *, cells(p%coord(1)%cell)%cell_id
+        !if (p%coord(p%n_coord)%cell == 0 ) print *, 'here'
+        
+    end subroutine cross_surface
     
+    subroutine reflective_bc (uvw, xyz, surface_crossed)
+        real(8), intent(inout) :: uvw(3)
+        real(8), intent(in)       :: xyz(3)
+        real(8) :: xyz_(3), r
+        integer :: surface_crossed
+        integer :: surf_type
+        integer :: flag
+        
+        surf_type = surfaces(surface_crossed)%surf_type
+        
+        select case(surf_type) 
+        
+        case (1) !> px
+            uvw(1) = -uvw(1) 
+        case (2) !> py
+            uvw(2) = -uvw(2) 
+        case (3) !> pz
+            uvw(3) = -uvw(3) 
+            
+        case (6) !> sqcz  (TO BE EDITTED)
+            xyz_(3)   = xyz(3) 
+            xyz_(1:2) = xyz(1:2) - surfaces(surface_crossed)%parmtrs(1:2) 
+            r = surfaces(surface_crossed)%parmtrs(3) 
+            
+            if ((xyz_(2) >= -r-TINY_BIT).and.(xyz_(2) <= -r + TINY_BIT)) then 
+                uvw(2) = -uvw(2)
+            elseif ((xyz_(1) >= -r-TINY_BIT).and.(xyz_(1) <= -r + TINY_BIT)) then 
+                uvw(1) = -uvw(1)
+            elseif ((xyz_(2) >= r-TINY_BIT).and.(xyz_(2) <= r + TINY_BIT)) then 
+                uvw(2) = -uvw(2) 
+            elseif ((xyz_(1) >= r-TINY_BIT).and.(xyz_(1) <= r + TINY_BIT)) then 
+                uvw(1) = -uvw(1) 
+            else 
+                print *, 'particle is not on the surface'
+                print *, 'xyz', xyz
+                stop 
+            end if
+            
+        case (9) !> cylz
+            xyz_(3)   = xyz(3) 
+            xyz_(1:2) = xyz(1:2) - surfaces(surface_crossed)%parmtrs(1:2) 
+            
+            uvw(1) = uvw(1) - 2*(xyz_(1)*uvw(1) + xyz_(2)*uvw(2))*xyz_(1)&
+                        /(surfaces(surface_crossed)%parmtrs(3))**2
+            uvw(2) = uvw(2) - 2*(xyz_(1)*uvw(1) + xyz_(2)*uvw(2))*xyz_(2)&
+                        /(surfaces(surface_crossed)%parmtrs(3))**2
+            uvw(3) = uvw(3) 
+            
+        case (10) !> sph
+            xyz_(1:3) = xyz(1:3) - surfaces(surface_crossed)%parmtrs(1:3) 
+            
+            uvw(1) = uvw(1) - 2*(xyz_(1)*uvw(1) + xyz_(2)*uvw(2) + xyz_(3)*uvw(3))*xyz_(1) &
+                        /(surfaces(surface_crossed)%parmtrs(4))**2
+            uvw(2) = uvw(2) - 2*(xyz_(1)*uvw(1) + xyz_(2)*uvw(2) + xyz_(3)*uvw(3))*xyz_(2) &
+                        /(surfaces(surface_crossed)%parmtrs(4))**2
+            uvw(3) = uvw(3) - 2*(xyz_(1)*uvw(1) + xyz_(2)*uvw(2) + xyz_(3)*uvw(3))*xyz_(3) &
+                        /(surfaces(surface_crossed)%parmtrs(4))**2
+            
+        end select 
+        
+        
+    end subroutine reflective_bc
     
     !===============================================================================
     ! NEIGHBOR_LISTS builds a list of neighboring cells to each surface to speed up
@@ -420,7 +524,6 @@ module geometry
                     !p % coord(j + 1) % uvw = p % coord(j) % uvw
 
                     ! Move particle to next level and set universe
-                    print*, "2"
                     idx_univ = find_univ_idx(universes, c % fill)!universes%find_idx(c % fill)
 
                     ! Apply translation

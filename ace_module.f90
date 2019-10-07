@@ -18,6 +18,7 @@ integer :: pt1, pt2
 integer :: anum, mnum
 integer :: ix, lmt 
 integer, parameter :: ace_read_handler = 20171116
+real :: val
 
 integer :: min_egrid, max_egrid, num_egrid, loc1, loc2, loc3, max_len
  
@@ -32,6 +33,15 @@ READ_ACE_ISO:Do iso = 1, num_iso
   if(icore==score) print *, iso, trim(ace(iso)%library)
 
   open(ace_read_handler, file=trim(library_path)//trim(ace(iso)%library), action="read")
+  
+  ! excited state if mnum > 300
+  read(ace(iso)%library(1:5), '(f)') val
+  i = mod(int(val), 1000)
+  if (i > 300) then 
+    ace(iso)%excited = .true. 
+  else 
+    ace(iso)%excited = .false. 
+  endif 
   
   !1st line
   read(ace_read_handler,'(i6, 4X, f12.6, es12.4)') ace(iso)%ZAID, ace(iso)%atn, ace(iso)%temp
@@ -1307,14 +1317,12 @@ type (AceFormat), pointer :: ac
 integer :: iMT, LOCA, nfis
 real(8), allocatable :: temp_XS(:,:)
 
-if ( JXS(21) == 0 ) return
-
 !Set pointer
 ac => ace(iso)
 
 !Allocate arrays 
-IE = XSS(JXS(21)); NE = XSS(JXS(21)+1);
-if ( NE > 1 ) then
+if ( JXS(21) /= 0 ) then
+    IE = XSS(JXS(21)); NE = XSS(JXS(21)+1);
     allocate( ac % sigf( 1 : NXS(3) ) )
     ac % sigf( : ) = 0 
     ac % sigf( IE : IE+NE-1 ) = XSS( JXS(21)+2 : JXS(21)+2+NE-1 )

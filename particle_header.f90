@@ -35,7 +35,7 @@ module particle_header
 
     type, public :: Particle
         ! Basic data
-        integer(8) :: id            ! Unique ID
+        !integer(8) :: id            ! Unique ID
         
         ! Particle coordinates
         integer          :: n_coord          ! number of current coordinates
@@ -60,31 +60,31 @@ module particle_header
         real(8)    :: mu            ! angle of scatter
         logical    :: alive         ! is particle alive?
         
-        ! Pre-collision physical data
-        real(8)    :: last_xyz_current(3) ! coordinates of the last collision or
+        !! Pre-collision physical data
+        !real(8)    :: last_xyz_current(3) ! coordinates of the last collision or
                                             !  reflective/periodic surface crossing
                                             !  for current tallies
-        real(8)    :: last_xyz(3)         ! previous coordinates
+        !real(8)    :: last_xyz(3)         ! previous coordinates
         real(8)    :: last_uvw(3)         ! previous direction coordinates
         real(8)    :: last_wgt            ! pre-collision particle weight
-        real(8)    :: absorb_wgt          ! weight absorbed for survival biasing
+        !real(8)    :: absorb_wgt          ! weight absorbed for survival biasing
         
-        ! What event last took place
-        logical    :: fission       ! did the particle cause implicit fission
-        integer    :: event         ! scatter, absorption
-        integer    :: event_nuclide ! index in nuclides array
-        integer    :: event_MT      ! reaction MT
-        integer    :: delayed_group ! delayed group
+        !! What event last took place
+        !logical    :: fission       ! did the particle cause implicit fission
+        !integer    :: event         ! scatter, absorption
+        !integer    :: event_nuclide ! index in nuclides array
+        !integer    :: event_MT      ! reaction MT
+        !integer    :: delayed_group ! delayed group
         
-        ! Post-collision physical data
-        integer    :: n_bank        ! number of fission sites banked
-        real(8)    :: wgt_bank      ! weight of fission sites banked
-        integer    :: n_delayed_bank(MAX_DELAYED_GROUPS) ! number of delayed fission
+        !! Post-collision physical data
+        !integer    :: n_bank        ! number of fission sites banked
+        !real(8)    :: wgt_bank      ! weight of fission sites banked
+        !integer    :: n_delayed_bank(MAX_DELAYED_GROUPS) ! number of delayed fission
                                                          ! sites banked
         
-        ! Indices for various arrays
-        integer    :: surface       ! index for surface particle is on
-        integer    :: cell_born     ! index for cell particle was born in
+        !! Indices for various arrays
+        !integer    :: surface       ! index for surface particle is on
+        !integer    :: cell_born     ! index for cell particle was born in
         integer    :: material      ! index for current material
         integer    :: last_material ! index for last material
         
@@ -94,12 +94,16 @@ module particle_header
         
         ! Statistical data
         integer    :: n_collision   ! # of collisions
+        integer    :: n_cross       ! # of surface cross
         
-        ! Track output
-        logical    :: write_track = .false.
+        !! Track output
+        !logical    :: write_track = .false.
 
         ! Tag for S(a,b)
         logical    :: yes_sab = .false.
+
+        ! VRC trace
+        logical :: vrc_traced = .false.
         
         ! Secondary particles created
         !integer(8) :: n_secondary = 0
@@ -146,21 +150,22 @@ contains
         this % alive = .true.
         
         ! clear attributes
-        this % surface           = NONE
-        this % cell_born         = NONE
+        !this % surface           = NONE
+        !this % cell_born         = NONE
         this % material          = NONE
         this % last_material     = NONE
-        this % last_sqrtkT       = NONE
+        !this % last_sqrtkT       = NONE
         this % wgt               = ONE
         this % last_wgt          = ONE
-        this % absorb_wgt        = ZERO
-        this % n_bank            = 0
-        this % wgt_bank          = ZERO
+        !this % absorb_wgt        = ZERO
+        !this % n_bank            = 0
+        !this % wgt_bank          = ZERO
         this % sqrtkT            = ERROR_REAL
         this % n_collision       = 0
-        this % fission           = .false.
-        this % delayed_group     = 0
-        this % n_delayed_bank(:) = 0
+        this % n_cross           = 0
+        !this % fission           = .false.
+        !this % delayed_group     = 0
+        !this % n_delayed_bank(:) = 0
         this % g = NONE
         
         ! Set up base level coordinates
@@ -168,7 +173,7 @@ contains
         this % n_coord = 1
         this % last_n_coord = 1
         
-        !nullify(this % univ)
+        this % vrc_traced = .false.
     
     end subroutine initialize
   

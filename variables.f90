@@ -13,8 +13,13 @@ implicit none
     
     integer :: tally_switch !> o for off // 1 for on
     real(8) :: keff, k_col, k_tl
+    real(8) :: k_vrc, fiss_vrc, loss_vrc, fiss_last, keff_vrc
     real(8), allocatable:: kprt(:)
     real(8) :: Nominal_Power
+    real(8) :: cyc_power, avg_power
+
+    ! depletaion parameters
+    logical :: do_burn
     
     !==============================================================================
     integer ::    & 

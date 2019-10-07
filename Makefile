@@ -2,8 +2,9 @@ SHELL = /bin/bash
 
 COMPILERC   = icc
 COMPILERF   = mpif90 
-FLAG  		= -openmp
-BUG		= -check all -traceback
+FLAG  		= -openmp -mcmodel=medium -heap-arrays -mkl
+#BUG		= -check all -traceback -fp-stack-check
+MPIFLAG	  	= -mcmodel=medium -heap-arrays -mkl
 
 ### TAU UTIL ### 
 #  #export PATH=$PATH:/home/guest/HyeonTae/Traiing/tau-2.28.1/bin
@@ -22,7 +23,7 @@ include FILE.list
 	$(COMPILERC) $(FLAG) $(BUG) $(PROFILE) -c  $*.c
 
 .f90.o:
-	$(COMPILERF) $(FLAG) $(BUG) $(PROFILE) -c  $*.f90
+	$(COMPILERF) $(FLAG) $(BUG) $(PROFILE) -c  $*.f90 -lmkl_lapack95_lp64
 
 	
 %.o: %.mod

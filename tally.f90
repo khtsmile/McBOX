@@ -12,7 +12,7 @@ module tally
         integer :: lattice   = NONE
         integer :: lattice_x = NONE
         integer :: lattice_y = NONE
-        integer :: lattice_z = NONE    
+        integer :: lattice_z = NONE
       contains 
         procedure :: reset => reset_coord
     end type LocalCoord

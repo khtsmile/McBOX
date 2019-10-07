@@ -47,8 +47,12 @@ subroutine collision_CE (p)
         if ( rn < temp/macro_xs(1) ) then
             iso = materials(p%material)%ace_idx(i)
             i_iso = i
-            if ( materials(p%material)%sab  .and. ace(iso)%sab_iso /= 0 &
-                .and. p%E < 4D-6 ) p%yes_sab = .true.
+            if ( materials(p%material)%sab .and. ace(iso)%sab_iso /= 0 &
+                .and. p%E < 4D-6 ) then 
+                p%yes_sab = .true.
+            else 
+                p%yes_sab = .false.
+            endif
             exit
         endif
     enddo
@@ -75,7 +79,15 @@ subroutine collision_CE (p)
 
     r = rang()*(noel+el)-el
     if( ace(iso)%nxs(5) == 0 .or. r <= 0.0d0 ) then 
+        if ( p%yes_sab ) then
+                print *, materials(p%material)%mat_name , materials(p%material)%sab
+                print *, ace(iso)%sab_iso, p%E 
+                print *, ( materials(p%material)%sab == .true.  .and. ace(iso)%sab_iso /= 0 &
+                .and. p%E < 4D-6 )
+        call SAB_CE(p,iso,micro_xs(2),micro_xs(6))
+        else
         call elastic_CE (p, iso)
+        end if
     else
         call notElastic_CE (p, iso, xn)
     end if
@@ -473,6 +485,11 @@ subroutine notElastic_CE (p,iso,xn)
         endif
     enddo law_search
     
+    if ( eg%nlaw == 1 ) then 
+        law = eg % dist(1) % law
+        ilaw = 1
+    endif 
+    
     if (law < 0) then 
         print *, 'ERROR :: law not selected'
         print *, F, eg%dist(ilaw)%F(pt1), ipfac
@@ -487,7 +504,6 @@ subroutine notElastic_CE (p,iso,xn)
     p%last_E = p%E
     !> Sample the scattering cosine
     if (law /= 44 .and. law /= 61) then 
-        !print *, 'law', law, p%E
         call acecos (p%E, iso, mu, iMT)
     endif 
     !p%E = p%last_E
@@ -691,8 +707,7 @@ subroutine directionEnergy (p, mu, iMT, iso)
             Eout_lab = Ein*temp/(1.+A)**2
             mu     = (1.+mu_CM*A)/sqrt(temp)
             p%E = Eout_lab 
-            p%coord(1)%uvw = rotate_angle(p%coord(1)%uvw, mu)
-
+            p%coord(1)%uvw = rotate_angle(p%coord(1)%uvw, mu, iso)
         ! target in motion
         else
             call TWO_BODY_COLLISOIN(p,mu,kT,A,ace(iso)%resonant)
@@ -712,14 +727,14 @@ subroutine directionEnergy (p, mu, iMT, iso)
         mu         = mu_CM*sqrt(Eout_CM/Eout_lab) + sqrt(Ein/Eout_lab)/(A+1.)
         
         p%E = Eout_lab
-        p%coord(1)%uvw = rotate_angle(p%coord(1)%uvw, mu)
+        p%coord(1)%uvw = rotate_angle(p%coord(1)%uvw, mu, iso)
         !do j = 1, p%n_coord
         !    p%coord(j)%uvw = rotate_angle (p%coord(j)%uvw, mu)
         !enddo 
         
     else!if(ace(iso)%TY(iMT)>0) then  !> Reaction was in TAR frame 
         !> mu and p%E are in lab frame
-        p%coord(1)%uvw = rotate_angle(p%coord(1)%uvw, mu)
+        p%coord(1)%uvw = rotate_angle(p%coord(1)%uvw, mu, iso)
 
         !do j = 1, p%n_coord
         !    p%coord(j)%uvw = rotate_angle (p%coord(j)%uvw, mu)
@@ -986,11 +1001,11 @@ end function
 
 
 ! =============================================================================
-function rotate_angle (uvw0, mu) result (uvw)
-    implicit none 
-    
+function rotate_angle (uvw0, mu, iso) result (uvw)
+    implicit none
     real(8), intent(in) :: uvw0(3) 
     real(8), intent(in) :: mu 
+    integer, optional   :: iso
     real(8) :: uvw(3)
     
     real(8) :: phi
@@ -1017,9 +1032,10 @@ function rotate_angle (uvw0, mu) result (uvw)
     endif
 
     do i = 1, 3 
-        if (uvw(i) /= uvw(i)) then 
+        if ( uvw(i) /= uvw(i) ) then 
             print*, "rotation error"
-            print *, a, b
+            if ( present(iso) ) print*, iso, ace(iso)%library
+            print *, a, b, mu
             print *, uvw(:) 
             stop
         endif 

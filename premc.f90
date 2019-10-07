@@ -1,13 +1,13 @@
 subroutine premc
     use constants
+    use variables,  only : E_mode, do_burn
     use input_reader
     use ace_xs, only : setugrid
     use bank_header, only: source_bank
     use simulation, only: bank_initialize 
     use FMFD, only: FMFD_allocation, fmfdon
     use ENTROPY
-    use variables
-    use randoms
+    use DEPLETION_MODULE
     
     implicit none
     
@@ -25,6 +25,16 @@ subroutine premc
     endif
     call read_geom 
     if(tally_switch > 0) call read_tally
+
+    call read_depletion
+    if (do_burn) then 
+        if(icore==score)  print '(A28)', '    Reading Depletion Lib...' 
+        call getdepletionlibrary
+    endif 
+    
+    !==============================================================================
+    !Set material library for burnup and equilibrium Xe135 search 
+    call setmat
     
     !===========================================================================
     !Set lethargy grid for hash-based energy look-up
@@ -32,6 +42,7 @@ subroutine premc
 
     ! ==========================================================================
     call ENTRP_INIT
+    if ( mprupon ) call SET_PRUP
 
     ! ==========================================================================
     ! FMFD calculation
@@ -39,7 +50,7 @@ subroutine premc
     
     !===========================================================================
     !Source bank initialize
-    allocate(source_bank(n_history)) 
+    allocate(source_bank(ngen)) 
     call bank_initialize(source_bank)
 
 end subroutine
