@@ -651,6 +651,7 @@ subroutine FMFD_SOLVE(keff,fsd)
 
     
     !> CMFD feedback (modulation)
+    print*, keff
     if ( isnan(keff) .or. ( keff < 0D0 .or. keff > 2D0 ) ) then
         fsd = 1D0
     else

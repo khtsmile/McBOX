@@ -1,0 +1,23 @@
+
+
+energy 1
+nugrid 8192
+% dbrc 4E-6 2.1E-4 92238.70c_sss_0K
+entropy -107.1 -107.1 -100 107.1 107.1 100 10 10 10
+
+
+% history inactive active
+pop 1E6 250 50
+PRUP 1E6 0 20E6
+
+
+FMFD 
+grid -107.1 -107.1 -100 107.1 107.1 100 170 170 20
+acc 5
+cmfd 17 2
+
+
+tally 0
+%
+% CMFD 0
+

@@ -69,6 +69,9 @@ subroutine SHENTROPY(sb)
         call p%initialize()
         call p%set(sb(ii))
         exyz(:) = FIND_ENTRP_LAT(p%coord(1)%xyz(:))
+        if ( exyz(1) < 1 .or. exyz(1) > nen(1) ) cycle
+        if ( exyz(2) < 1 .or. exyz(2) > nen(2) ) cycle
+        if ( exyz(3) < 1 .or. exyz(3) > nen(3) ) cycle
         entrp(exyz(1),exyz(2),exyz(3)) = &
         entrp(exyz(1),exyz(2),exyz(3)) + p%wgt
     end do

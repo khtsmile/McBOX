@@ -1,0 +1,28 @@
+CARD E : Depletion_Card
+	do_burn        				= F
+	%real_power					= 0.012  % MWth
+	%Matrix_Exponential_Solver	= 0 % 0 for CRAM
+	%cram_order					= 14  
+	%nstep_burnup				= 14
+	%burnup_time					= 0.25  %(1:nstep_burnup) := CUMULATIVE DAYS FOR BURNUP [day]
+	%                              0.50
+	%                              0.75
+	%                              1.00
+	%                              5.00
+	%                              10.00 
+	%                              20.00
+	%                              40.00
+	%                              60.00
+	%                              80.00
+	%                              100.d0
+	%                              120.d0
+	%                              140.d0 
+	%                              160.d0
+	%							  
+	%% LIBRARY PATH FOR decay_library, 1gcx_library, and yield_library
+	%library_path = 	
+    %./depletion_library/
+
+
+
+ENDE

@@ -786,7 +786,8 @@ end subroutine READ_CTRL
 ! Read_Card reads the type of input card
 ! =============================================================================
     subroutine Read_Card(File_Number,Card_Type)
-        
+        use ENTROPY, only: en0, en1, nen
+        implicit none
         integer :: i, j 
         integer,intent(in)::File_Number
         character(*),intent(inout)::Card_Type
@@ -858,6 +859,10 @@ end subroutine READ_CTRL
                         read(File_Number,*,iostat=File_Error) ace0K(i)%library
                     enddo 
 
+                case("ENTROPY")
+                    backspace(File_Number)
+                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, en0, en1, nen
+                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
                 case("PRUP")
                     backspace(File_Number)
                     read(File_Number,*,iostat=File_Error) Char_Temp, Equal, mprupon
@@ -914,6 +919,7 @@ end subroutine READ_CTRL
                     ncm(3)   = nfm(3)   / fcz
                     call FMFD_ERR0
                     call FMFD_ERR1
+                    cmfdon = .true.
 
                 case("NUMBER_CMFD_SKIP")
                     backspace(File_Number)

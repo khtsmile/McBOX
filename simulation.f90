@@ -212,6 +212,9 @@ subroutine simulate_history(cyc)
         ! find fission_bank lattice index and apply shape
         do i = 1, isize 
             id = FMFD_ID(fission_bank(i)%xyz)
+            if ( id(1) < 1 .or. id(1) > nfm(1) ) cycle
+            if ( id(2) < 1 .or. id(2) > nfm(2) ) cycle
+            if ( id(3) < 1 .or. id(3) > nfm(3) ) cycle
             fission_bank(i)%wgt = fission_bank(i)%wgt * fsd(id(1),id(2),id(3))
         enddo
     endif 

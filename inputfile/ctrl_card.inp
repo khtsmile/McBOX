@@ -1,0 +1,25 @@
+CARD A : Control_Card 
+	Energy_mode   			= 1
+	Nominal_Power			= 100  % MWth
+	nugrid					= 8192
+	
+	history_per_cycle		= 50000 
+	Number_inactive			= 30
+	Number_active			= 300
+	
+	DBRC					= T 
+	DBRC_E_MIN				= 4E-6
+	DBRC_E_MAX				= 2.1E-4
+	N_ISO0K					= 1 
+	DBRC_lib				= 92238.70c_sss_0K
+	
+	
+	
+	CMFD 					= F
+	CMFD_grid				= 110 
+	Number_CMFD_skip		= 10
+	Number_CMFD_acc			= 2
+	
+	Tally					= F 
+
+ENDA
