@@ -1,0 +1,7 @@
+
+McBOX.out:129969 terminated with signal 7 at PC=4e8956 SP=7fff91682920.  Backtrace:
+./McBOX.out[0x4e8956]
+./McBOX.out(ace_reactions_mp_collision_ce_+0x197)[0x4e7227]
+./McBOX.out(tracking_mp_transport_+0x9bd)[0x52d7bd]
+./McBOX.out(simulation_mp_simulate_history_+0x1bbf)[0x532d6f]
+/opt/intel/composer_xe_2013_sp1.3.174/compiler/lib/intel64/libiomp5.so(__kmp_invoke_microtask+0x93)[0x2b0b536f9ed3]

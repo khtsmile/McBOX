@@ -124,7 +124,7 @@ module constants
        AMU              = 1.660539040e-27_8, & ! 1 amu in kg
        C_LIGHT          = 2.99792458e8_8,    & ! speed of light in m/s
        N_AVOGADRO       = 0.6022140857_8,    & ! Avogadro's number in 10^24/mol
-       K_BOLTZMANN      = 8.6173303e-5_8,    & ! Boltzmann constant in eV/K
+       K_B              = 8.6173303e-11_8,   & ! Boltzmann constant in MeV/K
        INFINITY         = huge(0.0_8),       & ! positive infinity
        TOOLONG          = 1.0e6_8,           & ! too long distance limit
        ZERO             = 0.0_8,             &

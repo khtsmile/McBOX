@@ -143,39 +143,39 @@ end function
 
 function getxs (mt_ENDF,iso, erg, ierg)
     integer, intent(in) :: mt_ENDF, iso
-	real(8), intent(in) :: erg
-	real(8) :: getxs
-	real(8) :: ipfac
-	integer :: i, iMT
-	integer, optional :: ierg
+    real(8), intent(in) :: erg
+    real(8) :: getxs
+    real(8) :: ipfac
+    integer :: i, iMT
+    integer, optional :: ierg
     type (CrossSectionDataForm), pointer :: sigmt
-	
-	
-	! 1. Find MT index 
-	iMT = 0; getxs = 0.0d0
-	do i = 1, ace(iso)%NXS(4) 
-		if (ace(iso)%MT(i) == mt_ENDF) then 
-			iMT = i 
-			exit
-		endif 
-	enddo 
-	if (iMT == 0) return  ! no such reaction 
-	
-	
-	! 2. Find erg grid index 
-	if (.not. present(ierg)) then 
-		call getierg(iso,ierg,erg)
-	endif
-	
-	
-	! 3. Calculate xs_MT
+    
+    
+    ! 1. Find MT index 
+    iMT = 0; getxs = 0.0d0
+    do i = 1, ace(iso)%NXS(4) 
+        if (ace(iso)%MT(i) == mt_ENDF) then 
+            iMT = i 
+            exit
+        endif 
+    enddo 
+    if (iMT == 0) return  ! no such reaction 
+    
+    
+    ! 2. Find erg grid index 
+    if (.not. present(ierg)) then 
+        call getierg(iso,ierg,erg)
+    endif
+    
+    
+    ! 3. Calculate xs_MT
     ipfac = max(0.d0, min(1.d0,(erg-ace(iso)%E(ierg))/(ace(iso)%E(ierg+1)-ace(iso)%E(ierg))))
-	sigmt => ace(iso)%sig_MT(iMT)
-	if (ierg < (sigmt%IE+sigmt%NE-1) .and. ierg >= sigmt%IE) then 
-		getxs = sigmt%cx(ierg) + ipfac*(sigmt%cx(ierg+1)-sigmt%cx(ierg))
-	endif
-	
-	return 
+    sigmt => ace(iso)%sig_MT(iMT)
+    if (ierg < (sigmt%IE+sigmt%NE-1) .and. ierg >= sigmt%IE) then 
+        getxs = sigmt%cx(ierg) + ipfac*(sigmt%cx(ierg+1)-sigmt%cx(ierg))
+    endif
+    
+    return 
 
 end function
 

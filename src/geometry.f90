@@ -99,13 +99,13 @@ module geometry
           call p % coord(j) % reset()
         enddo
         j = p % n_coord
-        
+
         i_universe = p % coord(j) % universe
         
         
-        if (j == 1) then
+        if ( j == 1 ) then
             !p%univ => universes(0)
-            p%coord(p%n_coord)% universe = 0 
+            p%coord(1)% universe = 0 
             idx = 0
         else
             idx = p % coord(j) % universe
@@ -133,7 +133,6 @@ module geometry
                 found = .true.
                 !print *, 'in univ ',universes(idx)%univ_id , 'found in cell:', cells(i_cell)%cell_id
                 !print *, i_cell
-                
                 !print *, p%coord(j)%xyz
                 exit
             endif
@@ -142,28 +141,21 @@ module geometry
         
         
                 
-        if (found) then
+        if ( found ) then
             associate(c => cells(i_cell))
                 CELL_TYPE: if (c % filltype == FILL_MATERIAL) then
                     ! ======================================================================
                     ! AT LOWEST UNIVERSE, TERMINATE SEARCH
-                    !print *, 'FILL_MATERIAL : ', c%cell_id!,  c%mat_id
                     
                     p % coord(j) % cell = i_cell      ! index in cells(:) array
                     p % material = c%mat_idx
                     
-                    
-                    if (p%material == 0) then 
+                    if ( p%material == 0 ) then 
                         p%wgt = 0 
                         p%alive = .false. 
-                        !print *, p%coord(1)%xyz
-                        !print *, c%cell_id, 'outside', c%mat_idx
-                        !stop
                     endif
                     
-                    if (present(cell_idx)) cell_idx = i_cell
-                    
-                    
+                    if ( present(cell_idx) ) cell_idx = i_cell
                     
                     
                 elseif (c % filltype == FILL_UNIVERSE) then CELL_TYPE
@@ -511,7 +503,7 @@ module geometry
         end do CELL_LOOP
         
                 
-        if (found) then
+        if ( found ) then
             associate(c => cells(i_cell))
                 CELL_TYPE: if (c % fill_type() == FILL_MATERIAL) then
                     ! ======================================================================
@@ -578,5 +570,19 @@ module geometry
     end subroutine     
     
     
+    function getXYZ(index, a, b, c) result(xyz)
+        integer, intent(in) :: index, a,b,c
+        integer, dimension(3) :: xyz
+
+        if ((index.le.0).or.(index.gt.(a*b*c))) then
+            print *, 'function getXYZ() :: INDEX OUT OF RANGE'
+            stop
+        endif
+        
+        xyz(3) = ceiling(real(index, 8)/real(a*b,8))
+        xyz(2) = ceiling(real(index - (xyz(3)-1)*a*b, 8)/a)
+        xyz(1) = index - (xyz(3)-1)*a*b - (xyz(2)-1)*a
+    
+    end function getXYZ
     
 end module

@@ -24,17 +24,17 @@ module geometry_header
     ! ======================== CELL DATA SECTION ======================== !
     !> GENERAL CELL TYPE =============
     Type :: Cell
-        character(20)    :: cell_id                     !> unique cell index (from input)
-        integer         :: idx                        !> cell index in the cells(:) array
-        integer            :: univ_id
-        !character(20)     :: mat_id                    !> material ID filling this cell
-                                                    !> if imat = 0, information of fill must be provided.
-        integer            :: mat_idx
-        integer            :: fill                     !> fill = universe / lattice index filling this cell
+        character(20)  :: cell_id     !> unique cell index (from input)
+        integer        :: idx         !> cell index in the cells(:) array
+        integer        :: univ_id
+        !character(20) :: mat_id      !> material ID filling this cell
+                                      !> if imat = 0, information of fill must be provided.
+        integer        :: mat_idx
+        integer        :: fill        !> fill = universe / lattice index filling this cell
         !class(Universe), pointer :: univ_in_cell
         
-        integer         :: nsurf                     !> number of surfaces of this cell
-        integer            :: filltype
+        integer         :: nsurf      !> number of surfaces of this cell
+        integer         :: filltype
         integer, allocatable :: list_of_surface_IDs(:)
         integer, allocatable :: neg_surf_idx(:), pos_surf_idx(:)
         
@@ -42,7 +42,7 @@ module geometry_header
         !type(NeighboringCellStruct), allocatable(:) :: NeighboringCells
         
         
-        integer :: operand_flag                        !> and -> 1 / or -> -1 / default = 0 
+        integer :: operand_flag       !> and -> 1 / or -> -1 / default = 0 
 !        type(surf_block), allocatable :: surf_blk(:)
     contains 
         procedure :: fill_type => cell_fill
@@ -54,10 +54,10 @@ module geometry_header
     !> GENERAL UNIVERSE TYPE =============
     
     Type :: Universe
-        integer :: univ_type                            !> 0 : pure     universe  
-                                                        !> 1 : pin         universe
-        integer :: univ_id                              !> Unique ID
-        real(8) :: xyz(3)                                !> Universe translation 
+        integer :: univ_type          !> 0 : pure universe  
+                                      !> 1 : pin universe
+        integer :: univ_id            !> Unique ID
+        real(8) :: xyz(3)             !> Universe translation 
         integer :: ncell
         real(8), allocatable :: r(:)
         integer, allocatable :: cell(:)
@@ -72,17 +72,17 @@ module geometry_header
     
     type :: Lattice
         integer :: lat_id
-        integer :: lat_type                 !> 1 :: rectlinear lattice
-                                            !> 2 :: vertical hexgon lattice
-                                            !> 3 :: horizontal hexgon lattice
-        real(8) :: xyz(3)                    !> Universe translation 
-        integer :: n_xyz(3)                    !> number of repetitions in x y direction
-        integer, allocatable :: lat(:,:,:)  !> index in the universes array
+        integer :: lat_type                !> 1 :: rectlinear lattice
+                                           !> 2 :: vertical hexgon lattice
+                                           !> 3 :: horizontal hexgon lattice
+        real(8) :: xyz(3)                  !> Universe translation 
+        integer :: n_xyz(3)                !> no of repetitions in x y direction
+        integer, allocatable :: lat(:,:,:) !> index in the universes array
         real(8) :: pitch(3)
         
     endtype
     type(lattice), allocatable, target :: lattices(:), lattices_temp(:)
-    type(lattice)   :: obj_lat
+    type(lattice)  :: obj_lat
     type(lattice), pointer :: lat_ptr
     
     real(8),allocatable :: sgrid(:)
@@ -326,6 +326,7 @@ module geometry_header
                 endif
             end associate
         enddo 
+
         
         if (d_surf < TOOLONG) return
         
@@ -372,8 +373,6 @@ module geometry_header
                 enddo 
             enddo 
         enddo 
-        
-        
         
         !do iz = 1, this%n_xyz(3)
         !    do iy = 1, this%n_xyz(2)

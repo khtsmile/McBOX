@@ -26,8 +26,9 @@ module tally
     end type
     
     !> Variables
-    type(CoordStruct), allocatable :: TallyCoord(:)
-    real(8),            allocatable :: TallyFlux(:), TallyPower(:)
+    type(CoordStruct), allocatable, target :: TallyCoord(:)
+    real(8), allocatable :: TallyFlux(:), TallyPower(:)
+    real(8), allocatable :: tally1(:), tally2(:)
     
     
     contains
@@ -47,7 +48,7 @@ module tally
 
     function FindTallyBin(p) result (idx)
         type(particle), intent(in) :: p 
-        integer :: idx
+        integer :: idx(4)
         integer :: i_bin, i_coord, i, j
         integer, dimension(6) :: A, B, C 
         
@@ -91,8 +92,8 @@ module tally
             
             C(:) = abs(A(:)-B(:))
             if (sum(C) /= 0) cycle Bin
-            
-            idx = i_bin
+            idx(1) = i_bin
+            idx(2:4) = B(4:6)
             exit Bin 
 
         enddo Bin

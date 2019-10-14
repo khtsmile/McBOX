@@ -47,12 +47,12 @@ subroutine collision_CE (p)
         if ( rn < temp/macro_xs(1) ) then
             iso = materials(p%material)%ace_idx(i)
             i_iso = i
-            if ( materials(p%material)%sab == .true.  .and. ace(iso)%sab_iso /= 0 &
+            if ( materials(p%material)%sab .and. ace(iso)%sab_iso /= 0 &
                 .and. p%E < 4D-6 ) then 
-				p%yes_sab = .true.
-			else 
-				p%yes_sab = .false.
-			endif
+                p%yes_sab = .true.
+            else 
+                p%yes_sab = .false.
+            endif
             exit
         endif
     enddo
@@ -80,9 +80,9 @@ subroutine collision_CE (p)
     r = rang()*(noel+el)-el
     if( ace(iso)%nxs(5) == 0 .or. r <= 0.0d0 ) then 
         if ( p%yes_sab ) then
-				print *, materials(p%material)%mat_name , materials(p%material)%sab
-				print *, ace(iso)%sab_iso, p%E 
-				print *, ( materials(p%material)%sab == .true.  .and. ace(iso)%sab_iso /= 0 &
+                print *, materials(p%material)%mat_name , materials(p%material)%sab
+                print *, ace(iso)%sab_iso, p%E 
+                print *, ( materials(p%material)%sab == .true.  .and. ace(iso)%sab_iso /= 0 &
                 .and. p%E < 4D-6 )
         call SAB_CE(p,iso,micro_xs(2),micro_xs(6))
         else
@@ -485,18 +485,15 @@ subroutine notElastic_CE (p,iso,xn)
         endif
     enddo law_search
     
-	if (eg%nlaw == 1) then 
-		law = eg % dist(1) % law
-		ilaw = 1
-	endif 
-	
+    if ( eg%nlaw == 1 ) then 
+        law = eg % dist(1) % law
+        ilaw = 1
+    endif 
+    
     if (law < 0) then 
         print *, 'ERROR :: law not selected'
-        print *, ace(iso)%library, iMT, ace(iso)%TY(iMT), eg%nlaw
-        print *, F,  ipfac, rn
-		print *, eg%dist(ilaw)%F(pt1)
-		
-		! interpolation 때문에 F가 약간 틀어져서? -> 맨 마지막 law를 선택하도록 하자
+        print *, F, eg%dist(ilaw)%F(pt1), ipfac
+        print *, ace(iso)%library, iMT, ace(iso)%TY(iMT), eg%nlaw, law
         stop
     endif 
     
@@ -520,8 +517,7 @@ subroutine notElastic_CE (p,iso,xn)
         !print *, 'WARNING :: abs cosine larger than 1', mu 
         mu = sign(1.0d0, mu)
     endif
-	
-	
+    
     call directionEnergy (p, mu, iMT, iso) 
     
     xn = abs(ace(iso)%TY(iMT))
@@ -535,6 +531,8 @@ end subroutine
 !    source through the implicit capture process. 
 ! ================================================== !
 subroutine fissionSite_CE (p, iso, micro_xs)
+    use FMFD, only: fmfdon, fsd_MC, FMFD_ID, INSIDE
+    implicit none
     type(particle), intent(in) :: p
     real(8), intent(in) :: micro_xs(5) 
     integer, intent(in) :: iso
@@ -549,11 +547,21 @@ subroutine fissionSite_CE (p, iso, micro_xs)
     real(8) :: ipfac    ! interpolation factor
     real(8) :: F         ! collision probability
     real(8) :: erg_out, mu = 1
+    integer :: id(3)
     
     
     n = int(p%wgt*(micro_xs(5)/micro_xs(1))*(1.0/keff) + rang())
+
+    ! fission site for FMFD calculation
+    if ( fmfdon ) then
+        if ( INSIDE(p%coord(1)%xyz) ) then
+            id(:) = FMFD_ID(p%coord(1)%xyz)
+            fsd_MC(id(1),id(2),id(3)) = fsd_MC(id(1),id(2),id(3)) + n
+        end if
+    end if
+
+    ! fission source
     do i_source = 1, n
-        
         bank_idx = bank_idx + 1
         thread_bank(bank_idx)%xyz = p%coord(1)%xyz
         thread_bank(bank_idx)%uvw = rand_vec()
@@ -602,7 +610,8 @@ subroutine fissionSite_CE (p, iso, micro_xs)
             enddo 
             
             !> Interpolate F(E) (P(E) in ENDF Manual...)
-            ipfac = max(0.d0, min(1.d0,(p%E-eg%dist(ilaw)%E(pt1))/(eg%dist(ilaw)%E(pt1+1)-eg%dist(ilaw)%E(pt1))))
+            ipfac = max(0.d0, min(1.d0,(p%E-eg%dist(ilaw)%E(pt1)) &
+                /(eg%dist(ilaw)%E(pt1+1)-eg%dist(ilaw)%E(pt1))))
             F     = eg%dist(ilaw)%F(pt1) + ipfac*(eg%dist(ilaw)%F(pt1+1)-eg%dist(ilaw)%F(pt1))
             if (rn < F) then 
                 law = eg % dist(ilaw) % law
@@ -611,7 +620,8 @@ subroutine fissionSite_CE (p, iso, micro_xs)
         enddo law_search
         
         if (law < 0) then 
-            print *, '**************************   law not selected', F, eg%dist(ilaw)%F(pt1), ipfac
+            print *, '**************************   law not selected', &
+                F, eg%dist(ilaw)%F(pt1), ipfac
             stop
         endif 
         erg_out = p%E
@@ -621,7 +631,7 @@ subroutine fissionSite_CE (p, iso, micro_xs)
         thread_bank(bank_idx)%E = erg_out
         
     enddo 
-        
+
         
 end subroutine
 
@@ -717,10 +727,7 @@ subroutine directionEnergy (p, mu, iMT, iso)
         mu         = mu_CM*sqrt(Eout_CM/Eout_lab) + sqrt(Ein/Eout_lab)/(A+1.)
         
         p%E = Eout_lab
-		
-		! 여기임 사마륨 에러
         p%coord(1)%uvw = rotate_angle(p%coord(1)%uvw, mu, iso)
-		
         !do j = 1, p%n_coord
         !    p%coord(j)%uvw = rotate_angle (p%coord(j)%uvw, mu)
         !enddo 
@@ -728,7 +735,7 @@ subroutine directionEnergy (p, mu, iMT, iso)
     else!if(ace(iso)%TY(iMT)>0) then  !> Reaction was in TAR frame 
         !> mu and p%E are in lab frame
         p%coord(1)%uvw = rotate_angle(p%coord(1)%uvw, mu, iso)
-		
+
         !do j = 1, p%n_coord
         !    p%coord(j)%uvw = rotate_angle (p%coord(j)%uvw, mu)
         !enddo 
@@ -995,11 +1002,10 @@ end function
 
 ! =============================================================================
 function rotate_angle (uvw0, mu, iso) result (uvw)
-    implicit none 
-    integer,optional :: iso
-
+    implicit none
     real(8), intent(in) :: uvw0(3) 
     real(8), intent(in) :: mu 
+    integer, optional   :: iso
     real(8) :: uvw(3)
     
     real(8) :: phi
@@ -1026,10 +1032,10 @@ function rotate_angle (uvw0, mu, iso) result (uvw)
     endif
 
     do i = 1, 3 
-        if (uvw(i) /= uvw(i)) then 
+        if ( uvw(i) /= uvw(i) ) then 
             print*, "rotation error"
-			if(present(iso)) print *, iso, ace(iso)%library 
-            print *, a, b, mu 
+            if ( present(iso) ) print*, iso, ace(iso)%library
+            print *, a, b, mu
             print *, uvw(:) 
             stop
         endif 

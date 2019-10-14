@@ -103,7 +103,7 @@ endtype
 type AceFormat
   character(20) :: library       !> name of library for each isotope
   integer :: ZAID                !> ZAID number
-  logical :: excited			 !> True if excited
+  logical :: excited             !> True if excited
   integer :: NXS(1:16)           !> number array in ace format
   integer :: JXS(1:32)           !> pointer array in ace format
   real(8) :: temp                !> temperature in [MeV]
@@ -341,7 +341,6 @@ real(8),parameter :: wx2_ghq2(1:16) = (/1.42451415249E-02, &
  
  
     contains 
-	
     function find_ACE_iso_idx (this, iso_id) result (idx) 
         type(AceFormat) :: this(:) 
         character(*) :: iso_id 
@@ -364,12 +363,12 @@ real(8),parameter :: wx2_ghq2(1:16) = (/1.42451415249E-02, &
         
         do i = 1, num_iso
             if ((ace(i)%zaid == zaid/10) .and. ((mod(zaid,10)/=0) .eqv. ace(i)%excited)) then 
-				idx = i 
-				return 
+                idx = i 
+                return 
             endif
         enddo
-		
-		idx = 0 
+        
+        idx = 0 
         !print *, "ERROR :: no such isotope ZAID number : ", zaid 
         !stop 
         

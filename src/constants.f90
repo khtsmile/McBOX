@@ -3,31 +3,25 @@ module constants
     
     !==============================================================================
     !Constants for I/O unit
-    integer, parameter :: rd_geom        = 1, &  !I/O unit for reading problem
-                          rd_ctrl        = 2, &  !I/O unit for reading control param.
-                          rd_xs          = 3, &
-                          rd_tally       = 4, &
-                          rd_mat         = 5, & 
-						  rd_dep		 = 6, &
-                          rd_inven       = 7
-						  
-						  
-						  
-						  
-						  
-						  
-    integer, parameter :: wt_coord       = 8  !I/O unit for coordinate test 
-    integer, parameter :: prt_spec       = 9  !I/O unit for spectral analysis variable print 
+    integer, parameter :: rd_geom  = 1, &  !I/O unit for reading problem
+                          rd_ctrl  = 2, &  !I/O unit for reading control param.
+                          rd_xs    = 3, &
+                          rd_tally = 4, &
+                          rd_mat   = 5, & 
+                          rd_dep   = 6, &
+                          rd_inven = 7
+    integer, parameter :: wt_coord = 8  !I/O unit for coordinate test 
+    integer, parameter :: prt_spec = 9  !I/O unit for spectral analysis variable print 
     
     !integer, parameter :: rd_mg           = 3  !I/O unit for reading control param.
     !integer, parameter :: rd_event        = 4  !I/O unit for event for tmc
     !integer, parameter :: rd_burn         = 5  !I/O unit for burnup calculation
-    integer, parameter :: prt_keff       = 10  !I/O unit for keff
-    integer, parameter :: prt_ntpy       = 11  !I/O unit for ntpy 
-    integer, parameter :: prt_flux       = 12  !I/O unit for flux
-    integer, parameter :: prt_powr       = 13  !I/O unit for power
-	integer, parameter :: prt_bumat		 = 14  !I/O unit for burned materials
-	
+    integer, parameter :: prt_keff        = 10  !I/O unit for keff
+    integer, parameter :: prt_ntpy        = 11  !I/O unit for ntpy 
+    integer, parameter :: prt_flux        = 12  !I/O unit for flux
+    integer, parameter :: prt_powr        = 13  !I/O unit for power
+    integer, parameter :: prt_bumat       = 14  !I/O unit for burned materials
+    
     
     !integer, parameter :: prt_assflux      = 10 !I/O unit for flux
     !integer, parameter :: prt_asspowr      = 11 !I/O unit for power
@@ -164,6 +158,8 @@ module constants
        LATTICE_RECT = 1, & ! Rectangular lattice
        LATTICE_HEX  = 2    ! Hexagonal lattice
 
+  ! Base univer
+  integer, parameter :: BASE = 0
 
   ! Flag to say that the outside of a lattice is not defined
   integer, parameter :: NO_OUTER_UNIVERSE = -1
@@ -177,7 +173,6 @@ module constants
   ! ============================================================================
   ! CROSS SECTION RELATED CONSTANTS
   real(8) :: barn = 1.0d-24
-  
   
   ! Interpolation flag
   integer, parameter ::   &
@@ -244,8 +239,6 @@ module constants
   integer, parameter :: DEPLETION_RX(6) = [N_GAMMA, N_P, N_A, N_2N, N_3N, N_4N]
   real(8), parameter :: eVtoJoule = 1.602176487d-19 !Joule/eV
 
-  
-  
   ! ACE table types
   integer, parameter :: &
        ACE_NEUTRON   = 1, & ! continuous-energy neutron
@@ -268,6 +261,13 @@ module constants
        EMISSION_PROMPT = 1,  & ! Prompt emission of secondary particle
        EMISSION_DELAYED = 2, & ! Delayed emission of secondary particle
        EMISSION_TOTAL = 3      ! Yield represents total emission (prompt + delayed)
+
+  ! Cross section filetypes
+  integer, parameter :: &
+       ASCII  = 1, & ! ASCII cross section file
+       BINARY = 2    ! Binary cross section file
+
+
 
 
   ! ============================================================================

@@ -8,6 +8,7 @@ module material_header
         integer, allocatable :: ace_idx(:)     ! index in nuclides array
         real(8), allocatable :: numden(:)      ! nuclide atom density (#/b-cm)
         real(8), allocatable :: full_numden(:) ! AD for all inventory (#/b-cm)
+        real(8), allocatable :: temp(:)        ! temperature (MeV)
         real(8)              :: density_gpcc ! total density in g/cm^3
         real(8)              :: vol          ! material volume (cm^3)
         
@@ -31,6 +32,9 @@ module material_header
         
         ! Isotopes for S(a,b)?
         logical :: sab = .false.
+
+        ! Doppler broadening
+        logical :: db = .false.
         
     end type Material_CE
     

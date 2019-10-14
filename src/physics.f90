@@ -1,6 +1,6 @@
 module physics
     use omp_lib
-    use variables,            only: keff, k_col
+    use variables,            only: keff, k_col, k_tl
     use constants
     use particle_header 
     use XS_header 
@@ -47,11 +47,11 @@ module physics
                 idx_group = i_group
                 exit
             endif 
-        enddo  
+        enddo 
         
         p % wgt = p % wgt * sum(XS_MG(p%material)%sig_scat(p%g,:))/sig_tot
         p % g   = idx_group
-		p % last_uvw(:) = p % coord(1)% uvw(:)
+        p % last_uvw(:) = p % coord(1)% uvw(:)
         p % coord(1)% uvw(:) = rand_vec()
         
         if (p%wgt < wgt_min) THEN !call Russian_Roulette(p)
@@ -121,7 +121,7 @@ module physics
             p % g    = idx_group
             p % coord(1) % uvw(:) = rand_vec()
         endif
-		
+
     end subroutine
 
 end module 

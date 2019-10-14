@@ -38,9 +38,9 @@ READ_ACE_ISO:Do iso = 1, num_iso
   read(ace(iso)%library(1:5), '(f)') val
   i = mod(int(val), 1000)
   if (i > 300) then 
-	ace(iso)%excited = .true. 
+    ace(iso)%excited = .true. 
   else 
-	ace(iso)%excited = .false. 
+    ace(iso)%excited = .false. 
   endif 
   
   !1st line
@@ -1317,14 +1317,12 @@ type (AceFormat), pointer :: ac
 integer :: iMT, LOCA, nfis
 real(8), allocatable :: temp_XS(:,:)
 
-!if ( JXS(21) == 0 ) return
-
 !Set pointer
 ac => ace(iso)
 
 !Allocate arrays 
 if ( JXS(21) /= 0 ) then
-	IE = XSS(JXS(21)); NE = XSS(JXS(21)+1);
+    IE = XSS(JXS(21)); NE = XSS(JXS(21)+1);
     allocate( ac % sigf( 1 : NXS(3) ) )
     ac % sigf( : ) = 0 
     ac % sigf( IE : IE+NE-1 ) = XSS( JXS(21)+2 : JXS(21)+2+NE-1 )

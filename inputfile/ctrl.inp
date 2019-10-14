@@ -8,15 +8,15 @@ CARD A : Control_Card
 	Number_active			= 200
 
 	entropy					= 0 -64.26 0 64.26 0 64.26 20 20 3
-	
+
 	%DBRC					= T
 	%DBRC_E_MIN				= 4E-6
 	%DBRC_E_MAX				= 2.1E-4
 	%N_ISO0K				= 1 
 	%DBRC_lib				= 92238.70c_sss_0K
 	
-	FMFD 					= T
-	FMFD_GRID				= 0 -64.26 0 64.26 0 64.26 34 34 2
+%	FMFD 					= T
+%	FMFD_GRID				= 0 -64.26 0 64.26 0 64.26 34 34 2
 	%ONE_CMFD				= 17 2
 	
 	

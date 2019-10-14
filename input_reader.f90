@@ -993,17 +993,31 @@ end subroutine READ_CTRL
                             if(Equal/="=") call Card_Error(Card_Type,Char_Temp)    
                             allocate(CE_mat_ptr%ace_idx(1:CE_mat_ptr%n_iso))
                             allocate(CE_mat_ptr%numden(1:CE_mat_ptr%n_iso)) 
+                            allocate(CE_mat_ptr%temp(1:CE_mat_ptr%n_iso)) 
                             
                         case("ISOTOPES")
                             backspace(File_Number)
-                            if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
                             read(File_Number,*,iostat=File_Error) Char_Temp, Equal, line, CE_mat_ptr%numden(1)
+                            if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
                             CE_mat_ptr%ace_idx(1) = find_ACE_iso_idx (ace, line)
                             do i = 2, CE_mat_ptr%n_iso
                                 read(File_Number,*,iostat=File_Error) line, CE_mat_ptr%numden(i)
                                 CE_mat_ptr%ace_idx(i) = find_ACE_iso_idx (ace, line)
                             enddo 
                             
+                        case("DOPPLER")
+                            backspace(File_Number)
+                            read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%db
+                            if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                    
+                        case("TEMPERATURE")
+                            backspace(File_Number)
+                            read(File_Number,*,iostat=File_Error) Char_Temp, Equal, line, CE_mat_ptr%temp(1)
+                            do i = 2, CE_mat_ptr%n_iso
+                                read(File_Number,*,iostat=File_Error) line, CE_mat_ptr%temp(i)
+                            enddo 
+                            CE_mat_ptr%temp = CE_mat_ptr%temp * K_B
+
                         end select Card_D_Inp
                     
                         if (Char_Temp(1:7)=="END_MAT") Exit Read_Mat

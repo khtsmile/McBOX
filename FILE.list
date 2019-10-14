@@ -5,6 +5,7 @@ FSRCS := \
 		exception.f90\
 		XS_header.f90\
 		material_header.f90\
+		FMFD_header.f90\
 		ace_header.f90\
 		ace_module.f90\
 		ace_xs.f90\
@@ -13,7 +14,6 @@ FSRCS := \
 		randoms.f90\
 		bank_header.f90\
 		particle_header.f90\
-		FMFD_header.f90\
 		solver.f90\
 		CMFD.f90\
 		FMFD.f90\

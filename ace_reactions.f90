@@ -18,6 +18,8 @@ contains
 !    
 ! ================================================== !
 subroutine collision_CE (p) 
+    use CONSTANTS, only: K_B
+    implicit none
     type(particle), intent(inout) :: p
     integer :: iso, i, i_iso, xn
     real(8) :: rn, el, noel, r, sigt_sum, temp, sum1, sum2
@@ -31,6 +33,56 @@ subroutine collision_CE (p)
     ! 6 : thermal elastic
     real(8) :: ipfac
     integer :: ierg
+    real(8) :: dtemp
+    integer :: ii , jj
+    real(8) :: xs_t(5)
+
+    integer,parameter :: ne = 133953
+    real(8) :: ee(1:ne)
+    real(8) :: tt0, tt1
+
+    open(10,file='efort')
+    do ii = 1, 133953
+        read(10,*), ee(ii)
+    end do
+    close(10)
+
+!    call CPU_TIME(tt0)
+!    jj = 4
+!    !do ii = 1, ace(4)%nxs(3)
+!    dtemp = 6D2*K_B
+!    do ii = 1, 133953
+!!        micro_xs = getMicroXS(jj,ee(ii))
+!!        xs_t(5) = micro_xs(1)
+!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
+!        xs_t(1) = micro_xs(1)
+!        dtemp = 9D2*K_B
+!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
+!        xs_t(2) = micro_xs(1)
+!        dtemp = 12D2*K_B
+!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
+!        xs_t(3) = micro_xs(1)
+!        dtemp = 25D2*K_B
+!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
+!        xs_t(4) = micro_xs(1)
+!        write(8,1), ee(ii), xs_t(5)
+!        write(7,1), ee(ii), xs_t(1:4)
+!    end do
+!    !1 format(10es15.6)
+!    call CPU_TIME(tt1)
+!    print*, tt1-tt0
+!    stop
+
+
+    call DB_POLY(ne,ee)
+
+
+
+
+
+
+
+
     
     p%n_collision = p%n_collision + 1
     p % n_coord = 1
@@ -40,7 +92,19 @@ subroutine collision_CE (p)
     macro_xs = getMacroXS(materials(p%material), p%E)
     rn = rang(); temp = 0 
     do i = 1, materials(p%material)%n_iso
+        dtemp = abs(materials(p%material)%temp(i) &
+              - ace(materials(p%material)%ace_idx(i))%temp)
+        p%E=1D-12
+        if ( materials(p%material)%db .and. dtemp > K_B .and. p%E < 1D0 ) then
+        ! On-the-fly Doppler broadening
+        call GET_OTF_DB_MIC(materials(p%material)%temp(i), &
+            materials(p%material)%ace_idx(i),p%E,micro_xs)
+
+        else
+        ! point-wise data with given temperature
+        p%E = 0.001
         micro_xs = getMicroXS( materials(p%material)%ace_idx(i), p%E)
+        end if
         ! S(a,b)
         call GET_SAB_MIC(materials(p%material),i,p%E,micro_xs)
         temp = temp + micro_xs(1)*materials(p%material)%numden(i)*barn
@@ -1045,5 +1109,97 @@ function rotate_angle (uvw0, mu, iso) result (uvw)
     
     !print *, sqrt(uvw(1)**2 + uvw(2)**2 + uvw(3)**2) 
 end function 
+
+
+subroutine DB_POLY(ne,ee)
+    integer, intent(in):: ne
+    real(8), intent(in):: ee(:)
+    real(8) :: micro_xs(6)
+    real(8):: xs(3,ne)
+    real(8):: xs0(3)
+    integer:: id(3)
+    integer:: ii, jj
+    real(8):: coef(3)
+    real(8):: mm(3,3), aa(3), bb(3)
+    real(8):: temp, tt0, tt1
+
+
+    id(1) = 4
+    id(2) = 7
+    id(3) = 10
+
+    aa(1) = 293D0
+    aa(2) = 9D2
+    aa(3) = 2.5D3
+    temp  = 6D2
+
+    do ii = 1, 3
+        mm(ii,1) = aa(ii)*aa(ii)
+        mm(ii,2) = aa(ii)
+        mm(ii,3) = 1D0
+    end do
+
+
+    call CPU_TIME(tt0)
+    do jj = 1, ne
+!        micro_xs = getMicroXS(4,ee(jj))
+!        write(7,1), ee(jj), micro_xs(1)
+    do ii = 1, 3
+        micro_xs = getMicroXS(id(ii),ee(jj))
+        bb(ii) = micro_xs(1)
+    end do
+    print*
+    !pause
+    call GAUSSEL(mm,bb,coef)
+!    write(8,1), ee(jj), coef(1)*temp*temp+coef(2)*temp+coef(3)
+
+    end do
+    call CPU_TIME(tt1)
+    print*, tt1-tt0
+
+    do jj = 1, ne
+        write(8,1), ee(jj), (xs(ii,jj), ii =1, 3)
+    end do
+    1 format(10es15.7)
+    stop
+
+
+
+    print*, size(ee), ne
+    stop
+
+
+end subroutine
+
+subroutine GAUSSEL(aa,bb,xx)
+    real(8):: aa(3,3), bb(3), xx(3)
+    real(8):: mm(3,3)
+    integer:: ii, jj, kk
+    real(8):: temp
+
+    mm = aa
+
+    do kk = 1, 2
+    do ii = kk+1, 3
+        temp = mm(ii,kk)/mm(kk,kk)
+        mm(ii,kk) = 0
+        bb(ii) = bb(ii) - temp*bb(kk)
+        do jj = kk+1, 3
+            mm(ii,jj) = mm(ii,jj) - temp*mm(kk,jj)
+        end do
+    end do
+    end do
+
+    xx(3) = bb(3)/mm(3,3)
+    do ii = 2, 1, -1
+        temp = 0
+        do jj = ii+1, 3
+            temp = temp + mm(ii,jj)*xx(jj)
+        end do
+        xx(ii) = (bb(ii)-temp)/mm(ii,ii)
+    end do
+
+end subroutine
+
 
 end module

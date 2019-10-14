@@ -594,7 +594,7 @@ subroutine LAW61 (erg, iso, mu, dist, iMT)
             E1 = dist%LDAT(K(pt3)+2+i-1)
             E2 = dist%LDAT(K(pt3)+2+i)
             
-            if (INTT == 1 .or. p1 == p2) then  !> histogram
+            if ( INTT == 1 .or. p1 == p2 ) then  !> histogram
                 E_ = E1 + (rn - c1)/p1
             elseif(INTT == 2) then      !> linear-linear
                 temp = (p2-p1)/(E2-E1)
@@ -609,7 +609,6 @@ subroutine LAW61 (erg, iso, mu, dist, iMT)
             E2 = dist%LDAT(K(pt1)+2+NP(pt1)-1) + ipfac*(dist%LDAT(K(pt1+1)+2+NP(pt1+1)-1) - dist%LDAT(K(pt1)+2+NP(pt1)-1))
             
             Eout = E1 + (E_-dist%LDAT(K(pt3)+2))*(E2-E1)/(dist%LDAT(K(pt3)+2+NP(pt3)-1) - dist%LDAT(K(pt3)+2))
-
             j = i
             found = .true. 
         endif 
@@ -868,11 +867,10 @@ subroutine LAW7 (erg, iso, mu, dist, iMT)
     
     NR = dist%LDAT(1) 
     if (NR /= 0) then 
-        !print *, "WARNING :: NBT exists (law 7)"
+        print *, "WARNING :: NBT exists (law 7)"
         allocate(NBT(NR)); allocate(INTP(NR)) 
         NBT (1:NR) = dist%LDAT(2   :2+NR-1) 
         INTP(1:NR) = dist%LDAT(NR+2:2*NR+1) 
-		
     endif
 
     NE = dist%LDAT(2+2*NR) 
@@ -914,8 +912,8 @@ subroutine LAW7 (erg, iso, mu, dist, iMT)
         T = T_tbl(pt1)*(T_tbl(pt2)/T_tbl(pt1))**((erg-E(pt1))/(E(pt2)-E(pt1)))
     case( 5 )   !> log-log 
         T = T_tbl(pt1)*(T_tbl(pt2)/T_tbl(pt1))**(log(erg/E(pt1))/log(E(pt2)/E(pt1)))
-    end select    	
-	
+    end select
+    
     !ipfac = max(0.d0, min(1.d0,(erg-E(pt1))/(E(pt2)-E(pt1))))
     !
     !T    = T_tbl(pt1) + ipfac*(T_tbl(pt2)-T_tbl(pt1)) 
@@ -963,7 +961,6 @@ subroutine LAW9 (erg, iso, mu, dist, iMT)
     real(8), allocatable :: E(:), T_tbl(:)
     real(8), allocatable :: NBT(:), INT(:)
     real(8) :: Eout, T, temp, U
-    logical :: reject = .true. 
     integer :: itpType=0 
     
     NR = dist%LDAT(1) 
@@ -1032,10 +1029,10 @@ subroutine LAW9 (erg, iso, mu, dist, iMT)
     erg = Eout
     
     
-    if (allocated(T_tbl)) deallocate(T_tbl); 
-	if (allocated(E)) deallocate(E); 
-	if (allocated(INT)) deallocate(INT); 
-	if (allocated(NBT)) deallocate(NBT)
+    if (allocated(T_tbl)) deallocate(T_tbl)
+    if (allocated(E))     deallocate(E)
+    if (allocated(INT))   deallocate(INT)
+    if (allocated(NBT))   deallocate(NBT)
     
 end subroutine
 
@@ -1063,7 +1060,6 @@ subroutine LAW11 (erg, iso, mu, dist, iMT)
     real(8) :: ipfac
     real(8), allocatable :: Ea(:), Eb(:), a_tbl(:), b_tbl(:)
     real(8) :: Eout, a, b, temp, U, g
-    !logical :: reject = .true. 
     
     
     NRa = dist%LDAT(1)
@@ -1114,13 +1110,13 @@ subroutine LAW11 (erg, iso, mu, dist, iMT)
     
     g = sqrt((1+a*b/8.0d0)**2 -1) + (1+a*b/8.0d0)
     
-    loop: do     
+    loop : do
         rn1 = rang() 
         rn2 = rang() 
         Eout = -a*g*log(rn1)
         
         temp = ((1-g)*(1-log(rn1))-log(rn2))**2 
-        if (temp <= b*Eout) exit loop !reject = .false. 
+        if (temp <= b*Eout) exit loop
     enddo loop
     
     !> Check CM or LAB 
@@ -1149,7 +1145,6 @@ subroutine LAW66 (erg, iso, mu, dist, iMT)
     integer :: NPSX 
     real(8) :: Ap, A
     real(8) :: rn1, rn2, rn3, rn4, rn5, rn6, rn7, rn8, rn9
-    logical :: reject = .true.
     real(8) :: pp, x, y, T 
     real(8) :: Eout, Emax
     
@@ -1160,17 +1155,16 @@ subroutine LAW66 (erg, iso, mu, dist, iMT)
     
     Emax = (Ap-1)/Ap *(A*erg/(A+1) + ace(iso)%Q(iMT))
     
-    do while (reject) 
+    do
         rn1 = rang() 
         rn2 = rang() 
-        if (rn1**2 + rn2**2 <= 1) reject = .false. 
+        if (rn1**2 + rn2**2 <= 1) exit
     enddo
     
-    reject = .true.
-    do while (reject) 
+    do
         rn3 = rang() 
         rn4 = rang() 
-        if (rn3**2 + rn4**2 <= 1) reject = .false. 
+        if (rn3**2 + rn4**2 <= 1) exit
     enddo
     
     select case (NPSX) 

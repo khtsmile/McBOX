@@ -6,12 +6,14 @@ use material_header
 use ace_header 
 use ace_module 
 
-
 implicit none 
+    real(8), parameter:: inv_sqrt_pi = 0.564189583547756D0 ! 1/sqrt(pi)
 
 contains
 
 function getMacroXS (mat, erg) result (macro_xs)
+    use CONSTANTS, only: K_B
+    implicit none
     type(Material_CE), intent(in) :: mat
     real(8), intent(in) :: erg
     real(8) :: macro_xs(5)
@@ -23,7 +25,9 @@ function getMacroXS (mat, erg) result (macro_xs)
     real(8) :: micro_t, micro_d, micro_f, micro_nuf, micro_a, micro_el, micro_xn
     real(8) :: macro_t, macro_f, macro_nuf, macro_a, macro_qf
     real(8) :: xn_xs(4)
+    real(8) :: xs(5)
     integer :: isab
+    real(8) :: dtemp    ! temperautre difference | library - material |
     macro_t   = 0.0d0
     macro_a   = 0.0d0
     macro_f   = 0.0d0
@@ -41,6 +45,19 @@ function getMacroXS (mat, erg) result (macro_xs)
         isab = ace(iso_)%sab_iso    ! isotope number for S(a,b)
         if ( mat%sab .and. isab /= 0 .and. erg < 4D-6 ) then
             call GET_SAB_MAC(mat%numden(i_iso),iso_,isab,erg,macro_t,macro_a)
+            cycle
+        end if
+
+        ! =====================================================================
+        ! On-the-fly Doppler broadening
+        dtemp = abs(ace(iso_)%temp-mat%temp(i_iso))
+        if ( mat%db .and. ( dtemp > K_B .and. erg < 1d0 ) ) then
+            call GET_OTF_DB_MAC(mat,i_iso,iso_,erg,xs)
+            macro_t   = macro_t   + xs(1)
+            macro_a   = macro_a   + xs(2)
+            macro_f   = macro_f   + xs(3)
+            macro_nuf = macro_nuf + xs(4)
+            macro_qf  = macro_qf  + xs(5)
             cycle
         end if
     
@@ -74,7 +91,7 @@ function getMacroXS (mat, erg) result (macro_xs)
         macro_nuf = macro_nuf + mat%numden(i_iso) * micro_nuf * barn
         macro_qf  = macro_qf  + mat%numden(i_iso) * micro_f   * barn * ace(iso_)%qval
         
-        !> Macro_xs of Sig_abs is only used for CMFD, (n,xn) XS is subtracted. 
+        !> Macro_xs of Sig_abs is only used for FMFD, (n,xn) XS is subtracted. 
         do i = 1, ace(iso_)%NXS(5) !> through the reaction types...
             pt1 = abs(ace(iso_)%TY(i))
             if (pt1 > 1 .and. pt1 < 5) then 
@@ -110,6 +127,7 @@ function getMicroXS (iso, erg) result (micro_xs)
     real(8) :: micro_t, micro_d, micro_f, micro_nuf, micro_a, micro_el
     
     call getierg(iso,ierg_,erg)
+    print*, ierg_
     
     ipfac = max(0.d0, min(1.d0,(erg-ace(iso)%E(ierg_))/(ace(iso)%E(ierg_+1)-ace(iso)%E(ierg_))))
     !==============================================================
@@ -248,9 +266,10 @@ subroutine getierg(iso_,ierg_,erg0)
     
     
     uidx = 1 + int(log10(erg0/Emin)/udelta)
-    if(uidx<1) uidx = 1
+    if( uidx < 1 ) uidx = 1
     pt1 = ugrid(uidx-1,iso_)
     pt2 = min(ugrid(uidx,iso_)+1,ace(iso_)%nxs(3))
+    print*, "pt", pt1, pt2
     
     !pt1 = 1 
     !pt2 = size(ace(iso_)%E)
@@ -534,5 +553,284 @@ subroutine GET_IERG_SABE(iso_,ierg_,erg)
 
 end subroutine
 
+
+! =============================================================================
+! GET_OTF_DB
+! =============================================================================
+subroutine GET_OTF_DB_MAC(mat,i_iso,iso,E0,xs1)
+    use ACE_HEADER, only: ace, ghq, wghq, ghq2, xghq2, wghq2
+    implicit none
+    type(material_CE):: mat
+    integer, intent(in)   :: i_iso, iso ! index for material and ACE
+    real(8), intent(in)   :: E0
+    real(8), intent(inout):: xs1(5)
+    real(8):: xs0(5)
+    real(8):: erg_l, erg_u, E1
+    integer:: ierg0, ierg1
+    real(8):: bb, yy, inv_b, inv_y, inv_y2  ! parameters 1
+    real(8):: xx, x2, wx2  ! parameters 2
+    real(8):: p1, p2       ! parameters 3
+    real(8):: nd
+    integer:: ii
+
+    ! parameters
+    bb    = ace(iso)%atn/(mat%temp(i_iso)-ace(iso)%temp)
+    yy    = sqrt(bb*E0)
+    inv_b = 1D0/bb
+    inv_y = 1D0/yy
+    inv_y2 = inv_y*inv_y
+
+    ! initialization
+    xs1(:) = 0D0
+
+    if ( yy > ghq(16) ) then
+        erg_l = (yy+ghq(1))*(yy+ghq(1))*inv_b
+        erg_u = (yy+ghq(16))*(yy+ghq(16))*inv_b
+        call getierg(iso,ierg0,erg_l)
+        call getierg(iso,ierg1,erg_u)
+
+        do ii = 1, 16
+            xx = ghq(ii) + yy
+            x2 = xx*xx
+            E1 = x2*inv_b
+            ierg0 = EFF_IERG(E1,iso,ierg0,ierg1+1)
+            call GET_MIC_DB1(iso,ierg0,E1,xs0)
+            wx2 = wghq(ii) * x2
+            xs1(:) = xs1(:) + wx2 * xs0(:)
+        end do
+
+        p1 = inv_sqrt_pi*inv_y2
+        xs1(:) = xs1(:) * p1
+
+    else
+        erg_l = xghq2(1)*inv_b
+        erg_u = xghq2(16)*inv_b
+        call getierg(iso,ierg0,erg_l)
+        call getierg(iso,ierg1,erg_u)
+
+        do ii = 1, 16
+            E1 = xghq2(ii)*inv_b
+            ierg0 = EFF_IERG(E1,iso,ierg0,ierg1+1)
+            call GET_MIC_DB1(iso,ierg0,E1,xs0)
+            p1 = exp(2D0*ghq2(ii)*yy)
+            p2 = wghq2(ii)*(p1-1D0/p1)
+            xs1(:) = xs1(:) + p2 * xs0(:)
+        end do
+
+        p1 = inv_sqrt_pi*inv_y2*exp(-yy*yy)
+        xs1(:) = xs1(:) * p1
+
+    end if
+
+    nd = mat%numden(i_iso)
+    xs1(:) = xs1(:) * nd * barn
+
+end subroutine
+
+! =============================================================================
+! GET_OTF_DB
+! =============================================================================
+subroutine GET_OTF_DB_MIC(temp1,iso,E0,xs1)
+    use ACE_HEADER, only: ace, ghq, wghq, ghq2, xghq2, wghq2
+    implicit none
+    real(8), intent(in)   :: temp1  ! temperature
+    integer, intent(in)   :: iso    ! index for MAT and ACE library
+    real(8), intent(in)   :: E0
+    real(8), intent(inout):: xs1(6)
+    real(8):: xs0(6)
+    real(8):: erg_l, erg_u, E1
+    integer:: ierg0, ierg1
+    real(8):: bb, yy, inv_b, inv_y, inv_y2  ! parameters 1
+    real(8):: xx, x2, wx2  ! parameters 2
+    real(8):: p1, p2       ! parameters 3
+    real(8):: nd
+    integer:: ii
+
+    ! parameters
+    bb    = ace(iso)%atn/(temp1-ace(iso)%temp)
+    yy    = sqrt(bb*E0)
+    inv_b = 1D0/bb
+    inv_y = 1D0/yy
+    inv_y2 = inv_y*inv_y
+
+    ! initialization
+    xs1(:) = 0D0
+
+    if ( yy > ghq(16) ) then
+        erg_l = (yy+ghq(1))*(yy+ghq(1))*inv_b
+        erg_u = (yy+ghq(16))*(yy+ghq(16))*inv_b
+        call getierg(iso,ierg0,erg_l)
+        call getierg(iso,ierg1,erg_u)
+
+        do ii = 1, 16
+            xx = ghq(ii) + yy
+            x2 = xx*xx
+            E1 = x2*inv_b
+            ierg0 = EFF_IERG(E1,iso,ierg0,ierg1+1)
+            call GET_MIC_DB2(iso,ierg0,E1,xs0)
+            wx2 = wghq(ii) * x2
+            xs1(1:6) = xs1(1:6) + wx2 * xs0(1:6)
+        end do
+
+        p1 = inv_sqrt_pi*inv_y2
+        xs1(:) = xs1(:) * p1
+
+    else
+        erg_l = xghq2(1)*inv_b
+        erg_u = xghq2(16)*inv_b
+        call getierg(iso,ierg0,erg_l)
+        call getierg(iso,ierg1,erg_u)
+
+        do ii = 1, 16
+            E1 = xghq2(ii)*inv_b
+            ierg0 = EFF_IERG(E1,iso,ierg0,ierg1+1)
+            call GET_MIC_DB2(iso,ierg0,E1,xs0)
+            p1 = exp(2D0*ghq2(ii)*yy)
+            p2 = wghq2(ii)*(p1-1D0/p1)
+            xs1(1:6) = xs1(1:6) + p2 * xs0(1:6)
+        end do
+
+        p1 = inv_sqrt_pi*inv_y2*exp(-yy*yy)
+        xs1(:) = xs1(:) * p1
+
+    end if
+
+end subroutine
+
+! =============================================================================
+! 
+! =============================================================================
+function EFF_IERG(E0,iso,p1,p2) result(pt4)
+    use ACE_HEADER, only: ace
+    implicit none
+    real(8), intent(in):: E0
+    integer, intent(in):: iso
+    integer, intent(in):: p1, p2
+    integer:: pt1, pt2, pt3, pt4
+    
+    pt1 = p1
+    pt2 = p2
+
+    pt2 = pt2 + 1
+
+    if ( pt1 == pt2 ) then
+        pt4 = pt1 - 1
+    else
+        do
+            if ( (pt2-pt1) == 1 ) exit
+            pt3 = (pt2+pt1)/2
+            if ( E0 >= ace(iso)%E(pt3) ) then
+                pt1 = pt3
+            else
+                pt2 = pt3
+            end if
+        end do
+        pt4 = pt1
+    end if
+
+end function
+
+! =============================================================================
+! 
+! =============================================================================
+subroutine GET_MIC_DB1(iso,ierg,E1,xs)
+    use FMFD_HEADER, only: fmfdon
+    implicit none
+    integer, intent(in):: iso, ierg
+    real(8), intent(in):: E1
+    real(8):: xs(5)
+    real(8):: slope
+    integer:: ii, jj
+    real(8):: xs_xn(4)
+
+    slope = max(0D0,min(1D0,(E1-ace(iso)%E(ierg)) &
+        /(ace(iso)%E(ierg+1)-ace(iso)%E(ierg))))
+
+    xs(1) = ace(iso)%sigt(ierg) &
+          + slope * (ace(iso)%sigt(ierg+1)-ace(iso)%sigt(ierg))
+    xs(2) = ace(iso)%sigd(ierg) &
+          + slope * (ace(iso)%sigd(ierg+1)-ace(iso)%sigd(ierg))
+    xs(3) = 0D0
+
+    ! fissionable material
+    if ( ace(iso)%jxs(21) /= 0 .or. allocated(ace(iso)%sigf) ) then
+    xs(3) = ace(iso)%sigf(ierg) &
+          + slope * (ace(iso)%sigf(ierg+1)-ace(iso)%sigf(ierg))
+    xs(4) = xs(3) * getnu(iso,E1)
+    xs(5) = xs(3) * ace(iso)%qval
+    xs(2) = xs(2) + xs(3)
+    end if
+
+    ! (n,xn) cross-section
+    ! seperately considered and then collapsed? when FMFD is on
+    if ( fmfdon ) then
+    do ii = 1, ace(iso)%nxs(5)
+        jj = abs(ace(iso)%TY(ii))
+        if ( jj > 1 .and. jj < 5 ) then
+            xs_xn(1) = ace(iso)%sig_MT(ii)%cx(ierg) + slope * &
+                (ace(iso)%sig_MT(ii)%cx(ierg+1)-ace(iso)%sig_MT(ii)%cx(ierg))
+            xs_xn(jj) = xs_xn(1)
+        end if
+    end do
+
+    do ii = 2, 4
+        xs(2) = xs(2) - (ii-1)*xs_xn(ii)
+    end do
+    end if
+
+end subroutine
+
+! =============================================================================
+! 
+! =============================================================================
+subroutine GET_MIC_DB2(iso,ierg,E1,xs)
+    use FMFD_HEADER, only: fmfdon
+    implicit none
+    integer, intent(in):: iso, ierg
+    real(8), intent(in):: E1
+    real(8):: xs(6)
+    real(8):: slope
+    integer:: ii, jj
+    real(8):: xs_xn(4)
+
+    slope = max(0D0,min(1D0,(E1-ace(iso)%E(ierg)) &
+        /(ace(iso)%E(ierg+1)-ace(iso)%E(ierg))))
+
+    xs(1) = ace(iso)%sigt(ierg) &
+          + slope * (ace(iso)%sigt(ierg+1)-ace(iso)%sigt(ierg))
+    xs(2) = ace(iso)%sigel(ierg) &
+          + slope * (ace(iso)%sigel(ierg+1)-ace(iso)%sigel(ierg))
+    xs(3) = ace(iso)%sigd(ierg) &
+          + slope * (ace(iso)%sigd(ierg+1)-ace(iso)%sigd(ierg))
+    xs(4) = 0D0
+    xs(5) = 0D0
+    xs(6) = xs(3)
+
+    ! fissionable material
+    if ( ace(iso)%jxs(21) /= 0 .or. allocated(ace(iso)%sigf) ) then
+    xs(4) = ace(iso)%sigf(ierg) &
+          + slope * (ace(iso)%sigf(ierg+1)-ace(iso)%sigf(ierg))
+    xs(5) = xs(4)*getnu(iso,E1)
+    xs(3) = xs(3) + xs(4)
+    end if
+
+    ! (n,xn) cross-section
+    ! seperately considered and then collapsed? when FMFD is on
+    if ( fmfdon ) then
+    do ii = 1, ace(iso)%nxs(5)
+        jj = abs(ace(iso)%TY(ii))
+        if ( jj > 1 .and. jj < 5 ) then
+            xs_xn(1) = ace(iso)%sig_MT(ii)%cx(ierg) + slope * &
+                (ace(iso)%sig_MT(ii)%cx(ierg+1)-ace(iso)%sig_MT(ii)%cx(ierg))
+            xs_xn(jj) = xs_xn(1)
+        end if
+    end do
+
+    do ii = 2, 4
+        xs(3) = xs(3) - (ii-1)*xs_xn(ii)
+    end do
+    end if
+
+end subroutine
 
 end module 

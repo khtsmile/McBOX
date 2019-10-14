@@ -41,7 +41,10 @@ module particle_header
         integer          :: n_coord          ! number of current coordinates
         integer          :: cell_instance    ! offset for distributed properties
         type(LocalCoord) :: coord(MAX_COORD) ! coordinates for all levels
-                
+        
+        
+        !class(universe), pointer :: univ     !> universe pointer 
+        
         ! Particle coordinates before crossing a surface
         integer :: last_n_coord         ! number of current coordinates
         integer :: last_cell(MAX_COORD) ! coordinates for all levels
@@ -59,51 +62,49 @@ module particle_header
         
         !! Pre-collision physical data
         !real(8)    :: last_xyz_current(3) ! coordinates of the last collision or
-        !                                    !  reflective/periodic surface crossing
-        !                                    !  for current tallies
+                                            !  reflective/periodic surface crossing
+                                            !  for current tallies
         !real(8)    :: last_xyz(3)         ! previous coordinates
         real(8)    :: last_uvw(3)         ! previous direction coordinates
         real(8)    :: last_wgt            ! pre-collision particle weight
         !real(8)    :: absorb_wgt          ! weight absorbed for survival biasing
-        !
+        
         !! What event last took place
         !logical    :: fission       ! did the particle cause implicit fission
         !integer    :: event         ! scatter, absorption
         !integer    :: event_nuclide ! index in nuclides array
         !integer    :: event_MT      ! reaction MT
         !integer    :: delayed_group ! delayed group
-        !
+        
         !! Post-collision physical data
         !integer    :: n_bank        ! number of fission sites banked
         !real(8)    :: wgt_bank      ! weight of fission sites banked
         !integer    :: n_delayed_bank(MAX_DELAYED_GROUPS) ! number of delayed fission
-        !                                                 ! sites banked
-        !
+                                                         ! sites banked
+        
         !! Indices for various arrays
         !integer    :: surface       ! index for surface particle is on
         !integer    :: cell_born     ! index for cell particle was born in
         integer    :: material      ! index for current material
         integer    :: last_material ! index for last material
-        !
-        !! Temperature of the current cell
+        
+        ! Temperature of the current cell
         real(8)    :: sqrtkT        ! sqrt(k_Boltzmann * temperature) in eV
         real(8)    :: last_sqrtKT   ! last temperature
         
-        !! Statistical data
+        ! Statistical data
         integer    :: n_collision   ! # of collisions
-		integer	   :: n_cross		! # of surface cross
-        !
+        integer    :: n_cross       ! # of surface cross
+        
         !! Track output
         !logical    :: write_track = .false.
-        !
-        !! Tag for S(a,b)
+
+        ! Tag for S(a,b)
         logical    :: yes_sab = .false.
+
+        ! VRC trace
+        logical :: vrc_traced = .false.
         
-		! VRC trace 
-		logical :: vrc_traced = .false.
-		
-		
-		
         ! Secondary particles created
         !integer(8) :: n_secondary = 0
         !type(Bank) :: secondary_bank(MAX_SECONDARY)
@@ -161,7 +162,7 @@ contains
         !this % wgt_bank          = ZERO
         this % sqrtkT            = ERROR_REAL
         this % n_collision       = 0
-		this % n_cross			 = 0 
+        this % n_cross           = 0
         !this % fission           = .false.
         !this % delayed_group     = 0
         !this % n_delayed_bank(:) = 0
@@ -171,7 +172,7 @@ contains
         this % coord(1) % universe = base_univ
         this % n_coord = 1
         this % last_n_coord = 1
-		
+        
         this % vrc_traced = .false.
     
     end subroutine initialize

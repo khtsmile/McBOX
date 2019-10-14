@@ -3,32 +3,32 @@ module material_header
     implicit none 
 
     type Material_CE
-        character(len=20)    :: mat_name		! User-defined name
-        integer              :: n_iso = 0		! number of isotopes (nuclides)
-        integer, allocatable :: ace_idx(:)		! index in nuclides array
-        real(8), allocatable :: numden(:)		! nuclide atom density (atom/b-cm)
-		real(8), allocatable :: full_numden(:)	! nuclide atom density for all inventory (atom/b-cm)
-        real(8)              :: density_gpcc	! total density in g/cm^3
-        real(8) 			 :: vol				! material volume (cm^3) 
-		
+        character(len=20)    :: mat_name       ! User-defined name
+        integer              :: n_iso = 0      ! number of isotopes (nuclides)
+        integer, allocatable :: ace_idx(:)     ! index in nuclides array
+        real(8), allocatable :: numden(:)      ! nuclide atom density (#/b-cm)
+        real(8), allocatable :: full_numden(:) ! AD for all inventory (#/b-cm)
+        real(8)              :: density_gpcc ! total density in g/cm^3
+        real(8)              :: vol          ! material volume (cm^3)
+        
         ! Does this material contain fissionable nuclides? Is it depletable?
         logical :: fissionable = .false.
         logical :: depletable = .false.
-		real(8) :: flux = 0.0d0
-		real(8) :: pwr  = 0.0d0
-		real(8), allocatable :: ogxs(:,:)
+        real(8) :: flux = 0.0d0
+        real(8) :: pwr  = 0.0d0
+        real(8), allocatable :: ogxs(:,:)
 
-		!ogxs(:,1) = One-group Volume-integrated (n,g)  // mt 102 (ENDF)
-		!ogxs(:,2) = One-group Volume-integrated (n,2n) // mt 16 (ENDF)
-		!if idx_mt_iso is fissionable
-		!  ogxs(:,3) = One-group Volume-integrated (n,3n) // mt 17 (ENDF)
-		!  ogxs(:,4) = One-group Volume-integrated (n,f)  // mt 18 (ENDF)
-		!end if
-		!if idx_mt_iso is not fissionable
-		!  ogxs(:,3) = One-group Volume-integrated (n,alpha) // mt 107 (ENDF)
-		!  ogxs(:,4) = One-group Volume-integrated (n,p)     // mt 103 (ENDF)
-		!end if
-		
+        !ogxs(:,1) = One-group Volume-integrated (n,g)  // mt 102 (ENDF)
+        !ogxs(:,2) = One-group Volume-integrated (n,2n) // mt 16 (ENDF)
+        !if idx_mt_iso is fissionable
+        !  ogxs(:,3) = One-group Volume-integrated (n,3n) // mt 17 (ENDF)
+        !  ogxs(:,4) = One-group Volume-integrated (n,f)  // mt 18 (ENDF)
+        !end if
+        !if idx_mt_iso is not fissionable
+        !  ogxs(:,3) = One-group Volume-integrated (n,alpha) // mt 107 (ENDF)
+        !  ogxs(:,4) = One-group Volume-integrated (n,p)     // mt 103 (ENDF)
+        !end if
+        
         ! Isotopes for S(a,b)?
         logical :: sab = .false.
         
