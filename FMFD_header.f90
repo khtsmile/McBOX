@@ -14,6 +14,8 @@ module FMFD_HEADER
     ! =========================================================================
     ! FMFD & DTMC Calculation
     real(8), allocatable :: k_fmfd(:)
+    real(8), allocatable :: p_fmfd(:,:,:,:)
+    real(8), allocatable :: e_fmfd(:,:,:)
     type :: FMFD_parameters
         real(8) :: phi
         real(8) :: sig_t 

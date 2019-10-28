@@ -127,7 +127,6 @@ function getMicroXS (iso, erg) result (micro_xs)
     real(8) :: micro_t, micro_d, micro_f, micro_nuf, micro_a, micro_el
     
     call getierg(iso,ierg_,erg)
-    print*, ierg_
     
     ipfac = max(0.d0, min(1.d0,(erg-ace(iso)%E(ierg_))/(ace(iso)%E(ierg_+1)-ace(iso)%E(ierg_))))
     !==============================================================
@@ -269,10 +268,6 @@ subroutine getierg(iso_,ierg_,erg0)
     if( uidx < 1 ) uidx = 1
     pt1 = ugrid(uidx-1,iso_)
     pt2 = min(ugrid(uidx,iso_)+1,ace(iso_)%nxs(3))
-    print*, "pt", pt1, pt2
-    
-    !pt1 = 1 
-    !pt2 = size(ace(iso_)%E)
     
     if(pt1==pt2) then
       pt1 = pt1 - 1

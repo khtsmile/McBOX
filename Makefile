@@ -2,7 +2,7 @@ SHELL = /bin/bash
 
 COMPILERC   = icc
 COMPILERF   = mpif90 
-FLAG  		= -openmp -mcmodel=medium -heap-arrays -mkl -O2
+FLAG  		= -openmp -mcmodel=medium -heap-arrays -mkl #-O2
 #BUG		= -check all -traceback -fp-stack-check
 MPIFLAG	  	= -mcmodel=medium -heap-arrays -mkl
 

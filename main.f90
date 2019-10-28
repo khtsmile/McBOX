@@ -1,8 +1,8 @@
 program main
 use constants
 use variables
-use FMFD,       only : FMFD_type, n_acc, fmfdon, cmfdon
 use ENTROPY,    only : mprupon, entrp0
+use FMFD_HEADER, only: p_fmfd, k_fmfd, e_fmfd, fmfdon, cmfdon
 use simulation 
 use DEPLETION_MODULE
 use omp_lib
@@ -19,7 +19,7 @@ real(8) :: tt1, tt2, tt3
 integer :: jj, kk
 
 !> Preparation for parallelization ===============================================
-call omp_set_num_threads(1)
+!call omp_set_num_threads(1)
 call MPI_Init_thread(MPI_THREAD_SINGLE, provide, ierr)
 core = MPI_COMM_WORLD
 call MPI_COMM_RANK(core,icore,ierr)
@@ -81,6 +81,14 @@ call MPI_FINALIZE(ierr)
 
 contains
 
+function AVG(val)
+    real(8):: avg
+    real(8), intent(in):: val(:)
+
+    avg = sum(val)/size(val)
+
+end function
+
 function STD(val)
     real(8):: std
     real(8), intent(in):: val(:)
@@ -100,6 +108,8 @@ subroutine TIME_MEASURE
     allocate(t_MC(n_totcyc))
     allocate(t_det(n_totcyc))
     allocate(t_tot(n_totcyc))
+    t_MC  = 0
+    t_det = 0
 
 end subroutine
 
@@ -207,6 +217,8 @@ end subroutine
 ! END_MSG
 ! =============================================================================
 subroutine END_MSG
+    use tally
+    implicit none
 
 if ( icore == score ) then
     write(*,*)
@@ -223,20 +235,41 @@ if ( icore == score ) then
 
     ! multiplication factor
     if ( fmfdon ) then
-    do ii = 1, n_totcyc
+    do ii = 1, n_inact
         write(*,12), k_fmfd(ii)
     end do
+    do ii = n_inact+1, n_totcyc
+        write(*,13), k_fmfd(ii), AVG(k_fmfd(n_inact+1:ii)), STD(k_fmfd(n_inact+1:ii))
+    end do
+    write(*,*)
+    end if
+
+    ! power distribution
+    if ( fmfdon ) then
+    do ii = 1, nfm(1)
+    do jj = 1, nfm(2)
+    do kk = 1, nfm(3)
+        p_fmfd(0,ii,jj,kk) = AVG(p_fmfd(1:,ii,jj,kk))
+        e_fmfd(ii,jj,kk) = STD(p_fmfd(1:,ii,jj,kk))
+    end do
+    end do
+    end do
+    write(*,14), p_fmfd(0,:,:,:)
+    write(*,*)
+    write(*,14), e_fmfd(:,:,:)
     write(*,*)
     end if
 
     ! computing time
     t_MC = t_tot - t_det
     do ii = 1, n_totcyc
-        write(*,13), t_MC(ii), t_det(ii), t_tot(ii)
+        write(*,15), t_MC(ii), t_det(ii), t_tot(ii)
     end do
 
     12 format(F10.6)
-    13 format(3ES15.7)
+    13 format(2F10.6,F10.2)
+    14 format(102ES15.7)
+    15 format(3ES15.7)
 
 end if
 

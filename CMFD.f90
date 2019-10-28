@@ -9,13 +9,14 @@ module CMFD
 ! =============================================================================
 ! ONE_NODE_CMFD
 ! =============================================================================
-subroutine ONE_NODE_CMFD(keff,fm_t,fm_a,fm_nf,fmD,fm_phi1,fmJ0,fmJ1,fmJn,fmF)
+subroutine ONE_NODE_CMFD(keff,fm_t,fm_a,fm_nf,fmD,fm_phi1,fmJ0,fmJ1,fmJn,fmF,cyc)
     use SOLVERS, only: BICG_G, SORL, BiCG_L, SORG
     implicit none
     real(8), intent(inout):: keff
     real(8), intent(in), dimension(:,:,:):: fm_t, fm_a, fm_nf, fmD
     real(8), intent(inout):: fm_phi1(:,:,:)
     real(8), intent(inout), dimension(:,:,:,:):: fmJ0, fmJ1, fmJn, fmF
+    integer:: cyc
     real(8), dimension(nfm(1),nfm(2),nfm(3)):: &
         fm_phi0, &  ! neutron flux
         fm_s        ! neutron source
@@ -24,6 +25,7 @@ subroutine ONE_NODE_CMFD(keff,fm_t,fm_a,fm_nf,fmD,fm_phi1,fmJ0,fmJ1,fmJn,fmF)
         fmDh        ! D hat
     real(8) :: error, k_pre
     integer :: global, local
+    real(8)::tt0, tt1
 
     call L2G(fm_phi1,fm_t,fm_a,fm_nf,fmJn,fmF)
     call L_DTILDA(fmD,fmDt)
@@ -34,7 +36,7 @@ subroutine ONE_NODE_CMFD(keff,fm_t,fm_a,fm_nf,fmD,fm_phi1,fmJ0,fmJ1,fmJn,fmF)
 
     do
     ! ------------------------------- GLOBAL
-    error = 1D0
+    !if ( cyc > 10 ) print*, keff, error
     call G_DHAT(cmJn,cmDt,cm_phi1,cmF,cmDh)
     call G_MATRIX(cmDt,cmDh)
     k_pre = keff
@@ -48,7 +50,6 @@ subroutine ONE_NODE_CMFD(keff,fm_t,fm_a,fm_nf,fmD,fm_phi1,fmJ0,fmJ1,fmJn,fmF)
            / sum(cm_nf*cm_phi0*cm_nf*cm_phi1)
     end do
     error = abs(keff-k_pre)/keff
-    !print*, keff, error
     if ( error < 1D-8 .or. isnan(keff) .or. keff < 0 .or. keff > 2 ) exit
     ! ------------------------------- LOCAL
     call G_INJ(cmDt,cmDh,cm_phi1)

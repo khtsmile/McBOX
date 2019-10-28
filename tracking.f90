@@ -17,6 +17,8 @@ module tracking
                                 FMFD_SURF, fmfdon
     use DEPLETION_MODULE,   only: tally_burnup
     use VRC,                only: trace_psudoray
+    use TH_HEADER,          only: th_on
+    use TEMPERATURE,        only: TH_INSIDE, TH_COL
     
     implicit none
 
@@ -45,9 +47,10 @@ subroutine transport(p,cyc)
     real(8) :: macro_xs(5)
     real(8) :: xyz(3)
     integer :: i_cell, i_bin(4), i_lat, i_surf
-    integer :: i_xyz(3), idx_xyz
+    integer :: i_xyz(3), idx_xyz, j_xyz(3)
     logical :: inside_FMFD
     integer :: income_FMFD
+    logical :: inside_th
     real(8) :: ddiff
     logical :: fm_crossed
     
@@ -74,6 +77,11 @@ subroutine transport(p,cyc)
     !> CMFD distance 
     d_FMFD = INFINITY
     if ( fmfdon ) call FMFD_DISTANCE (p,i_xyz,d_FMFD,inside_FMFD,income_FMFD,i_surf)
+
+    ! =========================================================================
+    !> TH distance
+!    d_TH = INFINITY
+!    if ( th_on ) call TH_DISTANCE(p,j_xyz,d_TH)
     
     !> minimum distance
     ddiff = abs(d_boundary-d_FMFD)/d_boundary
@@ -137,6 +145,10 @@ subroutine transport(p,cyc)
             call collision_CE(p)
         endif
         !if ( fmfdon .and. inside_FMFD ) call FMFD_COL(p%wgt,macro_xs,i_xyz)
+        if ( th_on ) then
+            call TH_INSIDE(p%coord(1)%xyz(:),j_xyz(:),inside_th)
+            if ( inside_th ) call TH_COL(p%wgt,macro_xs(1),macro_xs(4),j_xyz(:))
+        end if
 
     elseif  ( distance == d_FMFD ) then 
         call FMFD_SURF(inside_FMFD, income_FMFD,i_surf, i_xyz, &

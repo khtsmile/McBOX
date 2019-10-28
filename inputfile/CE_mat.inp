@@ -4,7 +4,7 @@ CARD D : CE_MAT_CARD
 		density_gpcc	= 10.26
 		vol				= 0.916088
 		fissionable		= T
-		depletable		= T
+		depletable		= F
 		n_iso			= 3
 		sab				= F
 		isotopes 		= 92235.711nc  6.20000E+21
@@ -16,35 +16,7 @@ CARD D : CE_MAT_CARD
 						   8016.711nc 1200
 	END_MAT_01 
 
-	MAT_02 : UO2 fuel
-		mat_name    	= UO2
-		density_gpcc	= 10.26
-		vol				= 0.916088
-		fissionable		= T
-		depletable		= T
-		n_iso			= 3
-		sab				= F
-		isotopes 		= 92235.712nc  6.20000E+21
-						  92238.712nc  1.60000E+22
-						   8016.712nc  4.44000E+22
-		
-	END_MAT_02 
-	
-	MAT_03 : UO2 fuel
-		mat_name    	= UO2
-		density_gpcc	= 10.26
-		vol				= 0.916088
-		fissionable		= T
-		depletable		= T
-		n_iso			= 3
-		sab				= F
-		isotopes 		= 92235.714nc  6.20000E+21
-						  92238.714nc  1.60000E+22
-						   8016.714nc  4.44000E+22
-		
-	END_MAT_03 
-  
-	MAT_04 : water
+	MAT_02 : water
 		mat_name    	= water
 		density_gpcc	= 0.74186
 		%vol				= 3161.96
@@ -54,7 +26,6 @@ CARD D : CE_MAT_CARD
 						
 		isotopes 		= 1001.711nc  4.96224E+22
 						  8016.711nc  2.48112E+22
-	END_MAT_04
-	
-	
+	END_MAT_02
+
 ENDD

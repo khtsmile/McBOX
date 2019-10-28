@@ -41,11 +41,11 @@ subroutine collision_CE (p)
     real(8) :: ee(1:ne)
     real(8) :: tt0, tt1
 
-    open(10,file='efort')
-    do ii = 1, 133953
-        read(10,*), ee(ii)
-    end do
-    close(10)
+!    open(10,file='efort')
+!    do ii = 1, 133953
+!        read(10,*), ee(ii)
+!    end do
+!    close(10)
 
 !    call CPU_TIME(tt0)
 !    jj = 4
@@ -72,17 +72,7 @@ subroutine collision_CE (p)
 !    call CPU_TIME(tt1)
 !    print*, tt1-tt0
 !    stop
-
-
-    call DB_POLY(ne,ee)
-
-
-
-
-
-
-
-
+!    call DB_POLY(ne,ee)
     
     p%n_collision = p%n_collision + 1
     p % n_coord = 1
@@ -94,7 +84,6 @@ subroutine collision_CE (p)
     do i = 1, materials(p%material)%n_iso
         dtemp = abs(materials(p%material)%temp(i) &
               - ace(materials(p%material)%ace_idx(i))%temp)
-        p%E=1D-12
         if ( materials(p%material)%db .and. dtemp > K_B .and. p%E < 1D0 ) then
         ! On-the-fly Doppler broadening
         call GET_OTF_DB_MIC(materials(p%material)%temp(i), &
@@ -102,7 +91,6 @@ subroutine collision_CE (p)
 
         else
         ! point-wise data with given temperature
-        p%E = 0.001
         micro_xs = getMicroXS( materials(p%material)%ace_idx(i), p%E)
         end if
         ! S(a,b)
@@ -1142,16 +1130,15 @@ subroutine DB_POLY(ne,ee)
 
     call CPU_TIME(tt0)
     do jj = 1, ne
-!        micro_xs = getMicroXS(4,ee(jj))
-!        write(7,1), ee(jj), micro_xs(1)
     do ii = 1, 3
         micro_xs = getMicroXS(id(ii),ee(jj))
         bb(ii) = micro_xs(1)
     end do
-    print*
-    !pause
     call GAUSSEL(mm,bb,coef)
-!    write(8,1), ee(jj), coef(1)*temp*temp+coef(2)*temp+coef(3)
+    write(8,1), ee(jj), coef(1)*temp*temp+coef(2)*temp+coef(3)
+    !write(8,1), ee(jj), bb(1), bb(2), bb(3)
+    !print*
+    !pause
 
     end do
     call CPU_TIME(tt1)

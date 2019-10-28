@@ -9,7 +9,8 @@ module constants
                           rd_tally = 4, &
                           rd_mat   = 5, & 
                           rd_dep   = 6, &
-                          rd_inven = 7
+                          rd_inven = 7, &
+                          rd_temp  = 0
     integer, parameter :: wt_coord = 8  !I/O unit for coordinate test 
     integer, parameter :: prt_spec = 9  !I/O unit for spectral analysis variable print 
     

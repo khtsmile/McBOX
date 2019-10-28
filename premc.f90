@@ -8,6 +8,8 @@ subroutine premc
     use FMFD, only: FMFD_allocation, fmfdon
     use ENTROPY
     use DEPLETION_MODULE
+    use TH_HEADER, only: th_on
+    use TEMPERATURE, only: TH_INITIAL
     
     implicit none
     
@@ -25,6 +27,10 @@ subroutine premc
     endif
     call read_geom 
     if(tally_switch > 0) call read_tally
+    if ( th_on ) then
+        call READ_TH
+        call TH_INITIAL
+    end if
 
     call read_depletion
     if (do_burn) then 

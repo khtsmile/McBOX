@@ -60,10 +60,10 @@ done
 export N_OMP=28
 mpirun -machinefile spacen${NN}_IH -np $NP ./McBOX.out -x N_OMP > log${NN}.out &
 
-if [ $NP == 1 ]; then
-	./show.sh $N0
-else
-	./show.sh $N0 $N1
-fi
+#if [ $NP == 1 ]; then
+#	./show.sh $N0
+#else
+#	./show.sh $N0 $N1
+#fi
 
 

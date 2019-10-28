@@ -10,7 +10,7 @@ double rang() {
 	time_t current_time;
     current_time = time(NULL);
 	
-	seed = seed+125346*(int)current_time;
+	 seed = seed+125346*(int)current_time;
 	seed = seed+125346*omp_get_thread_num(); 
 	// Initialise the random number generator with different seed in each thread
 	// The following constants are chosen arbitrarily... use something more sensible

@@ -5,7 +5,6 @@ module tally
     
     implicit none
     
-    
     type :: LocalCoord
         integer :: cell      = NONE
         integer :: universe  = NONE

@@ -720,63 +720,6 @@ subroutine READ_CTRL
         end if
     end do Read_File
     close(rd_ctrl)
-        
-!        !Read ctrl.inp
-!        open(rd_ctrl, file="./inputfile/ctrl.inp",action="read", status="old")
-!    
-!        ierr = 0; 
-!        do while (ierr.eq.0)
-!            read (rd_ctrl, FMT='(A)', iostat=ierr) line 
-!            if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle  
-!            !> option identifier 
-!            j = 0
-!            do while (j.le.len(line))
-!                j = j+1 
-!                if (line(j:j).eq.' ') exit
-!                option = line(1:j)        
-!            enddo 
-!            select case (option)
-!            case ("pop")
-!                read(line(j+1:), *) n_history, n_inact, n_act
-!                n_totcyc = n_inact + n_act
-!                ngen = n_history
-!                allocate(kprt(n_act))
-!                
-!            case ("energy") 
-!                read(line(j+1:), *) E_mode
-!                
-!            case ("nugrid")
-!                read(line(j+1:), *) nugrid
-!            
-!            case ("tally") 
-!                read(line(j+1:), *) tally_switch
-!                if ( tally_switch > 0 .and. icore == score ) then
-!                open(prt_spec,file="flux.out",action="write",status="replace")
-!                open(prt_spec,file="power.out",action="write",status="replace")
-!                end if
-!
-!            case ("DBRC","dbrc")
-!                n_iso0K = 1
-!                call READ_DBRC(trim(line(j+1:)))
-!            case ("entropy")
-!                read(line(j+1:), *) en0(:), en1(:), nen(:)
-!!            case ("CMFD") 
-!!                read(line(j+1:), *) CMFD_lat, n_skip, n_acc
-!!                CMFD_type = 1
-!!            case ("pCMFD") 
-!!                read(line(j+1:), *) CMFD_lat, n_skip, n_acc
-!!                CMFD_type = 2 
-!            case ("FMFD","fmfd")
-!                call FMFD_INITIAL
-!                call FMFD_READ(rd_ctrl)
-!            case ("power") 
-!                read(line(j+1:), *) Nominal_Power
-!            case ("PRUP","prup")
-!                call PRUP_INITIAL
-!                call READ_PRUP(adjustl(line(5:)))
-!            end select
-!        enddo
-!        close(rd_ctrl)
 
     if ( icore == score ) print '(A25)', '    CTRL  READ COMPLETE...' 
     
@@ -785,352 +728,368 @@ end subroutine READ_CTRL
 ! =============================================================================
 ! Read_Card reads the type of input card
 ! =============================================================================
-    subroutine Read_Card(File_Number,Card_Type)
-        use ENTROPY, only: en0, en1, nen
-        implicit none
-        integer :: i, j 
-        integer,intent(in)::File_Number
-        character(*),intent(inout)::Card_Type
-        integer::File_Error
-        character(30):: Char_Temp
-        character(80):: line, lib1,lib2
-        character(1)::Equal
-        integer :: n
-        logical :: switch
-        
-        File_Error=0
-        n = 0 
-        select case(Card_Type)
-        case('A') 
-            Read_Card_A : do
-                if(File_Error/=0) call Card_Error(Card_Type,Char_Temp)
-                read(File_Number,*,iostat=File_Error) Char_Temp
-                Call Small_to_Capital(Char_Temp)
-                Card_A_Inp : select case(Char_Temp)
-                case("ENERGY_MODE")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, E_mode
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                case("NOMINAL_POWER")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, Nominal_Power
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                case("NUGRID")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, nugrid
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                case("HISTORY_PER_CYCLE")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, ngen
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                case("NUMBER_INACTIVE")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_inact
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                case("NUMBER_ACTIVE")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_act
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                    n_totcyc = n_act + n_inact
-                    allocate(kprt(n_totcyc))
+subroutine Read_Card(File_Number,Card_Type)
+    use ENTROPY, only: en0, en1, nen
+    use TH_HEADER, only: th_on, th0, th1, th2, nth, dth, rr0, rr1, p_th
+    implicit none
+    integer :: i, j 
+    integer,intent(in)::File_Number
+    character(*),intent(inout)::Card_Type
+    integer::File_Error
+    character(30):: Char_Temp
+    character(80):: line, lib1,lib2
+    character(1)::Equal
+    integer :: n
+    logical :: switch
+    
+    File_Error=0
+    n = 0 
+    select case(Card_Type)
+    case('A') 
+        Read_Card_A : do
+            if(File_Error/=0) call Card_Error(Card_Type,Char_Temp)
+            read(File_Number,*,iostat=File_Error) Char_Temp
+            Call Small_to_Capital(Char_Temp)
+            Card_A_Inp : select case(Char_Temp)
+            case("ENERGY_MODE")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, E_mode
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            case("NOMINAL_POWER")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, Nominal_Power
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            case("NUGRID")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, nugrid
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            case("HISTORY_PER_CYCLE")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, ngen
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            case("NUMBER_INACTIVE")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_inact
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            case("NUMBER_ACTIVE")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_act
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                n_totcyc = n_act + n_inact
+                allocate(kprt(n_totcyc))
 
-                case("DBRC")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, switch
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                case("DBRC_E_MIN")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, DBRC_E_MIN
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                case("DBRC_E_MAX")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, DBRC_E_MAX
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                case("N_ISO0K")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_iso0K
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                    allocate(ace0K(n_iso0K))
-                case("DBRC_LIB") 
-                    backspace(File_Number)
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, ace0K(1)%library
-                    do i = 2, n_iso0K
-                        read(File_Number,*,iostat=File_Error) ace0K(i)%library
-                    enddo 
+            case("DBRC")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, switch
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            case("DBRC_E_MIN")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, DBRC_E_MIN
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            case("DBRC_E_MAX")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, DBRC_E_MAX
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            case("N_ISO0K")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_iso0K
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                allocate(ace0K(n_iso0K))
+            case("DBRC_LIB") 
+                backspace(File_Number)
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, ace0K(1)%library
+                do i = 2, n_iso0K
+                    read(File_Number,*,iostat=File_Error) ace0K(i)%library
+                enddo 
 
-                case("ENTROPY")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, en0, en1, nen
-                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
-                case("PRUP")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, mprupon
-                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
-                    if ( mprupon ) call PRUP_INITIAL
-                case("IGEN")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, ngen
-                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
-                case("DGEN")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, rampup
-                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
-                case("CRT1")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, crt1
-                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
-                case("CRT2")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, crt2
-                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
-                case("EACC")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, elength
-                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+            case("ENTROPY")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, en0, en1, nen
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+            case("PRUP")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, mprupon
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+                if ( mprupon ) call PRUP_INITIAL
+            case("IGEN")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, ngen
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+            case("DGEN")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, rampup
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+            case("CRT1")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, crt1
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+            case("CRT2")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, crt2
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+            case("EACC")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, elength
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
 
-                case("FMFD")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, fmfdon
-                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
-                    if ( fmfdon ) call FMFD_INITIAL
-                case("FMFD_GRID")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, fm0, fm1, nfm
-                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
-                    fm2 = fm1 - fm0
-                    dfm = fm2 / dble(nfm)
-                    call FMFD_ERR0
-                case("FMFD_ACC")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_acc
-                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
-                    call FMFD_ERR0
-                case("FMFD_SKIP")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_skip
-                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
-                    call FMFD_ERR0
-                case("ONE_CMFD")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, fcr, fcz
-                    if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
-                    ncm(1:2) = nfm(1:2) / fcr
-                    ncm(3)   = nfm(3)   / fcz
-                    call FMFD_ERR0
-                    call FMFD_ERR1
-                    cmfdon = .true.
+            case("FMFD")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, fmfdon
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+                if ( fmfdon ) call FMFD_INITIAL
+            case("FMFD_GRID")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, fm0, fm1, nfm
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+                fm2 = fm1 - fm0
+                dfm = fm2 / dble(nfm)
+                call FMFD_ERR0
+            case("FMFD_ACC")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_acc
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+                call FMFD_ERR0
+            case("FMFD_SKIP")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_skip
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+                call FMFD_ERR0
+            case("ONE_CMFD")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, fcr, fcz
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+                ncm(1:2) = nfm(1:2) / fcr
+                ncm(3)   = nfm(3)   / fcz
+                call FMFD_ERR0
+                call FMFD_ERR1
+                cmfdon = .true.
 
-                case("NUMBER_CMFD_SKIP")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_skip
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                case("NUMBER_CMFD_ACC")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_acc
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                case("TALLY")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, tally_switch
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                    if( tally_switch > 0 .and. icore == score ) then
-                        open(prt_flux,file="flux.out",action="write",status="replace")
-                        open(prt_powr,file="power.out",action="write",status="replace")
-                    end if
-                end select Card_A_Inp
-                if (Char_Temp=="ENDA") Exit Read_Card_A
-            end do Read_Card_A
-        
-        case('D')
-            Read_Card_D : do
-                read(File_Number,*,iostat=File_Error) Char_Temp
-                if (Char_Temp(1:3)=="MAT" .or. Compare_String(Char_Temp(1:3),"mat")) then
-                    ! add a new material slot
-                    n = n+1
-                    allocate(materials_temp(n))
-                    if (n > 1) materials_temp(1:n-1) = materials(:) 
-                    CE_mat_ptr => materials_temp(n)
-                
-                    if(File_Error/=0) call Card_Error(Card_Type,Char_Temp)
-                    Read_Mat : do 
-                        read(File_Number,*,iostat=File_Error) Char_Temp
-                        Call Small_to_Capital(Char_Temp)
-                        Card_D_Inp : select case(Char_Temp)
-                        case("MAT_NAME")
-                            backspace(File_Number)
-                            read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%mat_name
-                            if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                        case("DENSITY_GPCC")
-                            backspace(File_Number)
-                            read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%density_gpcc
-                            if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                        case("VOL")
-                            backspace(File_Number)
-                            read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%vol
-                            if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                        case("FISSIONABLE")
-                            backspace(File_Number)
-                            read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%fissionable
-                            if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                        case("DEPLETABLE")
-                            backspace(File_Number)
-                            read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%depletable
-                            if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                        case("SAB")
-                            backspace(File_Number)
-                            read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%sab
-                            if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                            if (CE_mat_ptr%sab) then 
-                                backspace(File_Number)
-                                read(File_Number,*,iostat=File_Error) & 
-                                    Char_Temp, Equal, line, lib1,lib2
-                                call READ_SAB_MAT(j,lib1,lib2)
-                            endif
-                            
-                        case("N_ISO")
-                            backspace(File_Number)
-                            read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%n_iso
-                            if(Equal/="=") call Card_Error(Card_Type,Char_Temp)    
-                            allocate(CE_mat_ptr%ace_idx(1:CE_mat_ptr%n_iso))
-                            allocate(CE_mat_ptr%numden(1:CE_mat_ptr%n_iso)) 
-                            allocate(CE_mat_ptr%temp(1:CE_mat_ptr%n_iso)) 
-                            
-                        case("ISOTOPES")
-                            backspace(File_Number)
-                            read(File_Number,*,iostat=File_Error) Char_Temp, Equal, line, CE_mat_ptr%numden(1)
-                            if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                            CE_mat_ptr%ace_idx(1) = find_ACE_iso_idx (ace, line)
-                            do i = 2, CE_mat_ptr%n_iso
-                                read(File_Number,*,iostat=File_Error) line, CE_mat_ptr%numden(i)
-                                CE_mat_ptr%ace_idx(i) = find_ACE_iso_idx (ace, line)
-                            enddo 
-                            
-                        case("DOPPLER")
-                            backspace(File_Number)
-                            read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%db
-                            if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                    
-                        case("TEMPERATURE")
-                            backspace(File_Number)
-                            read(File_Number,*,iostat=File_Error) Char_Temp, Equal, line, CE_mat_ptr%temp(1)
-                            do i = 2, CE_mat_ptr%n_iso
-                                read(File_Number,*,iostat=File_Error) line, CE_mat_ptr%temp(i)
-                            enddo 
-                            CE_mat_ptr%temp = CE_mat_ptr%temp * K_B
+            case("TH")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, th_on
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+            case("TH_GRID")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, th0, th1, nth
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+                th2 = th1 - th0
+                dth = th2 / dble(nth)
+            case("TH_RAD")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, p_th, rr0, rr1
+                if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
 
-                        end select Card_D_Inp
-                    
-                        if (Char_Temp(1:7)=="END_MAT") Exit Read_Mat
-                        
-                    enddo Read_Mat
-                    if(allocated(materials)) deallocate(materials)
-                    call move_alloc(materials_temp, materials)
-                    
+            case("NUMBER_CMFD_SKIP")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_skip
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            case("NUMBER_CMFD_ACC")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_acc
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            case("TALLY")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, tally_switch
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                if( tally_switch > 0 .and. icore == score ) then
+                    open(prt_flux,file="flux.out",action="write",status="replace")
+                    open(prt_powr,file="power.out",action="write",status="replace")
                 end if
-                
-                if (Char_Temp=="ENDD") Exit Read_Card_D
-            end do Read_Card_D            
-            n_materials = n
+            end select Card_A_Inp
+            if (Char_Temp=="ENDA") Exit Read_Card_A
+        end do Read_Card_A
+    
+    case('D')
+        Read_Card_D : do
+            read(File_Number,*,iostat=File_Error) Char_Temp
+            if (Char_Temp(1:3)=="MAT" .or. Compare_String(Char_Temp(1:3),"mat")) then
+                ! add a new material slot
+                n = n+1
+                allocate(materials_temp(n))
+                if (n > 1) materials_temp(1:n-1) = materials(:) 
+                CE_mat_ptr => materials_temp(n)
             
-        case('E') ! Depletion input 
-            Read_Card_E : do
                 if(File_Error/=0) call Card_Error(Card_Type,Char_Temp)
-                read(File_Number,*,iostat=File_Error) Char_Temp
-                Call Small_to_Capital(Char_Temp)
-                Card_E_Inp : select case(Char_Temp)
-                ! 01_01. DO_BURN Title
-                case("DO_BURN")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, do_burn
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                !case("REAL_POWER")    
-                !    backspace(File_Number)
-                !    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, RealPower
-                !    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                ! 01_02. Read Data Format
-                case("MATRIX_EXPONENTIAL_SOLVER")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, Matrix_Exponential_Solver
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                ! 01_03. Read Energy Group
-                case("CRAM_ORDER")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CRAM_ORDER
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                case("NSTEP_BURNUP")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, NSTEP_BURNUP
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                    allocate(burn_step(0:NSTEP_BURNUP))
-                case("BURNUP_TIME")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, burn_step(1)
-                    do i = 2, NSTEP_BURNUP
-                        read(File_Number,*,iostat=File_Error) burn_step(i)
-                    enddo 
-                    burn_step(0) = 0.0d0
-                    burn_step = burn_step * 86400.d0 !Unit in [sec]                
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                case("LIBRARY_PATH")
-                    backspace(File_Number)
-                    read(File_Number,*,iostat=File_Error) Char_Temp, Equal
-                    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
-                    read(File_Number,'(A)',iostat=File_Error) dep_lib(:)
-                    dep_lib = adjustl(dep_lib)
-                end select Card_E_Inp
-                if (Char_Temp=="ENDE") Exit Read_Card_E
-            end do Read_Card_E
+                Read_Mat : do 
+                    read(File_Number,*,iostat=File_Error) Char_Temp
+                    Call Small_to_Capital(Char_Temp)
+                    Card_D_Inp : select case(Char_Temp)
+                    case("MAT_NAME")
+                        backspace(File_Number)
+                        read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%mat_name
+                        if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                    case("DENSITY_GPCC")
+                        backspace(File_Number)
+                        read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%density_gpcc
+                        if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                    case("VOL")
+                        backspace(File_Number)
+                        read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%vol
+                        if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                    case("FISSIONABLE")
+                        backspace(File_Number)
+                        read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%fissionable
+                        if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                    case("DEPLETABLE")
+                        backspace(File_Number)
+                        read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%depletable
+                        if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                    case("SAB")
+                        backspace(File_Number)
+                        read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%sab
+                        if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                        if (CE_mat_ptr%sab) then 
+                            backspace(File_Number)
+                            read(File_Number,*,iostat=File_Error) & 
+                                Char_Temp, Equal, line, lib1,lib2
+                            call READ_SAB_MAT(j,lib1,lib2)
+                        endif
+                        
+                    case("N_ISO")
+                        backspace(File_Number)
+                        read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%n_iso
+                        if(Equal/="=") call Card_Error(Card_Type,Char_Temp)    
+                        allocate(CE_mat_ptr%ace_idx(1:CE_mat_ptr%n_iso))
+                        allocate(CE_mat_ptr%numden(1:CE_mat_ptr%n_iso)) 
+                        allocate(CE_mat_ptr%temp(1:CE_mat_ptr%n_iso)) 
+                        
+                    case("ISOTOPES")
+                        backspace(File_Number)
+                        read(File_Number,*,iostat=File_Error) Char_Temp, Equal, line, CE_mat_ptr%numden(1)
+                        if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                        CE_mat_ptr%ace_idx(1) = find_ACE_iso_idx (ace, line)
+                        do i = 2, CE_mat_ptr%n_iso
+                            read(File_Number,*,iostat=File_Error) line, CE_mat_ptr%numden(i)
+                            CE_mat_ptr%ace_idx(i) = find_ACE_iso_idx (ace, line)
+                        enddo 
+                        
+                    case("DOPPLER")
+                        backspace(File_Number)
+                        read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CE_mat_ptr%db
+                        if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                
+                    case("TEMPERATURE")
+                        backspace(File_Number)
+                        read(File_Number,*,iostat=File_Error) Char_Temp, Equal, line, CE_mat_ptr%temp(1)
+                        do i = 2, CE_mat_ptr%n_iso
+                            read(File_Number,*,iostat=File_Error) line, CE_mat_ptr%temp(i)
+                        enddo 
+                        CE_mat_ptr%temp = CE_mat_ptr%temp * K_B
+
+                    end select Card_D_Inp
+                
+                    if (Char_Temp(1:7)=="END_MAT") Exit Read_Mat
+                    
+                enddo Read_Mat
+                if(allocated(materials)) deallocate(materials)
+                call move_alloc(materials_temp, materials)
+                
+            end if
             
-        case default 
-            if (icore==score) print *, 'No such card type defined ::', card_type
-            stop
-        end select
+            if (Char_Temp=="ENDD") Exit Read_Card_D
+        end do Read_Card_D            
+        n_materials = n
         
-        RealPower = Nominal_Power
+    case('E') ! Depletion input 
+        Read_Card_E : do
+            if(File_Error/=0) call Card_Error(Card_Type,Char_Temp)
+            read(File_Number,*,iostat=File_Error) Char_Temp
+            Call Small_to_Capital(Char_Temp)
+            Card_E_Inp : select case(Char_Temp)
+            ! 01_01. DO_BURN Title
+            case("DO_BURN")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, do_burn
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            !case("REAL_POWER")    
+            !    backspace(File_Number)
+            !    read(File_Number,*,iostat=File_Error) Char_Temp, Equal, RealPower
+            !    if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            ! 01_02. Read Data Format
+            case("MATRIX_EXPONENTIAL_SOLVER")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, Matrix_Exponential_Solver
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            ! 01_03. Read Energy Group
+            case("CRAM_ORDER")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, CRAM_ORDER
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            case("NSTEP_BURNUP")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, NSTEP_BURNUP
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                allocate(burn_step(0:NSTEP_BURNUP))
+            case("BURNUP_TIME")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal, burn_step(1)
+                do i = 2, NSTEP_BURNUP
+                    read(File_Number,*,iostat=File_Error) burn_step(i)
+                enddo 
+                burn_step(0) = 0.0d0
+                burn_step = burn_step * 86400.d0 !Unit in [sec]                
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+            case("LIBRARY_PATH")
+                backspace(File_Number)
+                read(File_Number,*,iostat=File_Error) Char_Temp, Equal
+                if(Equal/="=") call Card_Error(Card_Type,Char_Temp)
+                read(File_Number,'(A)',iostat=File_Error) dep_lib(:)
+                dep_lib = adjustl(dep_lib)
+            end select Card_E_Inp
+            if (Char_Temp=="ENDE") Exit Read_Card_E
+        end do Read_Card_E
         
-    end subroutine Read_Card
+    case default 
+        if (icore==score) print *, 'No such card type defined ::', card_type
+        stop
+    end select
+    
+    RealPower = Nominal_Power
+    
+end subroutine Read_Card
 
     
-    subroutine read_depletion 
-        
-        logical :: file_exists
-        integer :: Open_Error, File_Error
-        character(4)::Card
-        character::Card_Type    
+subroutine read_depletion 
+    
+    logical :: file_exists
+    integer :: Open_Error, File_Error
+    character(4)::Card
+    character::Card_Type    
 
-        file_exists = .false.
-        inquire(file="./inputfile/depletion.inp",exist=file_exists)
-        if(file_exists==.false.) then
-          do_burn = .false.
-          return
-        end if 
-        
-        open(unit=rd_dep,file="./inputfile/depletion.inp",status='old', action='read',iostat=Open_Error)
-        Read_File : do
-            read(rd_dep,*,iostat=File_Error) Card
-            if (File_Error/=0) exit Read_File
-            if (Card=="CARD" .or. Compare_String(Card,"card")) then
-                backspace(rd_dep)
-                read(rd_dep,*,iostat=File_Error) Card,Card_Type
-                call Small_to_Capital(Card_Type)
-                if (icore==score) print *, "depletion.inp :: CARD ", Card_Type," is being read..."
-                call Read_Card(rd_dep,Card_Type)
-            end if
-        end do Read_File
-        close(rd_dep)
-        
-    end subroutine read_depletion
+    file_exists = .false.
+    inquire(file="./inputfile/depletion.inp",exist=file_exists)
+    if(file_exists==.false.) then
+      do_burn = .false.
+      return
+    end if 
+    
+    open(unit=rd_dep,file="./inputfile/depletion.inp",status='old', action='read',iostat=Open_Error)
+    Read_File : do
+        read(rd_dep,*,iostat=File_Error) Card
+        if (File_Error/=0) exit Read_File
+        if (Card=="CARD" .or. Compare_String(Card,"card")) then
+            backspace(rd_dep)
+            read(rd_dep,*,iostat=File_Error) Card,Card_Type
+            call Small_to_Capital(Card_Type)
+            if (icore==score) print *, "depletion.inp :: CARD ", Card_Type," is being read..."
+            call Read_Card(rd_dep,Card_Type)
+        end if
+    end do Read_File
+    close(rd_dep)
+    
+end subroutine read_depletion
 
 ! =========================================================================
 ! FMFD_INITIAL
 ! =========================================================================
 subroutine FMFD_INITIAL
-    use FMFD,   only: fmfdon, n_acc
+    use FMFD,   only: fmfdon, n_acc, FMFD_type
     implicit none
 
-    fmfdon = .true.
     n_acc  = 2
-    n_skip = 1
+    n_skip = 0
+    FMFD_type = 1
 
 end subroutine
 
@@ -1150,54 +1109,6 @@ subroutine FMFD_ERR1
         stop
     end if
 end subroutine
-
-!! =========================================================================
-!! FMFD_READ
-!! =========================================================================
-!subroutine FMFD_READ(rd)
-!    use FMFD_HEADER, only: fm0, fm1, fm2, nfm, dfm, ncm, cmfdon, fcr, fcz
-!    implicit none
-!    integer, intent(in):: rd
-!    integer :: j
-!    integer :: ierr
-!    character(100) :: line
-!    character(50)  :: option
-!
-!    ierr = 0
-!    do while (ierr.eq.0)
-!        read (rd, FMT='(A)', iostat=ierr) line 
-!        if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle  
-!        !> option identifier 
-!        j = 0
-!        do while (j.le.len(line))
-!            j = j+1 
-!            if (line(j:j).eq.' ') exit
-!            option = line(1:j)        
-!        enddo 
-!        select case (option)
-!        case ("grid")   ! essential
-!            read(line(j+1:), *) fm0(:), fm1(:), nfm(:)
-!            fm2(:) = fm1(:) - fm0(:)
-!            dfm(:) = fm2(:) / nfm(:)
-!        case ("acc")    ! optional 
-!            read(line(j+1:), *) n_acc
-!        case ("CMFD","cmfd")
-!            cmfdon = .true.
-!            read(line(j+1:), *) fcr, fcz
-!            ncm(1:2) = nfm(1:2) / fcr
-!            ncm(3) = nfm(3) / fcz
-!
-!            if ( mod(nfm(1),fcr) /= 0 .or. mod(nfm(3),fcz) /= 0 ) then
-!                print*, "CMFD mesh grid /= FMFD mesh grid"
-!                stop
-!            end if
-!        case default
-!            backspace(rd)
-!            return
-!        end select
-!    enddo
-!
-!end subroutine
 
 ! =========================================================================
 ! PRUP_INTIAL
@@ -1431,63 +1342,144 @@ function IS_SAB(name_of_lib) result(lib_type)
 !    end select
 
 end function
-
-
-
-
-
-
     
-    subroutine read_tally
-        integer :: i, j, k, idx, n, level, i_univ, i_lat, i_pin, n_pin
-        integer :: a,b,c, i_xyz(3), i_save
-        integer :: ierr
-        character(100) :: line
-        character(50)  :: option, temp, test
-        
-        
-        !Read tally.inp
-        open(rd_tally, file="./inputfile/tally.inp",action="read", status="old")
+subroutine read_tally
+    integer :: i, j, k, idx, n, level, i_univ, i_lat, i_pin, n_pin
+    integer :: a,b,c, i_xyz(3), i_save
+    integer :: ierr
+    character(100) :: line
+    character(50)  :: option, temp, test
     
-        ierr = 0;
-        do while (ierr.eq.0)
-            read (rd_tally, FMT='(A)', iostat=ierr) line 
-            if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle  
-            !> option identifier             
-            j = index(adjustl(line),' ') -1 
-            option = line(1:j)
-            
-            if (trim(option) /= "tally") then 
-                print *, 'ERROR Tally Read :: tally.inp     ', option
-                stop
-            end if
+    
+    !Read tally.inp
+    open(rd_tally, file="./inputfile/tally.inp",action="read", status="old")
 
-            line = adjustl(line(j+1:))
-            j = index(line,' ')-1
-            option = trim(line(1:j))
+    ierr = 0;
+    do while (ierr.eq.0)
+        read (rd_tally, FMT='(A)', iostat=ierr) line 
+        if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle  
+        !> option identifier             
+        j = index(adjustl(line),' ') -1 
+        option = line(1:j)
+        
+        if (trim(option) /= "tally") then 
+            print *, 'ERROR Tally Read :: tally.inp     ', option
+            stop
+        end if
 
-            select case (option)
-            case ("cell")
-                read(line(j+1:), *) n
-                allocate(TallyCoord(1:n))
-                allocate(TallyFlux(1:n))
-                allocate(TallyPower(1:n))
-                TallyFlux(:) =0; TallyPower(:)=0
-                TallyCoord(:)%flag = 1
-                do i = 1, n
-10                    read (rd_tally, FMT='(A)', iostat=ierr) line 
-                    if ((len_trim(line)==0).or.(scan(line,"%"))/=0) goto 10  
-                    level = 0; idx = index(line,'>')
-                    do while (idx /= 0)
-                        level = level + 1 
-                        j = index(line,' '); read(line(1:j),*) temp ; line = line(j:) 
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_univ;  line = line(j:)
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_lat  ; line = line(j:)
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_x; line = line(j:)
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_y; line = line(j:)
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_z; line = line(j:)
+        line = adjustl(line(j+1:))
+        j = index(line,' ')-1
+        option = trim(line(1:j))
+
+        select case (option)
+        case ("cell")
+            read(line(j+1:), *) n
+            allocate(TallyCoord(1:n))
+            allocate(TallyFlux(1:n))
+            allocate(TallyPower(1:n))
+            TallyFlux(:) =0; TallyPower(:)=0
+            TallyCoord(:)%flag = 1
+            do i = 1, n
+                  read (rd_tally, FMT='(A)', iostat=ierr) line 
+                if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle
+                level = 0; idx = index(line,'>')
+                do while (idx /= 0)
+                    level = level + 1 
+                    j = index(line,' '); read(line(1:j),*) temp ; line = line(j:) 
+                    line = adjustl(line);j = index(line,' '); read(line(1:j),*) &
+                        i_univ;  line = line(j:)
+                    line = adjustl(line);j = index(line,' '); read(line(1:j),*) &
+                        i_lat  ; line = line(j:)
+                    line = adjustl(line);j = index(line,' '); read(line(1:j),*) &
+                        TallyCoord(i)%coord(level)%lattice_x; line = line(j:)
+                    line = adjustl(line);j = index(line,' '); read(line(1:j),*) &
+                        TallyCoord(i)%coord(level)%lattice_y; line = line(j:)
+                    line = adjustl(line);j = index(line,' '); read(line(1:j),*) &
+                        TallyCoord(i)%coord(level)%lattice_z; line = line(j:)
+                    
+                    TallyCoord(i)%coord(level)%cell     = find_cell_idx(cells, adjustl(temp))
+                    if (i_univ == 0) then 
+                        TallyCoord(i)%coord(level)%universe = 0 
+                    else 
+                        TallyCoord(i)%coord(level)%universe = find_univ_idx(universes, i_univ)
+                    endif
+                    
+                    if (i_lat == 0) then 
+                        TallyCoord(i)%coord(level)%lattice = 0 
+                    else 
+                        TallyCoord(i)%coord(level)%lattice  =  find_lat_idx(lattices, i_lat)
+                    endif
+                    
+                    idx = index(line,'>')
+                    line = line(idx+1:); line = adjustl(line)
+                enddo 
+                idx = index(line, 'vol')
+                line = adjustl(line(4:)); read(line(1:),*) TallyCoord(i)%vol
+                TallyCoord(i)%n_coord = level
+            enddo 
+            TallyFlux(:)  = 0
+            TallyPower(:) = 0 
+
+        case("pin") 
+            read(line(j+1:), *) n
+            allocate(TallyCoord(1:n)); TallyCoord(n)%n_coord = 0 
+            allocate(TallyFlux(1:n))
+            allocate(TallyPower(1:n))
+            TallyCoord(:)%flag = 0
+            i = 1; 
+            do while ( i <= n) 
+            11  read (rd_tally, FMT='(A)', iostat=ierr) line
+                if ((len_trim(line)==0).or.(scan(line,"%"))/=0) goto 11
+
+                level = 0; idx = index(line,'>')
+                do while (idx /= 0)
+                    level = level + 1 
+                    !print *, 'level', level, line 
+                    j = index(line,' '); read(line(1:j),*) temp ; line = line(j:)                         
+                    line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_univ;  line = line(j:)
+                    line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_lat  ; line = line(j:)
+                    
+                    if (i_lat /= 0) i_lat = find_lat_idx(lattices, i_lat)
+                    line = adjustl(line);
+                    if (line(1:3) == 'all') then 
+                        a = lattices(i_lat)%n_xyz(1)
+                        b = lattices(i_lat)%n_xyz(2)
+                        c = lattices(i_lat)%n_xyz(3)
+                        n_pin = a*b*c
+                        i_save = i
+                        do i_pin = 1, n_pin
+                            i_xyz = getXYZ(i_pin, a,b,c)
+                            
+                            TallyCoord(i)%coord(1:level) = TallyCoord(i_save)%coord(1:level)
+                            
+                            TallyCoord(i)%coord(level)%lattice_x = i_xyz(1)
+                            TallyCoord(i)%coord(level)%lattice_y = i_xyz(2)
+                            TallyCoord(i)%coord(level)%lattice_z = i_xyz(3)
+                            
+                            if (i_lat == 0) then 
+                                TallyCoord(i)%coord(level)%lattice = 0 
+                            else 
+                                TallyCoord(i)%coord(level)%lattice  =  i_lat
+                            endif
+                            TallyCoord(i)%n_coord = level
+                            !> Reset the cell & univ designation (for pin only)
+                            TallyCoord(i)%coord(level)%cell = 0
+                            TallyCoord(i)%coord(level)%universe = 0 
+                            
+                            i = i + 1
+                            
+                        enddo 
+                        idx = 0 
+                    else
+                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) &
+                            TallyCoord(i)%coord(level)%lattice_x; line = line(j:)
+                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) &
+                            TallyCoord(i)%coord(level)%lattice_y; line = line(j:)
+                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) &
+                            TallyCoord(i)%coord(level)%lattice_z; line = line(j:)
                         
                         TallyCoord(i)%coord(level)%cell     = find_cell_idx(cells, adjustl(temp))
+                        
                         if (i_univ == 0) then 
                             TallyCoord(i)%coord(level)%universe = 0 
                         else 
@@ -1497,611 +1489,165 @@ end function
                         if (i_lat == 0) then 
                             TallyCoord(i)%coord(level)%lattice = 0 
                         else 
-                            TallyCoord(i)%coord(level)%lattice  =  find_lat_idx(lattices, i_lat)
+                            TallyCoord(i)%coord(level)%lattice  =  i_lat
                         endif
                         
                         idx = index(line,'>')
                         line = line(idx+1:); line = adjustl(line)
-                    enddo 
-                    idx = index(line, 'vol')
-                    line = adjustl(line(4:)); read(line(1:),*) TallyCoord(i)%vol
-                    TallyCoord(i)%n_coord = level
-                enddo 
-                TallyFlux(:)  = 0
-                TallyPower(:) = 0 
-
-            case("pin") 
-                read(line(j+1:), *) n
-                allocate(TallyCoord(1:n)); TallyCoord(n)%n_coord = 0 
-                allocate(TallyFlux(1:n))
-                allocate(TallyPower(1:n))
-                TallyCoord(:)%flag = 0
-                i = 1; 
-                do while ( i <= n) 
-                11  read (rd_tally, FMT='(A)', iostat=ierr) line
-                    if ((len_trim(line)==0).or.(scan(line,"%"))/=0) goto 11
-
-                    level = 0; idx = index(line,'>')
-                    do while (idx /= 0)
-                        level = level + 1 
-                        !print *, 'level', level, line 
-                        j = index(line,' '); read(line(1:j),*) temp ; line = line(j:)                         
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_univ;  line = line(j:)
-                        line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_lat  ; line = line(j:)
                         
-                        if (i_lat /= 0) i_lat = find_lat_idx(lattices, i_lat)
-                        line = adjustl(line);
-                        if (line(1:3) == 'all') then 
-                            a = lattices(i_lat)%n_xyz(1)
-                            b = lattices(i_lat)%n_xyz(2)
-                            c = lattices(i_lat)%n_xyz(3)
-                            n_pin = a*b*c
-                            i_save = i
-                            do i_pin = 1, n_pin
-                                i_xyz = getXYZ(i_pin, a,b,c)
-                                
-                                TallyCoord(i)%coord(1:level) = TallyCoord(i_save)%coord(1:level)
-                                
-                                TallyCoord(i)%coord(level)%lattice_x = i_xyz(1)
-                                TallyCoord(i)%coord(level)%lattice_y = i_xyz(2)
-                                TallyCoord(i)%coord(level)%lattice_z = i_xyz(3)
-                                
-                                if (i_lat == 0) then 
-                                    TallyCoord(i)%coord(level)%lattice = 0 
-                                else 
-                                    TallyCoord(i)%coord(level)%lattice  =  i_lat
-                                endif
-                                TallyCoord(i)%n_coord = level
-                                !> Reset the cell & univ designation (for pin only)
-                                TallyCoord(i)%coord(level)%cell = 0
-                                TallyCoord(i)%coord(level)%universe = 0 
-                                
-                                i = i + 1
-                                
-                            enddo 
-                            idx = 0 
-                        else
-                            line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_x; line = line(j:)
-                            line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_y; line = line(j:)
-                            line = adjustl(line);j = index(line,' '); read(line(1:j),*) TallyCoord(i)%coord(level)%lattice_z; line = line(j:)
-                            
-                            TallyCoord(i)%coord(level)%cell     = find_cell_idx(cells, adjustl(temp))
-                            
-                            if (i_univ == 0) then 
-                                TallyCoord(i)%coord(level)%universe = 0 
-                            else 
-                                TallyCoord(i)%coord(level)%universe = find_univ_idx(universes, i_univ)
-                            endif
-                            
-                            if (i_lat == 0) then 
-                                TallyCoord(i)%coord(level)%lattice = 0 
-                            else 
-                                TallyCoord(i)%coord(level)%lattice  =  i_lat
-                            endif
-                            
-                            idx = index(line,'>')
-                            line = line(idx+1:); line = adjustl(line)
-                            
-                            if (idx == 0) then 
-                                i = i + 1
-                                TallyCoord(i)%n_coord = level
-                                !> Reset the cell designation (for pin only)
-                                TallyCoord(i)%coord(level)%cell = 0
-                            endif
-                        endif 
-                    enddo 
-                    !> pin volume is not needed (all same)
-                    TallyCoord(:)%vol = 1
-                enddo                     
-                TallyFlux(:)  = 0
-                TallyPower(:) = 0
-                
-            end select
-        enddo
-        
-        close(rd_tally)
-        if(icore==score) print '(A25)', '    TALLY READ COMPLETE...' 
-        
-    end subroutine
-    subroutine check_input_result(universes,lattices, cells,surfaces)
-        type(surface) :: surfaces(:)
-        type(lattice) :: lattices(:)
-        type(universe):: universes(0:)
-        type(cell)      :: cells(:)
-        integer :: i, j, iy, iz
-        
-        print *, ' ========== SURFACE CHECK =========='
-        print *, ' INDEX     ID      surf_type'
-        do i = 1, size(surfaces) 
-            print '(I5, A10, I10)', i, trim(surfaces(i)%surf_id), surfaces(i)%surf_type
-        enddo 
-        print *, ''
-        print *, ''
-        
-        
-        print *, ' ========== CELL CHECK =========='
-        do i = 1, size(cells) 
-            print *, 'cell number :', i 
-            print *, 'cell id:', cells(i)%cell_id!, cells(i)%univ_id, cells(i)%mat_id
-            print *, 'surf list: ', cells(i)%list_of_surface_IDs(:)
-            print *, 'neg : ', surfaces(cells(i)%neg_surf_idx(:))%surf_id
-            print *, 'pos : ', surfaces(cells(i)%pos_surf_idx(:))%surf_id
-            print *, 'operand : ',cells(i)%operand_flag
-            print *, 'fill type:', cells(i)%fill_type()
-            print *, 'material idx', cells(i)%mat_idx
-            print *, ''
-            print *, ''
-        enddo 
-        
-        
-        print *, ' ========== UNIVERSE CHECK =========='
-        do i = 0,size(universes(1:))
-            print *, ''
-            print *, 'univ_id = ', universes(i)%univ_id, '   # of cell', universes(i)%ncell 
-            do j = 1, universes(i)%ncell
-                print '(a4,I2,2A7)', 'cell',j,'    ', cells(universes(i)%cell(j))%cell_id
-            enddo 
-        enddo 
-        print *, ''
-        print *, ''
-        
-        
-        print *, ' ========== LATTICE CHECK =========='
-        do i = 1, size(lattices) 
-            print *, ''
-            print *, 'lattice id = ', lattices(i)%lat_id
-            do iz = 1, lattices(i)%n_xyz(3)
-                do iy = 1, lattices(i)%n_xyz(2)
-                    print '(17I2)', (universes(lattices(i)%lat(j,iy,iz))%univ_id, j = 1, lattices(i)%n_xyz(1))
+                        if (idx == 0) then 
+                            i = i + 1
+                            TallyCoord(i)%n_coord = level
+                            !> Reset the cell designation (for pin only)
+                            TallyCoord(i)%coord(level)%cell = 0
+                        endif
+                    endif 
                 enddo 
-                
-                print *, '' 
-            enddo 
-        enddo
-        
-        
-        
+                !> pin volume is not needed (all same)
+                TallyCoord(:)%vol = 1
+            enddo                     
+            TallyFlux(:)  = 0
+            TallyPower(:) = 0
             
-    end subroutine 
+        end select
+    enddo
+    
+    close(rd_tally)
+    if(icore==score) print '(A25)', '    TALLY READ COMPLETE...' 
+    
+end subroutine
 
 
+! =============================================================================
+! READ_TH
+! =============================================================================
+subroutine READ_TH
+    use TH_HEADER, only: k_fuel, k_clad, k_cool, h_cool, u_cool, c_cool
+    implicit none
+    integer:: ii, np
+    character(10):: card
 
-    ! ===========================================================================================================
-    ! ===========================================================================================================
-    ! ===========================================================================================================
-    ! ===========================================================================================================
-    ! ===========================================================================================================
-!    subroutine read_CE_mat
-!        implicit none 
-!        integer :: i, j,i_iso, n_mat, ierr, idx
-!        character(80) :: iso_id, line, option, mat_name
-!        
-!        open(rd_mat, file="./inputfile/CE_mat.inp",action="read", status="old")
-!        ierr = 0; n_mat = 0 
-!        do while (ierr.eq.0)
-!            read (rd_mat, FMT='(A)', iostat=ierr) line 
-!            if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle  
-!            
-!            j = 0; 
-!            do while (j.le.len(line))
-!                j = j+1 
-!                if (line(j:j).eq.' ') exit
-!                option = line(1:j)        
-!            enddo 
-!            
-!            
-!            select case (option)
-!            case ("mat")
-!                n_mat = n_mat+1
-!                allocate(materials_temp(n_mat))
-!                if (n_mat > 1) materials_temp(1:n_mat-1) = materials(:) 
-!                CE_mat_ptr => materials_temp(n_mat)
-!                
-!                line = line(j+1:);    j = index(line(:),' ')
-!                read(line(1:j-1),*) CE_mat_ptr%mat_name
-!                
-!                line = adjustl(line(j:)); j = index(line(:),' ')
-!                read(line(1:j-1),*) CE_mat_ptr%density_gpcc
-!                
-!                line = adjustl(line(j:)); j = index(line(:),' ')
-!                read(line(1:j-1),*) CE_mat_ptr%n_iso
-!
-!                line = adjustl(line(j:)); j = index(line(:),' ')
-!                if ( line(1:j-1) == "sab" ) call READ_SAB_MAT(j,line)
-!                
-!                allocate(CE_mat_ptr%ace_idx(CE_mat_ptr%n_iso))
-!                allocate(CE_mat_ptr%numden(CE_mat_ptr%n_iso)) 
-!                
-!                do i_iso = 1, CE_mat_ptr%n_iso 
-!                    read(rd_mat, *) line, CE_mat_ptr%numden(i_iso)
-!                    line = adjustl(line); j = index(line(:),' ')
-!                    read(line(1:j-1),*) iso_id
-!                    CE_mat_ptr%ace_idx(i_iso) = find_ACE_iso_idx (ace, iso_id)
-!                enddo 
-!                
-!                if(allocated(materials)) deallocate(materials)
-!                call move_alloc(materials_temp, materials)            
-!                
-!            end select
-!        enddo
-!        close(rd_mat)
-!        if ( icore == score ) print '(A27)', '    CE MAT READ COMPLETE...' 
-!        
-!    end subroutine
-!
-!! =============================================================================    
-!! READ_SAB_MAT reads which isotope is considered by thermal scattering; S(a,b)
-!! =============================================================================
-!subroutine READ_SAB_MAT(j,line)
-!    integer, intent(inout):: j
-!    character(*), intent(inout):: line
-!    character(80):: lib1    ! which isotope
-!    character(80):: lib2    ! which library
-!    integer:: i, k
-!
-!
-!    CE_mat_ptr%sab = .true.
-!
-!    line = adjustl(line(j:)); j = index(line(:),' ')
-!    lib1 = line(1:j-1)
-!    line = adjustl(line(j:)); j = index(line(:),' ')
-!    lib2 = line(1:j-1)
-!
-!    ! find a isotope and connect to the corresponding library
-!    do i = 1, num_iso
-!    if ( trim(ace(i)%library) == trim(lib1) ) then
-!    do k = 1, sab_iso
-!    if ( trim(sab(k)%library) == trim(lib2) ) then
-!        ace(i)%sab_iso = k
-!    end if
-!    end do
-!    end if
-!    end do
-!
-!end subroutine READ_SAB_MAT
-!
-!    
-!    subroutine read_inventory 
-!        implicit none 
-!        integer :: i, j, iso, ierr
-!        character(50) :: mat_id, option 
-!        
-!        ! ======================================== !
-!        !                 ACE read start
-!        ! ======================================== !
-!        open(rd_inven, file="./inputfile/inventory.inp",action="read", status="old")
-!        read(rd_inven,'(A)') library_path(:)
-!        read(rd_inven,*) num_iso
-!        allocate(ace(1:num_iso))
-!
-!        do iso =1, num_iso
-!            read(rd_inven,*) i, ace(iso)%library
-!        end do
-!        close(rd_inven)
-!
-!        call SET_SAB
-!        call SET_DBRC
-!        call set_ace
-!        if(icore==score) print '(A29)', '    ACE Lib. READ COMPLETE...' 
-!                
-!    
-!    end subroutine
-!
-!
-!! =============================================================================
-!! SET_SAB
-!! =============================================================================
-!subroutine SET_SAB
-!    integer:: iso
-!    integer:: dummy
-!    integer:: i
-!
-!    sab_iso = 0
-!    do iso = 1, num_iso
-!    if ( IS_SAB(trim(ace(iso)%library)) ) sab_iso = sab_iso + 1
-!    end do
-!
-!    if ( allocated(ace) ) deallocate(ace)
-!
-!    open(rd_inven, file="./inputfile/inventory.inp",action="read", status="old")
-!    read(rd_inven,'(A)') library_path(:)
-!    read(rd_inven,*) dummy
-!    num_iso = num_iso - sab_iso
-!    allocate(ace(1:num_iso))
-!    allocate(sab(1:sab_iso))
-!
-!    do iso = 1, num_iso
-!        read(rd_inven,*) i, ace(iso)%library
-!    end do
-!    do iso = 1, sab_iso
-!        read(rd_inven,*), i, sab(iso)%library
-!    end do
-!    close(rd_inven)
-!
-!end subroutine
-!
-!! =============================================================================
-!! SET_DBRC
-!! =============================================================================
-!subroutine SET_DBRC
-!    integer:: ii, jj
-!
-!    do ii = 1, n_iso0K
-!    do jj = 1, num_iso
-!        if ( trim(ace(jj)%library(1:5))  &
-!            == trim(ace0K(ii)%library(1:5)) ) then
-!            ace(jj)%resonant = ii
-!            exit
-!        end if
-!    end do
-!    end do
-!
-!end subroutine
-!
-!
-!
-!function IS_SAB(name_of_lib) result(lib_type)
-!    character(len=*), intent(in):: name_of_lib  ! name of library
-!    logical:: lib_type  ! type of library
-!    integer:: length    ! length of character
-!
-!    length = len_trim(name_of_lib)
-!    lib_type = .false.
-!    if ( name_of_lib(length-5:length-5) == 't' ) lib_type = .true. 
-!
-!!    select case(name_of_lib(length-5:length-5))
-!!    case('c'); lib_type = 1 ! continuous energy
-!!    case('t'); lib_type = 4 ! thermal scattering; S(a,b)
-!!    end select
-!
-!end function
-!    
-!
-!subroutine read_tally
-!    use TALLY, only: tally1, tally2
-!    implicit none
-!    integer :: i, j, k, idx, n, level, i_univ, i_lat, i_pin, n_pin
-!    integer :: a,b,c, i_xyz(3), i_save
-!    integer :: ierr
-!    character(100) :: line
-!    character(50)  :: option, temp, test
-!    type(CoordStruct), pointer:: TC
-!    
-!    
-!    !Read tally.inp
-!    open(rd_tally, file="./inputfile/tally.inp",action="read", status="old")
-!
-!    ierr = 0;
-!    do while (ierr.eq.0)
-!        read (rd_tally, FMT='(A)', iostat=ierr) line 
-!        if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle  
-!        !> option identifier             
-!        j = index(adjustl(line),' ') -1 
-!        option = line(1:j)
-!        
-!        if (trim(option) /= "tally") then 
-!            print *, 'ERROR Tally Read :: tally.inp     ', option
-!            stop
-!        end if
-!
-!        line = adjustl(line(j+1:))
-!        j = index(line,' ')-1
-!        option = trim(line(1:j))
-!
-!        select case (option)
-!        case ("cell")
-!            read(line(j+1:), *) n
-!            allocate(TallyCoord(1:n))
-!            allocate(TallyFlux(1:n))
-!            allocate(TallyPower(1:n))
-!            allocate(tally1(1:n))
-!            allocate(tally2(1:n))
-!            tally1 = 0; tally2 = 0
-!            TallyCoord(:)%flag = 1
-!            do i = 1, n
-!                if ( associated(TC) ) nullify(TC)
-!                TC => TallyCoord(i)
-!                read (rd_tally, FMT='(A)', iostat=ierr) line 
-!                if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle
-!                level = 0; idx = index(line,'>')
-!                do while (idx /= 0)
-!                    level = level + 1 
-!                    j = index(line,' '); read(line(1:j),*) temp ; line = line(j:) 
-!                    line = adjustl(line);j = index(line,' ')
-!                    read(line(1:j),*) i_univ;  line = line(j:)
-!                    line = adjustl(line);j = index(line,' ')
-!                    read(line(1:j),*) i_lat  ; line = line(j:)
-!                    line = adjustl(line);j = index(line,' ')
-!                    read(line(1:j),*) TC%coord(level)%lattice_x; line = line(j:)
-!                    line = adjustl(line);j = index(line,' ')
-!                    read(line(1:j),*) TC%coord(level)%lattice_y; line = line(j:)
-!                    line = adjustl(line);j = index(line,' ')
-!                    read(line(1:j),*) TC%coord(level)%lattice_z; line = line(j:)
-!                    
-!                    TC%coord(level)%cell     = find_cell_idx(cells, adjustl(temp))
-!                    if (i_univ == 0) then 
-!                        TC%coord(level)%universe = 0 
-!                    else 
-!                        TC%coord(level)%universe = find_univ_idx(universes, i_univ)
-!                    endif
-!                    
-!                    if (i_lat == 0) then 
-!                        TC%coord(level)%lattice = 0 
-!                    else 
-!                        TC%coord(level)%lattice = find_lat_idx(lattices, i_lat)
-!                    endif
-!                    
-!                    idx = index(line,'>')
-!                    line = line(idx+1:); line = adjustl(line)
-!                enddo 
-!                idx = index(line, 'vol')
-!                line = adjustl(line(4:)); read(line(1:),*) TC%vol
-!                TC%n_coord = level
-!            enddo 
-!            TallyFlux(:)  = 0
-!            TallyPower(:) = 0 
-!
-!        case("pin") 
-!            read(line(j+1:), *) n
-!            allocate(TallyCoord(1:n)); TallyCoord(n)%n_coord = 0 
-!            allocate(TallyFlux(1:n))
-!            allocate(TallyPower(1:n))
-!            allocate(tally1(1:n))
-!            allocate(tally2(1:n))
-!            tally1 = 0; tally2 = 0
-!            TallyCoord(:)%flag = 0
-!            i = 1; 
-!            do while ( i <= n )
-!                !if ( associated(TC) ) nullify(TC)
-!                TC => TallyCoord(i)
-!                read (rd_tally, FMT='(A)', iostat=ierr) line
-!                if ((len_trim(line)==0).or.(scan(line,"%"))/=0) cycle
-!
-!                level = 0; idx = index(line,'>')
-!                do while (idx /= 0)
-!                    level = level + 1 
-!                    !print *, 'level', level, line 
-!                    j = index(line,' '); read(line(1:j),*) temp ; line = line(j:)                         
-!                    line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_univ;  line = line(j:)
-!                    line = adjustl(line);j = index(line,' '); read(line(1:j),*) i_lat  ; line = line(j:)
-!                    
-!                    if (i_lat /= 0) i_lat = find_lat_idx(lattices, i_lat)
-!                    line = adjustl(line);
-!                    if (line(1:3) == 'all') then 
-!                        a = lattices(i_lat)%n_xyz(1)
-!                        b = lattices(i_lat)%n_xyz(2)
-!                        c = lattices(i_lat)%n_xyz(3)
-!                        n_pin = a*b*c
-!                        i_save = i
-!                        do i_pin = 1, n_pin
-!                            i_xyz = getXYZ(i_pin, a,b,c)
-!                            
-!                            TallyCoord(i)%coord(1:level) = TallyCoord(i_save)%coord(1:level)
-!                            
-!                            TallyCoord(i)%coord(level)%lattice_x = i_xyz(1)
-!                            TallyCoord(i)%coord(level)%lattice_y = i_xyz(2)
-!                            TallyCoord(i)%coord(level)%lattice_z = i_xyz(3)
-!                            
-!                            if (i_lat == 0) then 
-!                                TallyCoord(i)%coord(level)%lattice = 0 
-!                            else 
-!                                TallyCoord(i)%coord(level)%lattice  =  i_lat
-!                            endif
-!                            TallyCoord(i)%n_coord = level
-!                            !> Reset the cell & univ designation (for pin only)
-!                            TallyCoord(i)%coord(level)%cell = 0
-!                            TallyCoord(i)%coord(level)%universe = 0 
-!                            
-!                            i = i + 1
-!                            
-!                        enddo 
-!                        idx = 0 
-!                    else
-!                        line = adjustl(line);j = index(line,' ')
-!                        read(line(1:j),*) TC%coord(level)%lattice_x; line = line(j:)
-!                        line = adjustl(line);j = index(line,' ')
-!                        read(line(1:j),*) TC%coord(level)%lattice_y; line = line(j:)
-!                        line = adjustl(line);j = index(line,' ')
-!                        read(line(1:j),*) TC%coord(level)%lattice_z; line = line(j:)
-!                        
-!                        TC%coord(level)%cell     = find_cell_idx(cells, adjustl(temp))
-!                        
-!                        if (i_univ == 0) then 
-!                            TC%coord(level)%universe = 0 
-!                        else 
-!                            TC%coord(level)%universe = find_univ_idx(universes, i_univ)
-!                        endif
-!                        
-!                        if (i_lat == 0) then 
-!                            TC%coord(level)%lattice = 0 
-!                        else 
-!                            TC%coord(level)%lattice  =  i_lat
-!                        endif
-!                        
-!                        idx = index(line,'>')
-!                        line = line(idx+1:); line = adjustl(line)
-!                        
-!                        if (idx == 0) then 
-!                            i = i + 1
-!                            TC%n_coord = level
-!                            !> Reset the cell designation (for pin only)
-!                            TC%coord(level)%cell = 0
-!                        endif
-!                    endif 
-!                enddo 
-!                !> pin volume is not needed (all same)
-!                TallyCoord(:)%vol = 1
-!            enddo                     
-!            TallyFlux(:)  = 0
-!            TallyPower(:) = 0
-!            
-!        end select
-!    enddo
-!    
-!    close(rd_tally)
-!    if(icore==score) print '(A25)', '    TALLY READ COMPLETE...' 
-!    
-!end subroutine
-!
-!subroutine check_input_result(universes,lattices, cells,surfaces)
-!    type(surface) :: surfaces(:)
-!    type(lattice) :: lattices(:)
-!    type(universe):: universes(0:)
-!    type(cell)      :: cells(:)
-!    integer :: i, j, iy, iz
-!    
-!    print *, ' ========== SURFACE CHECK =========='
-!    print *, ' INDEX     ID      surf_type'
-!    do i = 1, size(surfaces) 
-!        print '(I5, A10, I10)', i, trim(surfaces(i)%surf_id), surfaces(i)%surf_type
-!    enddo 
-!    print *, ''
-!    print *, ''
-!    
-!    
-!    print *, ' ========== CELL CHECK =========='
-!    do i = 1, size(cells) 
-!        print *, 'cell number :', i 
-!        print *, 'cell id:', cells(i)%cell_id!, cells(i)%univ_id, cells(i)%mat_id
-!        print *, 'surf list: ', cells(i)%list_of_surface_IDs(:)
-!        print *, 'neg : ', surfaces(cells(i)%neg_surf_idx(:))%surf_id
-!        print *, 'pos : ', surfaces(cells(i)%pos_surf_idx(:))%surf_id
-!        print *, 'operand : ',cells(i)%operand_flag
-!        print *, 'fill type:', cells(i)%fill_type()
-!        print *, 'material idx', cells(i)%mat_idx
-!        print *, ''
-!        print *, ''
-!    enddo 
-!    
-!    
-!    print *, ' ========== UNIVERSE CHECK =========='
-!    do i = 0,size(universes(1:))
-!        print *, ''
-!        print *, 'univ_id = ', universes(i)%univ_id, '   # of cell', universes(i)%ncell 
-!        do j = 1, universes(i)%ncell
-!            print '(a4,I2,2A7)', 'cell',j,'    ', cells(universes(i)%cell(j))%cell_id
-!        enddo 
-!    enddo 
-!    print *, ''
-!    print *, ''
-!    
-!    
-!    print *, ' ========== LATTICE CHECK =========='
-!    do i = 1, size(lattices) 
-!        print *, ''
-!        print *, 'lattice id = ', lattices(i)%lat_id
-!        do iz = 1, lattices(i)%n_xyz(3)
-!            do iy = 1, lattices(i)%n_xyz(2)
-!                print '(17I2)', (universes(lattices(i)%lat(j,iy,iz))%univ_id, j = 1, lattices(i)%n_xyz(1))
-!            enddo 
-!            
-!            print *, '' 
-!        enddo 
-!    enddo
-!    
-!    
-!    
-!        
-!end subroutine 
+    
+    ! read 'mat_temp.inp'
+    open(rd_temp, file="./inputfile/mat_temp.inp",action="read", status="old")
+
+    ! fuel conductivity
+    read(rd_temp,*)
+    read(rd_temp,*), card, np
+    allocate(k_fuel(2,np))
+    do ii = 1, np
+    read(rd_temp,*), k_fuel(1,ii), k_fuel(2,ii)
+    end do
+    read(rd_temp,*)
+
+    ! clad conductivity
+    read(rd_temp,*)
+    read(rd_temp,*), card, np
+    allocate(k_clad(2,np))
+    do ii = 1, np
+    read(rd_temp,*), k_clad(1,ii), k_clad(2,ii)
+    end do
+    read(rd_temp,*)
+
+    ! coolant conductivity
+    read(rd_temp,*)
+    read(rd_temp,*), card, np
+    allocate(k_cool(2,np))
+    do ii = 1, np
+    read(rd_temp,*), k_cool(1,ii), k_cool(2,ii)
+    end do
+    read(rd_temp,*)
+
+    ! coolant enthalpy
+    read(rd_temp,*)
+    read(rd_temp,*), card, np
+    allocate(h_cool(2,np))
+    do ii = 1, np
+    read(rd_temp,*), h_cool(1,ii), h_cool(2,ii)
+    end do
+    read(rd_temp,*)
+
+    ! coolant specific heat
+    read(rd_temp,*)
+    read(rd_temp,*), card, np
+    allocate(c_cool(2,np))
+    do ii = 1, np
+    read(rd_temp,*), c_cool(1,ii), c_cool(2,ii)
+    end do
+    read(rd_temp,*)
+
+    ! coolant viscosity
+    read(rd_temp,*)
+    read(rd_temp,*), card, np
+    allocate(u_cool(2,np))
+    do ii = 1, np
+    read(rd_temp,*), u_cool(1,ii), u_cool(2,ii)
+    end do
+
+    close(rd_temp)
+
+end subroutine
+
+
+! =============================================================================
+! CHECK_INPUT_RESULT
+! =============================================================================
+subroutine check_input_result(universes,lattices, cells,surfaces)
+    type(surface) :: surfaces(:)
+    type(lattice) :: lattices(:)
+    type(universe):: universes(0:)
+    type(cell)      :: cells(:)
+    integer :: i, j, iy, iz
+    
+    print *, ' ========== SURFACE CHECK =========='
+    print *, ' INDEX     ID      surf_type'
+    do i = 1, size(surfaces) 
+        print '(I5, A10, I10)', i, trim(surfaces(i)%surf_id), surfaces(i)%surf_type
+    enddo 
+    print *, ''
+    print *, ''
+    
+    
+    print *, ' ========== CELL CHECK =========='
+    do i = 1, size(cells) 
+        print *, 'cell number :', i 
+        print *, 'cell id:', cells(i)%cell_id!, cells(i)%univ_id, cells(i)%mat_id
+        print *, 'surf list: ', cells(i)%list_of_surface_IDs(:)
+        print *, 'neg : ', surfaces(cells(i)%neg_surf_idx(:))%surf_id
+        print *, 'pos : ', surfaces(cells(i)%pos_surf_idx(:))%surf_id
+        print *, 'operand : ',cells(i)%operand_flag
+        print *, 'fill type:', cells(i)%fill_type()
+        print *, 'material idx', cells(i)%mat_idx
+        print *, ''
+        print *, ''
+    enddo 
+    
+    
+    print *, ' ========== UNIVERSE CHECK =========='
+    do i = 0,size(universes(1:))
+        print *, ''
+        print *, 'univ_id = ', universes(i)%univ_id, '   # of cell', universes(i)%ncell 
+        do j = 1, universes(i)%ncell
+            print '(a4,I2,2A7)', 'cell',j,'    ', cells(universes(i)%cell(j))%cell_id
+        enddo 
+    enddo 
+    print *, ''
+    print *, ''
+    
+    
+    print *, ' ========== LATTICE CHECK =========='
+    do i = 1, size(lattices) 
+        print *, ''
+        print *, 'lattice id = ', lattices(i)%lat_id
+        do iz = 1, lattices(i)%n_xyz(3)
+            do iy = 1, lattices(i)%n_xyz(2)
+                print '(17I2)', (universes(lattices(i)%lat(j,iy,iz))%univ_id, j = 1, lattices(i)%n_xyz(1))
+            enddo 
+            
+            print *, '' 
+        enddo 
+    enddo
+        
+end subroutine 
     
 end module

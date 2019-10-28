@@ -23,7 +23,8 @@ module simulation
                                    FMFD_solve, n_skip, n_acc, fsd, FMFD_ID, &
                                    process_FMFD, NORM_FMFD, fmfdon, &
                                    nfm, k_fmfd
-                                    
+    use TEMPERATURE,        only : TEMP_SOLVE, NORM_TH, PROCESS_TH
+    use TH_HEADER,          only : th_on
     
     implicit none 
     
@@ -107,13 +108,15 @@ subroutine simulate_history(cyc)
         
         !> normalize thread FMFD parameters (can be done outside critical)
         if ( fmfdon ) call NORM_FMFD()
+        if ( th_on ) call NORM_TH()
         
       !$omp end critical
     !$omp end parallel
 
     !call MPI_BARRIER(MPI_COMM_WORLD, ierr)
     !> Process tallied FMFD parameters ==========================================
-    if ( fmfdon ) call PROCESS_FMFD()
+    if ( fmfdon ) call PROCESS_FMFD(cyc)
+    if ( th_on ) call PROCESS_TH()
     
     !> Gather keff from the slave nodes =========================================
     call MPI_REDUCE(k_col,rcv_buf,1,MPI_REAL8,MPI_SUM,score,MPI_COMM_WORLD,ierr)
@@ -199,11 +202,12 @@ subroutine simulate_history(cyc)
     endif
 
     !> Solve FMFD and apply FSD shape feedback ==================================
-    if ( fmfdon .and. cyc > n_skip) then 
+    !if ( fmfdon .and. cyc > n_skip ) then 
+    if ( fmfdon .and. cyc < 15 ) then 
         if (icore == score) then
             call CPU_TIME(time1)
             k_fmfd(cyc) = keff
-            call FMFD_SOLVE(k_fmfd(cyc),fsd)
+            call FMFD_SOLVE(k_fmfd(cyc),fsd,cyc)
             call CPU_TIME(time2)
             t_det(cyc) = time2-time1
         end if
@@ -218,6 +222,10 @@ subroutine simulate_history(cyc)
             fission_bank(i)%wgt = fission_bank(i)%wgt * fsd(id(1),id(2),id(3))
         enddo
     endif 
+
+    ! =========================================================================
+    ! temperature distribution
+    if ( th_on ) call TEMP_SOLVE
 
     !> Inline Equilibrium Xe-135 
     !call inline_xenon()

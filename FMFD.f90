@@ -20,6 +20,8 @@ subroutine FMFD_allocation()
 
     ! parameters allocation
     allocate(k_fmfd(n_totcyc))
+    allocate(p_fmfd(0:n_act,nfm(1),nfm(2),nfm(3)))
+    allocate(e_fmfd(nfm(1),nfm(2),nfm(3)))
     allocate(fm(nfm(1),nfm(2),nfm(3)))
     allocate(fm_avg(nfm(1),nfm(2),nfm(3)))
     allocate(fsd_MC(nfm(1),nfm(2),nfm(3)))
@@ -150,9 +152,6 @@ subroutine FMFD_DISTANCE (p,i_xyz,d_FMFD,inside_FMFD,income_FMFD,i_surf)
     real(8) :: xyz(3), uvw(3), xyz1(3)
     real(8) :: d_temp(6)
     integer :: ij
-
-    ! distance initialization
-    d_FMFD = INFINITY
     
     ! Find lattice index in FMFD grid
     xyz(:) = p%coord(1)%xyz(:)
@@ -438,7 +437,8 @@ end subroutine
 ! =============================================================================
 ! PROCESS_FMFD deals with MPI process and average quantities
 ! =============================================================================
-subroutine PROCESS_FMFD() 
+subroutine PROCESS_FMFD(cyc) 
+    integer:: cyc
     !> MPI derived type reduce parameters 
     real(8), dimension(nfm(1),nfm(2),nfm(3)):: &
         sig_t0, sig_t1, &
@@ -452,6 +452,7 @@ subroutine PROCESS_FMFD()
     integer :: dsize
     real(8) :: aa, bb
     integer :: ij
+    integer:: acyc
 
     ! data transmission I
     sig_t0(:,:,:) = fm(:,:,:)%sig_t
@@ -581,17 +582,23 @@ subroutine PROCESS_FMFD()
     fm_avg(:,:,:)%J1(ii)  = fm_avg(:,:,:)%J1(ii)  / dble(n_acc)
     enddo
 
+    acyc = cyc - n_inact
+    if ( acyc > 0 ) p_fmfd(acyc,:,:,:) = fm_avg(:,:,:)%phi
+    fsd = 1D0
+
 end subroutine 
 
 
 ! =============================================================================
 ! FMFD_SOLVE solves FMFD eigenvalue problem
 ! =============================================================================
-subroutine FMFD_SOLVE(keff,fsd)
+subroutine FMFD_SOLVE(keff,fsd,cyc)
     use CMFD, only: ONE_NODE_CMFD
     implicit none
     real(8), intent(inout) :: keff          ! multiplication factor
     real(8), intent(inout) :: fsd(:,:,:)    ! fission source distribution
+    integer:: cyc
+    integer:: acyc
     real(8) :: M(nfm(1),nfm(2),nfm(3),7)    ! FMFD matrix
     real(8), dimension(nfm(1),nfm(2),nfm(3)):: &
         sig_t, &      ! total
@@ -630,13 +637,13 @@ subroutine FMFD_SOLVE(keff,fsd)
             sphi(:,:,:,ii) = 2D0*J1(:,:,:,ii)+2D0*J0(:,:,:,ii)
         end do
 
-        call ONE_NODE_CMFD(keff,sig_t,sig_a,nusig_f,D,phi1,J0,J1,Jn,sphi)
+        call ONE_NODE_CMFD(keff,sig_t,sig_a,nusig_f,D,phi1,J0,J1,Jn,sphi,cyc)
 
     else
         !> calculate D_tilda & D_hat 
         call D_TILDA_CALCULATION(D,D_tilda)
         call D_HAT_CALCULATION(D_tilda,Jn,phi1,D_hat)
-    
+
         ! matrix composition
         if ( FMFD_type == 1 ) then 
             !> CMFD 
@@ -645,13 +652,13 @@ subroutine FMFD_SOLVE(keff,fsd)
             !> p-CMFD
             !M = getMp (phi,D,J_pp,J_pn,sig_a,a,b,c,pitch(1),pitch(2),pitch(3))
         endif 
-         
-        call POWER (keff, M, phi0, phi1, nusig_f)
+
+        call POWER (keff, M, phi0, phi1, nusig_f,cyc)
     end if
 
     
     !> CMFD feedback (modulation)
-    print*, keff
+    !print*, "keff", keff
     if ( isnan(keff) .or. ( keff < 0D0 .or. keff > 2D0 ) ) then
         fsd = 1D0
     else
@@ -662,7 +669,9 @@ subroutine FMFD_SOLVE(keff,fsd)
         fsd(:,:,:)    = fsd_FM(:,:,:) / fsd_MC(:,:,:)
     end if
 
-    print*, "keff", keff
+    acyc = cyc - n_inact
+    if ( acyc > 0 ) p_fmfd(acyc,:,:,:) = phi1(:,:,:)
+
 !    stop
     
 end subroutine
@@ -767,7 +776,7 @@ function getM (Dt, Dh, sig_a) result(M)
     
     ! initialization
     M = 0
-
+    
     ! M matrix set 
     do k = 1, nfm(3)
     do j = 1, nfm(2)
@@ -792,29 +801,34 @@ function getM (Dt, Dh, sig_a) result(M)
 end function getM
 
 
-subroutine POWER (k_eff, M, phi0, phi1, nusig_f)
+subroutine POWER (k_eff, M, phi0, phi1, nusig_f,cyc)
     use SOLVERS, only: BICGStab_hepta, SOR
     implicit none
     real(8), intent(inout):: k_eff
     real(8), intent(in)   :: M(:,:,:,:), nusig_f(:,:,:)
     real(8), intent(inout):: phi0(:,:,:), phi1(:,:,:)
+    integer:: cyc
     real(8), parameter:: ONE = 1D0
     real(8) :: F(1:nfm(1),1:nfm(2),1:nfm(3))
     integer :: iter_max = 1E5
     integer :: iter = 0
     real(8) :: err
+    real(8):: tt0, tt1
+    real(8):: kpre
     
     err = ONE
     do while ( ( err > 1.0D-8 ) .and. (iter < iter_max) )
-        !print*, k_eff, err
+        !if ( cyc > 10 ) print*, k_eff, err
         iter = iter + 1
         phi0 = phi1
+        kpre = k_eff
         F = nusig_f(:,:,:)*phi1(:,:,:)/k_eff
         !call SOR(M(:,:,:,:),F(:,:,:),phi1(:,:,:))
         phi1 = BiCGStab_hepta(M(:,:,:,:),F(:,:,:))
         k_eff = k_eff*sum(nusig_f*phi1*nusig_f*phi1) &
                / sum(nusig_f*phi1*nusig_f*phi0)
-        err = maxval(abs(phi1(:,:,:)-phi0(:,:,:))/phi1(:,:,:))
+        !err = maxval(abs(phi1(:,:,:)-phi0(:,:,:))/phi1(:,:,:))
+        err = abs(k_eff-kpre)/k_eff
     enddo
     
 end subroutine 

@@ -1,0 +1,34 @@
+CARD A : Control_Card 
+	Energy_mode   			= 1
+	Nominal_Power			= 2815  % MWth
+	nugrid					= 8192
+	
+	history_per_cycle		= 100000
+	Number_inactive			= 50
+	Number_active			= 100
+
+	entropy					= 0 -42.84 0 42.84 0 64.26 20 20 3
+
+	%DBRC					= T
+	%DBRC_E_MIN				= 4E-6
+	%DBRC_E_MAX				= 2.1E-4
+	%N_ISO0K				= 1 
+	%DBRC_lib				= 92238.70c_sss_0K
+	
+%	FMFD 					= T
+%	FMFD_GRID				= 0 -64.26 0 64.26 0 64.26 34 34 2
+	%ONE_CMFD				= 17 2
+
+	TH						= T
+	TH_grid					= 0 -42.84 0 42.84 0 380 1 1 20
+	TH_RAD					= 1.28 0.41 0.467
+	%TH_RAD					= 1.28 0.41 0.41
+	
+	%CMFD					= F
+	%CMFD_grid				= 110 
+	%Number_CMFD_skip		= 10
+	%Number_CMFD_acc	    = 2
+	
+	%Tally					= F 
+
+ENDA
