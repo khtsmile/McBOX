@@ -41,7 +41,9 @@ BURNUP : do
 
     ! steady-state calculation
     time3 = omp_get_wtime()
-    Do curr_cyc = 1, n_totcyc
+    curr_cyc = 0
+    Do 
+        curr_cyc = curr_cyc + 1
         curr_act = curr_cyc - n_inact
         !> history wise transport simulation
         time1 = omp_get_wtime()
