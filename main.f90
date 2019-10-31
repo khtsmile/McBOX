@@ -49,6 +49,7 @@ BURNUP : do
         time2 = omp_get_wtime()
         t_tot(curr_cyc) = time2-time1
         call RUN_MSG
+        if ( curr_cyc == n_totcyc ) exit
     Enddo
     time4 = omp_get_wtime()
     call END_MSG
@@ -246,6 +247,10 @@ if ( icore == score ) then
 
     ! power distribution
     if ( fmfdon ) then
+    do ii = 1, n_totcyc
+    write(*,16), entrp3(ii)
+    end do
+    write(*,*)
     do ii = 1, nfm(1)
     do jj = 1, nfm(2)
     do kk = 1, nfm(3)
@@ -270,6 +275,7 @@ if ( icore == score ) then
     13 format(2F10.6,F10.2)
     14 format(102ES15.7)
     15 format(3ES15.7)
+    16 format(F10.5)
 
 end if
 

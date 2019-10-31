@@ -1,0 +1,23 @@
+CARD A : Control_Card 
+	Energy_mode   			= 1
+	Nominal_Power			= 2815  % MWth
+	nugrid					= 8192
+	
+	history_per_cycle		= 10E6
+	Number_inactive			= 200
+	Number_active			= 30
+
+	entropy					= -64.26 -64.26 20 64.26 64.26 120 102 102 10
+	PRUP					= F
+	IGEN					= 1E6
+	CRT1					= 1
+	CRT2					= 10E6
+
+	FMFD 					= F
+	FMFD_GRID				= -64.26 -64.26 20 64.26 64.26 120 102 102 10
+	ONE_CMFD				= 17 2
+	FMFD_ACC				= 5
+	
+	%Tally					= F 
+
+ENDA

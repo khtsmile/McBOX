@@ -10,6 +10,7 @@ module ENTROPY
     real(8):: entrp1    ! MPRUP entropy at previous generation
     real(8):: entrp2    ! MPRUP entropy at current generation
     real(8):: dentrp    ! entropy difference
+    real(8), allocatable:: entrp3(:)  ! entropy for FMFD calculation
 
     ! =========================================================================
     ! Modified paricle ramp-up method (MPRUP)

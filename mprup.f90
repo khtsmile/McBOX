@@ -18,14 +18,27 @@ module MPRUP
 ! 
 ! =============================================================================
 subroutine GENSIZE(cyc)
+    use FMFD_HEADER, only: acc, n_acc
     implicit none
     integer, intent(in) :: cyc
+    integer:: ii, jj 
 
     ! FMFD divergence
     if ( cyc > 1 .and. fmfdon ) then
     if ( isnan(k_fmfd(cyc-1)) .or. &
         ( k_fmfd(cyc-1) < 0D0 .or. k_fmfd(cyc-1) > 2D0 ) ) then
         print*, "1"
+        do ii = 2, n_acc
+        acc(ii)%fm(:,:,:)%phi     = 0
+        acc(ii)%fm(:,:,:)%sig_t   = 0
+        acc(ii)%fm(:,:,:)%sig_a   = 0
+        acc(ii)%fm(:,:,:)%nusig_f = 0
+        do jj = 1, 6
+        acc(ii)%fm(:,:,:)%Jn(jj)  = 0
+        acc(ii)%fm(:,:,:)%J0(jj)  = 0
+        acc(ii)%fm(:,:,:)%J1(jj)  = 0
+        end do
+        end do
         call GENSIZEUP
         return
     end if
@@ -87,10 +100,8 @@ subroutine GENSIZEUP
     implicit none
 
 !    source_bank(:)%wgt  = ngen/size(source_bank)
-    print*, size(source_bank), sum(source_bank(:)%wgt)
     source_bank(:)%wgt = (ngen+rampup)/dble(ngen)
     ngen = ngen + rampup
-    print*, ngen, sum(source_bank(:)%wgt)
     up_sign = .true.
 
     ! update criteria
@@ -130,18 +141,21 @@ end subroutine
 ! =============================================================================
 ! MPRUP_DIST distributes the necessary parameters to the nodes
 ! =============================================================================
-subroutine MPRUP_DIST(sz)
-    use BANK_HEADER, only: source_bank
+subroutine MPRUP_DIST(sz,source_bank)
     use MPI,         only: MPI_REAL8, MPI_COMM_WORLD
+    use BANK_HEADER, only: Bank
     implicit none
     integer, intent(in):: sz
+    type(Bank):: source_bank(:)
     integer:: TP
     integer:: WOR
 
     TP = MPI_REAL8
     WOR = MPI_COMM_WORLD
 
-    call MPI_BCAST(source_bank(:)%wgt,sz,TP,score,WOR,ierr)
+    do ii = 1, sz
+    call MPI_BCAST(source_bank(ii)%wgt,1,TP,score,WOR,ierr)
+    end do
     call MPI_BCAST(ngen,1,TP,score,WOR,ierr)
     call MPI_BCAST(genup,1,TP,score,WOR,ierr)
     call MPI_BCAST(mprupon,1,TP,score,WOR,ierr)

@@ -3,14 +3,23 @@ CARD A : Control_Card
 	Nominal_Power			= 2815  % MWth
 	nugrid					= 8192
 	
-	history_per_cycle		= 3E6
-	Number_inactive			= 50
-	Number_active			= 400
+	history_per_cycle		= 30E6
+	Number_inactive			= 200
+	Number_active			= 20
 
-	entropy					= -64.26 -64.26 20 64.26 64.26 120 24 24 10
+	entropy					= -85.68 -85.68 20 85.68 85.68 220 136 136 10
+	PRUP					= T
+	IGEN					= 1E6
+	DGEN					= 1E6
+	CRT1					= 0
+	CRT2					= 3E6
+%	IGEN					= 5E6
+%	DGEN					= 15E6
+%	CRT1					= 0
+%	CRT2					= 50E6
 
-	FMFD 					= T
-	FMFD_GRID				= -64.26 -64.26 20 64.26 64.26 120 102 102 10
+	FMFD 					= F
+	FMFD_GRID				= -85.68 -85.68 20 85.68 85.68 220 136 136 10
 	ONE_CMFD				= 17 2
 	FMFD_ACC				= 5
 	

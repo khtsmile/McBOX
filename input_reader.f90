@@ -729,7 +729,7 @@ end subroutine READ_CTRL
 ! Read_Card reads the type of input card
 ! =============================================================================
 subroutine Read_Card(File_Number,Card_Type)
-    use ENTROPY, only: en0, en1, nen
+    use ENTROPY, only: en0, en1, nen, shannon
     use TH_HEADER, only: th_on, th0, th1, th2, nth, dth, rr0, rr1, p_th
     implicit none
     integer :: i, j 
@@ -811,27 +811,34 @@ subroutine Read_Card(File_Number,Card_Type)
                 backspace(File_Number)
                 read(File_Number,*,iostat=File_Error) Char_Temp, Equal, mprupon
                 if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
-                if ( mprupon ) call PRUP_INITIAL
             case("IGEN")
+                if ( .not. mprupon ) cycle
                 backspace(File_Number)
                 read(File_Number,*,iostat=File_Error) Char_Temp, Equal, ngen
                 if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+                if ( mprupon ) call PRUP_INITIAL
             case("DGEN")
+                if ( .not. mprupon ) cycle
                 backspace(File_Number)
                 read(File_Number,*,iostat=File_Error) Char_Temp, Equal, rampup
                 if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
             case("CRT1")
+                if ( .not. mprupon ) cycle
                 backspace(File_Number)
                 read(File_Number,*,iostat=File_Error) Char_Temp, Equal, crt1
                 if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
             case("CRT2")
+                if ( .not. mprupon ) cycle
                 backspace(File_Number)
                 read(File_Number,*,iostat=File_Error) Char_Temp, Equal, crt2
                 if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
             case("EACC")
+                if ( .not. mprupon ) cycle
                 backspace(File_Number)
                 read(File_Number,*,iostat=File_Error) Char_Temp, Equal, elength
                 if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
+                deallocate(shannon)
+                allocate(shannon(2*elength))
 
             case("FMFD")
                 backspace(File_Number)
@@ -839,6 +846,7 @@ subroutine Read_Card(File_Number,Card_Type)
                 if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
                 if ( fmfdon ) call FMFD_INITIAL
             case("FMFD_GRID")
+                if ( .not. fmfdon ) cycle
                 backspace(File_Number)
                 read(File_Number,*,iostat=File_Error) Char_Temp, Equal, fm0, fm1, nfm
                 if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
@@ -846,16 +854,19 @@ subroutine Read_Card(File_Number,Card_Type)
                 dfm = fm2 / dble(nfm)
                 call FMFD_ERR0
             case("FMFD_ACC")
+                if ( .not. fmfdon ) cycle
                 backspace(File_Number)
                 read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_acc
                 if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
                 call FMFD_ERR0
             case("FMFD_SKIP")
+                if ( .not. fmfdon ) cycle
                 backspace(File_Number)
                 read(File_Number,*,iostat=File_Error) Char_Temp, Equal, n_skip
                 if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)
                 call FMFD_ERR0
             case("ONE_CMFD")
+                if ( .not. fmfdon ) cycle
                 backspace(File_Number)
                 read(File_Number,*,iostat=File_Error) Char_Temp, Equal, fcr, fcz
                 if ( Equal /= "=" ) call Card_Error (Card_Type,Char_Temp)

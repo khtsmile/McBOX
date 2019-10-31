@@ -55,7 +55,8 @@ subroutine simulate_history(cyc)
         !print*, "bank", size(thread_bank)
     end if
     isize = size(source_bank)
-    if ( mprupon .or. ( .not. mprupon .and. genup ) ) call MPRUP_DIST(isize)
+    if ( mprupon .or. ( .not. mprupon .and. genup ) ) &
+        call MPRUP_DIST(isize,source_bank(:))
     if ( .not. mprupon .and. genup ) call CYCLECHANGE(cyc)
     allocate(fission_bank(0))
     
@@ -81,7 +82,7 @@ subroutine simulate_history(cyc)
             
             !if buffer is almost full -> add to the fission bank
             !if (bank_idx > int(size(thread_bank)*0.01*(80-OMP_GET_THREAD_NUM()))) then 
-            if ( bank_idx > 800 ) then 
+            if ( bank_idx > 8000 ) then 
               !$omp critical
                 isize = size(fission_bank)
                 if(allocated(temp_bank)) deallocate(temp_bank)
@@ -115,7 +116,7 @@ subroutine simulate_history(cyc)
 
     !call MPI_BARRIER(MPI_COMM_WORLD, ierr)
     !> Process tallied FMFD parameters ==========================================
-    if ( fmfdon ) call PROCESS_FMFD(cyc)
+    if ( fmfdon ) call PROCESS_FMFD()
     if ( th_on ) call PROCESS_TH()
     
     !> Gather keff from the slave nodes =========================================
@@ -202,8 +203,7 @@ subroutine simulate_history(cyc)
     endif
 
     !> Solve FMFD and apply FSD shape feedback ==================================
-    !if ( fmfdon .and. cyc > n_skip ) then 
-    if ( fmfdon .and. cyc < 15 ) then 
+    if ( fmfdon .and. cyc > n_skip ) then 
         if (icore == score) then
             call CPU_TIME(time1)
             k_fmfd(cyc) = keff

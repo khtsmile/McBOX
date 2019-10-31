@@ -9,14 +9,13 @@ module CMFD
 ! =============================================================================
 ! ONE_NODE_CMFD
 ! =============================================================================
-subroutine ONE_NODE_CMFD(keff,fm_t,fm_a,fm_nf,fmD,fm_phi1,fmJ0,fmJ1,fmJn,fmF,cyc)
+subroutine ONE_NODE_CMFD(keff,fm_t,fm_a,fm_nf,fmD,fm_phi1,fmJ0,fmJ1,fmJn,fmF)
     use SOLVERS, only: BICG_G, SORL, BiCG_L, SORG
     implicit none
     real(8), intent(inout):: keff
     real(8), intent(in), dimension(:,:,:):: fm_t, fm_a, fm_nf, fmD
     real(8), intent(inout):: fm_phi1(:,:,:)
     real(8), intent(inout), dimension(:,:,:,:):: fmJ0, fmJ1, fmJn, fmF
-    integer:: cyc
     real(8), dimension(nfm(1),nfm(2),nfm(3)):: &
         fm_phi0, &  ! neutron flux
         fm_s        ! neutron source
@@ -36,7 +35,6 @@ subroutine ONE_NODE_CMFD(keff,fm_t,fm_a,fm_nf,fmD,fm_phi1,fmJ0,fmJ1,fmJn,fmF,cyc
 
     do
     ! ------------------------------- GLOBAL
-    !if ( cyc > 10 ) print*, keff, error
     call G_DHAT(cmJn,cmDt,cm_phi1,cmF,cmDh)
     call G_MATRIX(cmDt,cmDh)
     k_pre = keff

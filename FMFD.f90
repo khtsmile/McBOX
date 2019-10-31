@@ -16,6 +16,7 @@ module FMFD
 ! FMFD_initialize_1
 ! =============================================================================
 subroutine FMFD_allocation()
+    use ENTROPY, only: entrp3
     implicit none
 
     ! parameters allocation
@@ -39,6 +40,8 @@ subroutine FMFD_allocation()
         acc(ii)%fm(:,:,:)%J1(jj)   = 0
         end do
     enddo
+    allocate(entrp3(n_totcyc))
+    entrp3 = 0
     
     ! area and volume of mesh cell
     a_fm(:) = dfm(1)*dfm(3)
@@ -437,8 +440,7 @@ end subroutine
 ! =============================================================================
 ! PROCESS_FMFD deals with MPI process and average quantities
 ! =============================================================================
-subroutine PROCESS_FMFD(cyc) 
-    integer:: cyc
+subroutine PROCESS_FMFD
     !> MPI derived type reduce parameters 
     real(8), dimension(nfm(1),nfm(2),nfm(3)):: &
         sig_t0, sig_t1, &
@@ -452,7 +454,6 @@ subroutine PROCESS_FMFD(cyc)
     integer :: dsize
     real(8) :: aa, bb
     integer :: ij
-    integer:: acyc
 
     ! data transmission I
     sig_t0(:,:,:) = fm(:,:,:)%sig_t
@@ -582,10 +583,6 @@ subroutine PROCESS_FMFD(cyc)
     fm_avg(:,:,:)%J1(ii)  = fm_avg(:,:,:)%J1(ii)  / dble(n_acc)
     enddo
 
-    acyc = cyc - n_inact
-    if ( acyc > 0 ) p_fmfd(acyc,:,:,:) = fm_avg(:,:,:)%phi
-    fsd = 1D0
-
 end subroutine 
 
 
@@ -597,8 +594,7 @@ subroutine FMFD_SOLVE(keff,fsd,cyc)
     implicit none
     real(8), intent(inout) :: keff          ! multiplication factor
     real(8), intent(inout) :: fsd(:,:,:)    ! fission source distribution
-    integer:: cyc
-    integer:: acyc
+    integer, intent(in)    :: cyc           ! cycle number
     real(8) :: M(nfm(1),nfm(2),nfm(3),7)    ! FMFD matrix
     real(8), dimension(nfm(1),nfm(2),nfm(3)):: &
         sig_t, &      ! total
@@ -615,6 +611,7 @@ subroutine FMFD_SOLVE(keff,fsd,cyc)
         J0, &         ! partial current -
         J1, &         ! partial current +
         sphi          ! surface flux
+    integer:: acyc
 
     ! copy parameters
     do ii = 1, nfm(1)
@@ -637,7 +634,7 @@ subroutine FMFD_SOLVE(keff,fsd,cyc)
             sphi(:,:,:,ii) = 2D0*J1(:,:,:,ii)+2D0*J0(:,:,:,ii)
         end do
 
-        call ONE_NODE_CMFD(keff,sig_t,sig_a,nusig_f,D,phi1,J0,J1,Jn,sphi,cyc)
+        call ONE_NODE_CMFD(keff,sig_t,sig_a,nusig_f,D,phi1,J0,J1,Jn,sphi)
 
     else
         !> calculate D_tilda & D_hat 
@@ -653,7 +650,7 @@ subroutine FMFD_SOLVE(keff,fsd,cyc)
             !M = getMp (phi,D,J_pp,J_pn,sig_a,a,b,c,pitch(1),pitch(2),pitch(3))
         endif 
 
-        call POWER (keff, M, phi0, phi1, nusig_f,cyc)
+        call POWER (keff, M, phi0, phi1, nusig_f)
     end if
 
     
@@ -669,9 +666,10 @@ subroutine FMFD_SOLVE(keff,fsd,cyc)
         fsd(:,:,:)    = fsd_FM(:,:,:) / fsd_MC(:,:,:)
     end if
 
+    call FMFD_ENTRP(fsd_FM,cyc)
     acyc = cyc - n_inact
     if ( acyc > 0 ) p_fmfd(acyc,:,:,:) = phi1(:,:,:)
-
+    
 !    stop
     
 end subroutine
@@ -801,13 +799,12 @@ function getM (Dt, Dh, sig_a) result(M)
 end function getM
 
 
-subroutine POWER (k_eff, M, phi0, phi1, nusig_f,cyc)
+subroutine POWER (k_eff, M, phi0, phi1, nusig_f)
     use SOLVERS, only: BICGStab_hepta, SOR
     implicit none
     real(8), intent(inout):: k_eff
     real(8), intent(in)   :: M(:,:,:,:), nusig_f(:,:,:)
     real(8), intent(inout):: phi0(:,:,:), phi1(:,:,:)
-    integer:: cyc
     real(8), parameter:: ONE = 1D0
     real(8) :: F(1:nfm(1),1:nfm(2),1:nfm(3))
     integer :: iter_max = 1E5
@@ -818,7 +815,6 @@ subroutine POWER (k_eff, M, phi0, phi1, nusig_f,cyc)
     
     err = ONE
     do while ( ( err > 1.0D-8 ) .and. (iter < iter_max) )
-        !if ( cyc > 10 ) print*, k_eff, err
         iter = iter + 1
         phi0 = phi1
         kpre = k_eff
@@ -832,6 +828,20 @@ subroutine POWER (k_eff, M, phi0, phi1, nusig_f,cyc)
     enddo
     
 end subroutine 
+
+subroutine FMFD_ENTRP(fsd,cyc)
+    use ENTROPY, only: entrp3
+    implicit none
+    real(8), intent(in) :: fsd(:,:,:)
+    integer, intent(in) :: cyc
+    real(8):: ee0(nfm(1),nfm(2),nfm(3))
+
+
+    ee0 = fsd/sum(fsd)
+    where ( ee0 /= 0 ) ee0 = -ee0*log(ee0)/log(2D0)
+    entrp3(cyc) = sum(ee0)
+
+end subroutine
 
 
 ! function which produces p-CMFD M matrix

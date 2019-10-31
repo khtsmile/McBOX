@@ -15,6 +15,7 @@ FSRCS := \
 		bank_header.f90\
 		particle_header.f90\
 		th_header.f90\
+		entropy.f90\
 		solver.f90\
 		CMFD.f90\
 		FMFD.f90\
@@ -27,7 +28,6 @@ FSRCS := \
 		depletion_module.f90\
 		read_functions.f90\
 		simulation_header.f90\
-		entropy.f90\
 		input_reader.f90\
 		temperature.f90\
 		tracking.f90\
