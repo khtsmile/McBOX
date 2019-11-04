@@ -19,7 +19,7 @@ fi
 
 if [ -z $3 ]
 then
-	LIB=711
+	LIB=710
 fi
 
 

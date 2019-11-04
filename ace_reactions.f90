@@ -46,29 +46,29 @@ subroutine collision_CE (p)
 !        read(10,*), ee(ii)
 !    end do
 !    close(10)
-
+!
 !    call CPU_TIME(tt0)
 !    jj = 4
 !    !do ii = 1, ace(4)%nxs(3)
-!    dtemp = 6D2*K_B
 !    do ii = 1, 133953
-!!        micro_xs = getMicroXS(jj,ee(ii))
-!!        xs_t(5) = micro_xs(1)
-!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
-!        xs_t(1) = micro_xs(1)
-!        dtemp = 9D2*K_B
-!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
-!        xs_t(2) = micro_xs(1)
-!        dtemp = 12D2*K_B
-!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
-!        xs_t(3) = micro_xs(1)
-!        dtemp = 25D2*K_B
-!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
-!        xs_t(4) = micro_xs(1)
-!        write(8,1), ee(ii), xs_t(5)
-!        write(7,1), ee(ii), xs_t(1:4)
+!        micro_xs = getMicroXS(jj,ee(ii))
+!        xs_t(1) = micro_xs(6)
+!!        dtemp = 6D2*K_B
+!!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
+!!        xs_t(1) = micro_xs(6)
+!!        dtemp = 9D2*K_B
+!!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
+!!        xs_t(2) = micro_xs(1)
+!!        dtemp = 12D2*K_B
+!!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
+!!        xs_t(3) = micro_xs(1)
+!!        dtemp = 25D2*K_B
+!!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
+!!        xs_t(4) = micro_xs(1)
+!        write(8,1), ee(ii), xs_t(1:5)
+!        write(7,1), xs_t(1:5)
 !    end do
-!    !1 format(10es15.6)
+!    1 format(10es15.6)
 !    call CPU_TIME(tt1)
 !    print*, tt1-tt0
 !    stop
@@ -144,7 +144,7 @@ subroutine collision_CE (p)
         call notElastic_CE (p, iso, xn)
     end if
     
-    p%wgt = p%wgt * ((el+noel)/micro_xs(1)) !(1 - micro_xs(3)/micro_xs(1))
+    p%wgt = p%wgt * ((el+noel)/micro_xs(1))
     
     !> (n, xn) reaction
     p%wgt = p%wgt * dble(xn)

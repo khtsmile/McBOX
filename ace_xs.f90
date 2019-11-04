@@ -87,7 +87,7 @@ function getMacroXS (mat, erg) result (macro_xs)
         !>Summation for macroscopic cross sections
         macro_t   = macro_t   + mat%numden(i_iso) * micro_t   * barn
         macro_a   = macro_a   + mat%numden(i_iso) * micro_a   * barn
-        macro_f   = macro_f   + mat%numden(i_iso) * micro_f   * barn
+        !macro_f   = macro_f   + mat%numden(i_iso) * micro_f   * barn
         macro_nuf = macro_nuf + mat%numden(i_iso) * micro_nuf * barn
         macro_qf  = macro_qf  + mat%numden(i_iso) * micro_f   * barn * ace(iso_)%qval
         
@@ -109,7 +109,7 @@ function getMacroXS (mat, erg) result (macro_xs)
     
     macro_xs(1) = macro_t  
     macro_xs(2) = macro_a  
-    macro_xs(3) = macro_f  
+    !macro_xs(3) = macro_f  
     macro_xs(4) = macro_nuf
     macro_xs(5) = macro_qf
     
@@ -133,23 +133,22 @@ function getMicroXS (iso, erg) result (micro_xs)
     ! Microscopic XS
     micro_t   = ace(iso)%sigt(ierg_) + ipfac*(ace(iso)%sigt(ierg_+1)-ace(iso)%sigt(ierg_))
     micro_d   = ace(iso)%sigd(ierg_) + ipfac*(ace(iso)%sigd(ierg_+1)-ace(iso)%sigd(ierg_))
-    micro_f   = 0.d0
+    !micro_f   = 0.d0
     micro_nuf = 0.d0
-    micro_a   = micro_d
+    !micro_a   = micro_d
     
     ! Fissionable Material
     if(ace(iso)%jxs(21)/=0 .or. allocated(ace(iso)%sigf)) then
         micro_f   = ace(iso)%sigf(ierg_) + ipfac*(ace(iso)%sigf(ierg_+1)-ace(iso)%sigf(ierg_))
         micro_nuf = getnu(iso,erg)*micro_f
-        micro_a   = micro_d + micro_f
+        !micro_a   = micro_d + micro_f
     endif
     micro_el = ace(iso)%sigel(ierg_) + ipfac*(ace(iso)%sigel(ierg_+1)-ace(iso)%sigel(ierg_))
     
-    
     micro_xs(1) = micro_t
     micro_xs(2) = micro_el
-    micro_xs(3) = micro_a
-    micro_xs(4) = micro_f
+    !micro_xs(3) = micro_a
+    !micro_xs(4) = micro_f
     micro_xs(5) = micro_nuf
     micro_xs(6) = micro_d
     
@@ -787,6 +786,12 @@ subroutine GET_MIC_DB2(iso,ierg,E1,xs)
     real(8):: slope
     integer:: ii, jj
     real(8):: xs_xn(4)
+    ! 1 : total
+    ! 2 : elastic scattering
+    ! 3 : absorption
+    ! 4 : fission
+    ! 5 : nu-fission
+    ! 6 : disapperance
 
     slope = max(0D0,min(1D0,(E1-ace(iso)%E(ierg)) &
         /(ace(iso)%E(ierg+1)-ace(iso)%E(ierg))))
@@ -805,25 +810,8 @@ subroutine GET_MIC_DB2(iso,ierg,E1,xs)
     if ( ace(iso)%jxs(21) /= 0 .or. allocated(ace(iso)%sigf) ) then
     xs(4) = ace(iso)%sigf(ierg) &
           + slope * (ace(iso)%sigf(ierg+1)-ace(iso)%sigf(ierg))
-    xs(5) = xs(4)*getnu(iso,E1)
-    xs(3) = xs(3) + xs(4)
-    end if
-
-    ! (n,xn) cross-section
-    ! seperately considered and then collapsed? when FMFD is on
-    if ( fmfdon ) then
-    do ii = 1, ace(iso)%nxs(5)
-        jj = abs(ace(iso)%TY(ii))
-        if ( jj > 1 .and. jj < 5 ) then
-            xs_xn(1) = ace(iso)%sig_MT(ii)%cx(ierg) + slope * &
-                (ace(iso)%sig_MT(ii)%cx(ierg+1)-ace(iso)%sig_MT(ii)%cx(ierg))
-            xs_xn(jj) = xs_xn(1)
-        end if
-    end do
-
-    do ii = 2, 4
-        xs(3) = xs(3) - (ii-1)*xs_xn(ii)
-    end do
+    xs(3) = xs(3)*getnu(iso,E1)
+    xs(6) = xs(6) + xs(4)
     end if
 
 end subroutine

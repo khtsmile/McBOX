@@ -270,72 +270,74 @@ subroutine bank_initialize(this)
         min(1:3) = sgrid(1:3)
         max(1:3) = sgrid(4:6)
     endif 
-            
     
     do i = 1, size(this)
         this(i) % wgt = 1
         found         = .false.
         this(i) % uvw = rand_vec()
         
-        ! multigroup MC
-        if (E_mode == 0) then
-            this(i) % G = 1
-            search_MG: do while (found == .false.) 
-                do j = 1, 3
-                    this(i) % xyz(j) = rang()*(max(j)-min(j)) + min(j)
-                enddo
-                univ_idx = 0; xyz = this(i)%xyz
-                call find_cell_xyz(xyz, univ_idx, cell_idx)
-                if (cells(cell_idx)%mat_idx == 0) then 
-                    found = .false. 
-                    cycle search_MG
-                endif
-                mat_idx = cells(cell_idx)%mat_idx
-                !print '(I3, I3, A20)', i, cell_idx, XS_MG(mat_idx)%mat_id
-                do j = 1, size(XS_MG(mat_idx)%sig_fis)  
-                    if(XS_MG(mat_idx)%sig_fis(j) > 0.0001) then 
-                        found = .true.  
-                        exit search_MG
-                    else 
-                        found = .false.
-                        cycle search_MG
-                    endif 
-                enddo 
-                
-            enddo search_MG
-        
-
-        ! continuous energy MC
-        elseif (E_mode == 1) then
+!        ! multigroup MC
+!        if (E_mode == 0) then
+!            this(i) % G = 1
+!            search_MG: do while (found == .false.) 
+!                do j = 1, 3
+!                    this(i) % xyz(j) = rang()*(max(j)-min(j)) + min(j)
+!                enddo
+!                univ_idx = 0; xyz = this(i)%xyz
+!                call find_cell_xyz(xyz, univ_idx, cell_idx)
+!                if (cells(cell_idx)%mat_idx == 0) then 
+!                    found = .false. 
+!                    cycle search_MG
+!                endif
+!                mat_idx = cells(cell_idx)%mat_idx
+!                !print '(I3, I3, A20)', i, cell_idx, XS_MG(mat_idx)%mat_id
+!                do j = 1, size(XS_MG(mat_idx)%sig_fis)  
+!                    if(XS_MG(mat_idx)%sig_fis(j) > 0.0001) then 
+!                        found = .true.  
+!                        exit search_MG
+!                    else 
+!                        found = .false.
+!                        cycle search_MG
+!                    endif 
+!                enddo 
+!                
+!            enddo search_MG
+!        
+!
+!        ! continuous energy MC
+!        elseif (E_mode == 1) then
                     
             e1 = rang()*32.d0 + 1.d0
             e2 = rang()
             this(i)%E = fes(e1) + e2*(fes(e1+1)-fes(e1))
+            do j = 1, 3
+            this(i)%xyz(j) = rang()*(max(j)-min(j)) + min(j)
+            end do
                             
-            search_CE: do while ( found == .false.) 
-                do j = 1, 3
-                    this(i) % xyz(j) = rang()*(max(j)-min(j)) + min(j)
-                enddo
-                univ_idx = 0; xyz = this(i)%xyz
-                call find_cell_xyz(xyz, univ_idx, cell_idx)
-                ! within a material region
-                if (cells(cell_idx)%mat_idx == 0) then 
-                    found = .false. 
-                    cycle search_CE
-                endif
-                mat_idx = cells(cell_idx)%mat_idx
-                ! within a fissionable material region
-                do j = 1, materials(mat_idx)%n_iso
-                    iso = materials(mat_idx)%ace_idx(j)
-                    if(ace(iso)%jxs(2) /= 0) then 
-                        found = .true.  
-                    endif 
-                enddo 
-                
-            enddo search_CE 
+!            search_CE: do while ( found == .false.) 
+!                do j = 1, 3
+!                    this(i) % xyz(j) = rang()*(max(j)-min(j)) + min(j)
+!                enddo
+!                univ_idx = 0; xyz = this(i)%xyz
+!                call find_cell_xyz(xyz, univ_idx, cell_idx)
+!                ! within a material region
+!                if (cells(cell_idx)%mat_idx == 0) then 
+!                    found = .false. 
+!                    cycle search_CE
+!                endif
+!                mat_idx = cells(cell_idx)%mat_idx
+!                ! within a fissionable material region
+!                do j = 1, materials(mat_idx)%n_iso
+!                    iso = materials(mat_idx)%ace_idx(j)
+!                    if(ace(iso)%jxs(2) /= 0) then 
+!                        found = .true.  
+!                    endif 
+!                enddo 
+!                
+!            enddo search_CE 
             
             
-        endif
+!        endif
         
         
         !this(i) % xyz   = (/0.001, -10, 1/)
