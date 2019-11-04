@@ -9,18 +9,14 @@ CARD A : Control_Card
 
 	entropy					= -85.68 -85.68 20 85.68 85.68 220 136 136 10
 	PRUP					= T
-	IGEN					= 1E6
-	DGEN					= 1E6
-	CRT1					= 0
-	CRT2					= 3E6
-%	IGEN					= 5E6
-%	DGEN					= 15E6
-%	CRT1					= 0
-%	CRT2					= 50E6
+	IGEN					= 30E6
+	DGEN					= 10E6
+	CRT1					= 0		% MC 0 / FMFD 1
+	CRT2					= 30E6
 
-	FMFD 					= F
+	FMFD 					= T
 	FMFD_GRID				= -85.68 -85.68 20 85.68 85.68 220 136 136 10
-	ONE_CMFD				= 17 2
+	%ONE_CMFD				= 17 2
 	FMFD_ACC				= 5
 	
 	%Tally					= F 
