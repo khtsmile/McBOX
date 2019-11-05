@@ -41,37 +41,37 @@ subroutine collision_CE (p)
     real(8) :: ee(1:ne)
     real(8) :: tt0, tt1
 
-!    open(10,file='efort')
-!    do ii = 1, 133953
-!        read(10,*), ee(ii)
-!    end do
-!    close(10)
-!
-!    call CPU_TIME(tt0)
-!    jj = 4
-!    !do ii = 1, ace(4)%nxs(3)
-!    do ii = 1, 133953
-!        micro_xs = getMicroXS(jj,ee(ii))
+    open(10,file='efort')
+    do ii = 1, 133953
+        read(10,*), ee(ii)
+    end do
+    close(10)
+
+    call CPU_TIME(tt0)
+    jj = 4
+    !do ii = 1, ace(4)%nxs(3)
+    do ii = 1, 133953
+        micro_xs(1:5) = getMacroXS(materials(2),ee(ii))
+        xs_t(1:5) = micro_xs(1:5)
+!        dtemp = 6D2*K_B
+!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
 !        xs_t(1) = micro_xs(6)
-!!        dtemp = 6D2*K_B
-!!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
-!!        xs_t(1) = micro_xs(6)
-!!        dtemp = 9D2*K_B
-!!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
-!!        xs_t(2) = micro_xs(1)
-!!        dtemp = 12D2*K_B
-!!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
-!!        xs_t(3) = micro_xs(1)
-!!        dtemp = 25D2*K_B
-!!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
-!!        xs_t(4) = micro_xs(1)
-!        write(8,1), ee(ii), xs_t(1:5)
-!        write(7,1), xs_t(1:5)
-!    end do
-!    1 format(10es15.6)
-!    call CPU_TIME(tt1)
-!    print*, tt1-tt0
-!    stop
+!        dtemp = 9D2*K_B
+!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
+!        xs_t(2) = micro_xs(1)
+!        dtemp = 12D2*K_B
+!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
+!        xs_t(3) = micro_xs(1)
+!        dtemp = 25D2*K_B
+!        call GET_OTF_DB_MIC(dtemp,jj,ee(ii),micro_xs)
+!        xs_t(4) = micro_xs(1)
+        !write(8,1), ee(ii), xs_t(1:5)
+        write(7,1), xs_t(1:5)
+    end do
+    1 format(10es15.6)
+    call CPU_TIME(tt1)
+    print*, tt1-tt0
+    stop
 !    call DB_POLY(ne,ee)
     
     p%n_collision = p%n_collision + 1
@@ -90,7 +90,7 @@ subroutine collision_CE (p)
             materials(p%material)%ace_idx(i),p%E,micro_xs)
 
         else
-        ! point-wise data with given temperature
+        ! point-wise data at the given temperature
         micro_xs = getMicroXS( materials(p%material)%ace_idx(i), p%E)
         end if
         ! S(a,b)

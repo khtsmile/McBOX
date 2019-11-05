@@ -19,7 +19,7 @@ real(8) :: tt1, tt2, tt3
 integer :: jj, kk
 
 !> Preparation for parallelization ===============================================
-!call omp_set_num_threads(1)
+call omp_set_num_threads(1)
 call MPI_Init_thread(MPI_THREAD_SINGLE, provide, ierr)
 core = MPI_COMM_WORLD
 call MPI_COMM_RANK(core,icore,ierr)

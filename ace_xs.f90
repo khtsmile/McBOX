@@ -51,7 +51,9 @@ function getMacroXS (mat, erg) result (macro_xs)
         ! =====================================================================
         ! On-the-fly Doppler broadening
         dtemp = abs(ace(iso_)%temp-mat%temp(i_iso))
-        if ( mat%db .and. ( dtemp > K_B .and. erg < 1d0 ) ) then
+        !if ( mat%db .and. ( dtemp > K_B .and. erg < 1d0 ) ) then
+        !if ( .true. ) then
+        if ( .false. ) then
             call GET_OTF_DB_MAC(mat,i_iso,iso_,erg,xs)
             macro_t   = macro_t   + xs(1)
             macro_a   = macro_a   + xs(2)
@@ -553,12 +555,15 @@ end subroutine
 ! =============================================================================
 subroutine GET_OTF_DB_MAC(mat,i_iso,iso,E0,xs1)
     use ACE_HEADER, only: ace, ghq, wghq, ghq2, xghq2, wghq2
+    use FMFD_HEADER, only: fmfdon
+    use constants, only: k_b
     implicit none
     type(material_CE):: mat
     integer, intent(in)   :: i_iso, iso ! index for material and ACE
     real(8), intent(in)   :: E0
     real(8), intent(inout):: xs1(5)
     real(8):: xs0(5)
+    real(8):: xn(2:4)
     real(8):: erg_l, erg_u, E1
     integer:: ierg0, ierg1
     real(8):: bb, yy, inv_b, inv_y, inv_y2  ! parameters 1
@@ -569,6 +574,7 @@ subroutine GET_OTF_DB_MAC(mat,i_iso,iso,E0,xs1)
 
     ! parameters
     bb    = ace(iso)%atn/(mat%temp(i_iso)-ace(iso)%temp)
+    bb = ace(iso)%atn/((6D2-293D0)*k_b)
     yy    = sqrt(bb*E0)
     inv_b = 1D0/bb
     inv_y = 1D0/yy
@@ -588,11 +594,10 @@ subroutine GET_OTF_DB_MAC(mat,i_iso,iso,E0,xs1)
             x2 = xx*xx
             E1 = x2*inv_b
             ierg0 = EFF_IERG(E1,iso,ierg0,ierg1+1)
-            call GET_MIC_DB1(iso,ierg0,E1,xs0)
+            call GET_MIC_DB1(iso,ierg0,E1,xs0,xn(2:4))
             wx2 = wghq(ii) * x2
             xs1(:) = xs1(:) + wx2 * xs0(:)
         end do
-
         p1 = inv_sqrt_pi*inv_y2
         xs1(:) = xs1(:) * p1
 
@@ -605,15 +610,20 @@ subroutine GET_OTF_DB_MAC(mat,i_iso,iso,E0,xs1)
         do ii = 1, 16
             E1 = xghq2(ii)*inv_b
             ierg0 = EFF_IERG(E1,iso,ierg0,ierg1+1)
-            call GET_MIC_DB1(iso,ierg0,E1,xs0)
+            call GET_MIC_DB1(iso,ierg0,E1,xs0,xn(2:4))
             p1 = exp(2D0*ghq2(ii)*yy)
             p2 = wghq2(ii)*(p1-1D0/p1)
             xs1(:) = xs1(:) + p2 * xs0(:)
         end do
-
         p1 = inv_sqrt_pi*inv_y2*exp(-yy*yy)
         xs1(:) = xs1(:) * p1
 
+    end if
+
+    if ( fmfdon ) then
+    do ii = 2, 4
+        xs1(2) = xs1(2) - (dble(ii)-1D0)*xn(ii)
+    end do
     end if
 
     nd = mat%numden(i_iso)
@@ -727,15 +737,16 @@ end function
 ! =============================================================================
 ! 
 ! =============================================================================
-subroutine GET_MIC_DB1(iso,ierg,E1,xs)
+subroutine GET_MIC_DB1(iso,ierg,E1,xs,xn)
     use FMFD_HEADER, only: fmfdon
     implicit none
     integer, intent(in):: iso, ierg
     real(8), intent(in):: E1
     real(8):: xs(5)
+    real(8):: xn(2:4)
     real(8):: slope
     integer:: ii, jj
-    real(8):: xs_xn(4)
+    real(8):: xs_xn
 
     slope = max(0D0,min(1D0,(E1-ace(iso)%E(ierg)) &
         /(ace(iso)%E(ierg+1)-ace(iso)%E(ierg))))
@@ -744,7 +755,7 @@ subroutine GET_MIC_DB1(iso,ierg,E1,xs)
           + slope * (ace(iso)%sigt(ierg+1)-ace(iso)%sigt(ierg))
     xs(2) = ace(iso)%sigd(ierg) &
           + slope * (ace(iso)%sigd(ierg+1)-ace(iso)%sigd(ierg))
-    xs(3) = 0D0
+    xs(3:5) = 0D0
 
     ! fissionable material
     if ( ace(iso)%jxs(21) /= 0 .or. allocated(ace(iso)%sigf) ) then
@@ -757,18 +768,14 @@ subroutine GET_MIC_DB1(iso,ierg,E1,xs)
 
     ! (n,xn) cross-section
     ! seperately considered and then collapsed? when FMFD is on
+    xn(:) = 0D0
     if ( fmfdon ) then
     do ii = 1, ace(iso)%nxs(5)
         jj = abs(ace(iso)%TY(ii))
         if ( jj > 1 .and. jj < 5 ) then
-            xs_xn(1) = ace(iso)%sig_MT(ii)%cx(ierg) + slope * &
+            xn(jj) = xn(jj) + ace(iso)%sig_MT(ii)%cx(ierg) + slope * &
                 (ace(iso)%sig_MT(ii)%cx(ierg+1)-ace(iso)%sig_MT(ii)%cx(ierg))
-            xs_xn(jj) = xs_xn(1)
         end if
-    end do
-
-    do ii = 2, 4
-        xs(2) = xs(2) - (ii-1)*xs_xn(ii)
     end do
     end if
 
@@ -810,8 +817,8 @@ subroutine GET_MIC_DB2(iso,ierg,E1,xs)
     if ( ace(iso)%jxs(21) /= 0 .or. allocated(ace(iso)%sigf) ) then
     xs(4) = ace(iso)%sigf(ierg) &
           + slope * (ace(iso)%sigf(ierg+1)-ace(iso)%sigf(ierg))
-    xs(3) = xs(3)*getnu(iso,E1)
-    xs(6) = xs(6) + xs(4)
+    xs(5) = xs(4)*getnu(iso,E1)
+    xs(3) = xs(3) + xs(4)
     end if
 
 end subroutine

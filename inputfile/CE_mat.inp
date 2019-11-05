@@ -8,12 +8,10 @@ CARD D : CE_MAT_CARD
 		n_iso			= 3
 		sab				= F
 		isotopes 		= 92235.711nc  6.20000E+21
-						  92238.711nc  1.60000E+22
-						   8016.711nc  4.44000E+22
+ 						  92238.711nc  1.60000E+22
+  						   8016.711nc  4.44000E+22
 		doppler         = F
-		temperature     = 92235.711nc 1200
-		                  92238.711nc 1200
-						   8016.711nc 1200
+
 	END_MAT_01 
 
 	MAT_02 : water
